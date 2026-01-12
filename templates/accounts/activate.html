@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Activate your account | L+C Psych{% endblock %}
+
+{% block head_extra %}
+<style>
+/* Soft teal focus ring for buttons */
+.btn-soft-focus {
+  border: 0 !important;
+  border-color: transparent !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.btn-soft-focus:focus,
+.btn-soft-focus:focus-visible {
+  outline: none !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.65) !important;
+}
+
+/* Branded form inputs inside the card */
+.form-card input[type="text"],
+.form-card input[type="email"],
+.form-card input[type="password"],
+.form-card input[type="url"],
+.form-card input[type="tel"],
+.form-card select,
+.form-card textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  border: 1.5px solid rgba(146, 220, 229, 0.7) !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+  padding: 0.625rem 0.875rem; /* py-2.5 px-3.5 */
+  width: 100%;
+}
+.form-card input::placeholder,
+.form-card textarea::placeholder {
+  color: rgba(0, 95, 107, 0.55) !important; /* brand deep */
+}
+.form-card input:focus,
+.form-card input:focus-visible,
+.form-card select:focus,
+.form-card select:focus-visible,
+.form-card textarea:focus,
+.form-card textarea:focus-visible {
+  outline: none !important;
+  border-color: #92DCE5 !important;
+  box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.55) !important, inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+.form-card label { color: #0f3f46; font-weight: 600; display: block; margin-bottom: 0.25rem; }
+.form-card .helptext { color: #475569; font-size: 0.875rem; }
+.form-card .errorlist { color: #b91c1c; margin: 0.25rem 0 0.5rem; }
+
+/* Password helpers */
+.pw-row { display: flex; gap: 0.5rem; align-items: center; }
+.pw-toggle { font-size: 0.875rem; color: #116466; font-weight: 600; background: transparent; border: 0; padding: 0.25rem 0.5rem; border-radius: 0.5rem; }
+.pw-toggle:hover, .pw-toggle:focus-visible { outline: none; background: #E6F8F6; }
+.pw-meter { margin-top: 0.4rem; height: 6px; background: #E2E8F0; border-radius: 9999px; overflow: hidden; }
+.pw-meter-bar { height: 100%; width: 0%; background: #ef4444; transition: width .2s ease, background-color .2s ease; }
+.pw-feedback { margin-top: 0.25rem; font-size: 0.85rem; color: #475569; }
+.pw-feedback-weak { color: #b91c1c; }
+.pw-feedback-fair { color: #b45309; }
+.pw-feedback-good { color: #166534; }
+.pw-feedback-strong { color: #116466; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <!-- Hero -->
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Activate your account</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Set a strong password to complete your account setup.</p>
+    </div>
+  </section>
+
+  <!-- Form Section -->
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+            <div class="elementor-1393">
+           <div class="elementor-element elementor-element-a80adf4" >
+                <div class="e-con-inner">
+                    <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+                            <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+                            <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+                            <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+                            <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+                            <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+                            <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+                            <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+                            <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+                            <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+                        </svg>
+                    </div>
+                    <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+                            <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+                            <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+                            <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+                            <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+                            <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+                            <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+                            <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+                            <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+                            <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <div class="container mx-auto px-4">
+      <div class="max-w-md mx-auto">
+        <form method="post" class="form-card space-y-4 bg-white p-6 md:p-8 rounded-2xl ring-1 ring-slate-200 shadow-sm">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 text-sm">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+          {{ form.as_p }}
+          <div class="pt-2">
+            <button type="submit" class="btn-soft-focus rounded-xl bg-[#3C9C64] text-white font-semibold py-2.5 px-5 transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B] focus-visible:bg-[#92DCE5] focus-visible:text-[#005F6B]">Save and continue</button>
+          </div>
+        </form>
+        <script>
+          (function(){
+            function enhancePasswordField(input) {
+              if (!input) return;
+              // Insert a show/hide toggle right after the input
+              var toggle = document.createElement('button');
+              toggle.type = 'button';
+              toggle.className = 'pw-toggle';
+              toggle.setAttribute('aria-label', 'Show password');
+              toggle.textContent = 'Show';
+              input.insertAdjacentElement('afterend', toggle);
+
+              toggle.addEventListener('click', function(){
+                var showing = input.getAttribute('type') !== 'password';
+                if (showing) {
+                  input.setAttribute('type', 'password');
+                  toggle.textContent = 'Show';
+                  toggle.setAttribute('aria-label', 'Show password');
+                } else {
+                  input.setAttribute('type', 'text');
+                  toggle.textContent = 'Hide';
+                  toggle.setAttribute('aria-label', 'Hide password');
+                }
+              });
+            }
+
+            function buildMeter(afterEl) {
+              var meter = document.createElement('div');
+              meter.className = 'pw-meter';
+              var bar = document.createElement('div');
+              bar.className = 'pw-meter-bar';
+              meter.appendChild(bar);
+              afterEl.insertAdjacentElement('afterend', meter);
+              var feedback = document.createElement('div');
+              feedback.className = 'pw-feedback';
+              feedback.setAttribute('aria-live', 'polite');
+              meter.insertAdjacentElement('afterend', feedback);
+              return { bar: bar, feedback: feedback };
+            }
+
+            function scorePassword(pw) {
+              if (!pw) return { score: 0, label: 'Empty', className: '' };
+              var length = pw.length;
+              var lowers = /[a-z]/.test(pw);
+              var uppers = /[A-Z]/.test(pw);
+              var digits = /\d/.test(pw);
+              var symbols = /[^A-Za-z0-9]/.test(pw);
+              var classes = [lowers, uppers, digits, symbols].filter(Boolean).length;
+              var score = 0;
+              if (length >= 12 && classes >= 3) score = 4;
+              else if (length >= 10 && classes >= 3) score = 3;
+              else if (length >= 8 && classes >= 2) score = 2;
+              else if (length >= 6) score = 1;
+              var label = ['Very weak', 'Weak', 'Fair', 'Good', 'Strong'][score];
+              var clsMap = ['pw-feedback-weak','pw-feedback-weak','pw-feedback-fair','pw-feedback-good','pw-feedback-strong'];
+              return { score: score, label: label, className: clsMap[score] };
+            }
+
+            function applyMeter(meter, pw) {
+              var result = scorePassword(pw);
+              var widths = ['5%','20%','50%','75%','100%'];
+              var colors = ['#ef4444','#f59e0b','#f59e0b','#16a34a','#116466'];
+              meter.bar.style.width = widths[result.score];
+              meter.bar.style.backgroundColor = colors[result.score];
+              meter.feedback.className = 'pw-feedback ' + result.className;
+              meter.feedback.textContent = result.label + (result.score < 3 ? ' — use 12+ characters with a mix of letters, numbers, and symbols.' : '');
+            }
+
+            var pw1 = document.querySelector('input[name="new_password1"]');
+            var pw2 = document.querySelector('input[name="new_password2"]');
+
+            if (pw1) {
+              enhancePasswordField(pw1);
+              var meter = buildMeter(pw1.nextElementSibling || pw1);
+              ['input','keyup','change','paste'].forEach(function(evt){
+                pw1.addEventListener(evt, function(){ applyMeter(meter, pw1.value); });
+              });
+              // Initialize once
+              applyMeter(meter, pw1.value);
+            }
+            if (pw2) {
+              enhancePasswordField(pw2);
+            }
+          })();
+        </script>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block before_footer %}
+  <!-- Full-bleed teal bar to widen the footer wave lead-in -->
+  <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
+{% endblock %}

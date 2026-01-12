@@ -1,19 +1,132 @@
 {% extends "base.html" %}
 {% block title %}Edit Profile | Therapist{% endblock %}
+{% block head_extra %}
+  {{ block.super }}
+  <style>
+    .profile-editor .django-ckeditor-widget,
+    .profile-editor .django-ckeditor-widget .cke,
+    .profile-editor .django-ckeditor-widget .cke_chrome,
+    .profile-editor .django-ckeditor-widget .cke_inner,
+    .profile-editor .django-ckeditor-widget .cke_contents {
+      width: 100% !important;
+    }
+    .profile-editor .django-ckeditor-widget iframe {
+      width: 100% !important;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
-<main id="content">
+<main>
   <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-0">
     <div class="max-w-[1100px] mx-auto px-4 pt-16 pb-10">
       <h1 class="text-3xl font-semibold m-0">Edit your profile</h1>
+      <p class="mt-1 text-white/80 max-w-[760px]">Share the essentials clients need: your name, license type, who you serve, and any media that helps them get to know you.</p>
+    </div>
+    <div class="elementor-1393">
+      <div class="elementor-element elementor-element-a80adf4">
+        <div class="e-con-inner">
+          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
+            </svg>
+          </div>
+          <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
+
   <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
-    <div class="container mx-auto px-4">
-      <form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6">
+    <div class="max-w-[900px] mx-auto px-4">
+      {{ form.media }}
+  <form method="post" enctype="multipart/form-data" class="profile-editor bg-white rounded-2xl ring-1 ring-[#BEE3DB] shadow p-6 md:p-8 space-y-6">
         {% csrf_token %}
-        {{ form.as_p }}
-        <div class="mt-4">
-          <button type="submit" class="rounded-xl bg-[#3C9C64] text-white font-semibold py-2 px-4 transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B] focus-visible:bg-[#92DCE5] focus-visible:text-[#005F6B]">Save</button>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium mb-1">Salutation</label>
+            {{ form.salutation }}
+            {% if form.salutation.help_text %}<p class="mt-1 text-xs text-slate-500">{{ form.salutation.help_text }}</p>{% endif %}
+            {{ form.salutation.errors }}
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">License type</label>
+            {{ form.license_type }}
+            {{ form.license_type.errors }}
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">First name</label>
+            {{ form.first_name }}
+            {{ form.first_name.errors }}
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Last name</label>
+            {{ form.last_name }}
+            {{ form.last_name.errors }}
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Client focus</label>
+          <div class="rounded-xl border border-[#BEE3DB] bg-[#F7FCFB] p-4 space-y-2">
+            {{ form.client_focuses }}
+          </div>
+          {{ form.client_focuses.errors }}
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Services</label>
+          <div class="rounded-xl border border-[#BEE3DB] bg-[#F7FCFB] p-4 space-y-2">
+            {{ form.services }}
+          </div>
+          {% if form.services.help_text %}<p class="mt-1 text-xs text-slate-500">{{ form.services.help_text }}</p>{% endif %}
+          {{ form.services.errors }}
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Featured services (max 3)</label>
+          <div class="rounded-xl border border-[#BEE3DB] bg-[#F7FCFB] p-4 space-y-2">
+            {{ form.top_services }}
+          </div>
+          {% if form.top_services.help_text %}<p class="mt-1 text-xs text-slate-500">{{ form.top_services.help_text }}</p>{% endif %}
+          {{ form.top_services.errors }}
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Bio</label>
+          {{ form.bio }}
+          {% if form.bio.help_text %}<p class="mt-1 text-xs text-slate-500">{{ form.bio.help_text }}</p>{% endif %}
+          {{ form.bio.errors }}
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4">
+          <label class="flex items-center gap-2 text-sm font-medium">{{ form.accepts_new_clients }} Accepting new clients</label>
+          {{ form.accepts_new_clients.errors }}
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium mb-1">Photo</label>
+            {{ form.photo }}
+            {{ form.photo.errors }}
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Intro video URL</label>
+            {{ form.intro_video_url }}
+            {% if form.intro_video_url.help_text %}<p class="mt-1 text-xs text-slate-500">{{ form.intro_video_url.help_text }}</p>{% endif %}
+            {{ form.intro_video_url.errors }}
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-4">
+          <div>
+            <a href="{% url 'profiles:profile_detail' profile.slug %}" class="text-sm text-[#116466] hover:underline">View public profile</a>
+          </div>
+          <button type="submit" class="rounded-full bg-[#116466] text-white font-semibold py-2.5 px-6 hover:bg-[#0d4c4d]">Save changes</button>
         </div>
       </form>
     </div>

@@ -422,6 +422,7 @@
                                 }
                                 </style>
                                 {% for service in services %}
+                                {% if service.card_background_url %}
                                 <style>
                                 .e-loop-item-s{{ forloop.counter }} .elementor-element.elementor-element-23dc65e::before,
                                 .e-loop-item-s{{ forloop.counter }} .elementor-element.elementor-element-23dc65e > .elementor-background-video-container::before,
@@ -429,11 +430,12 @@
                                 .e-loop-item-s{{ forloop.counter }} .elementor-element.elementor-element-23dc65e > .elementor-background-slideshow::before,
                                 .e-loop-item-s{{ forloop.counter }} .elementor-element.elementor-element-23dc65e > .e-con-inner > .elementor-background-slideshow::before,
                                 .e-loop-item-s{{ forloop.counter }} .elementor-element.elementor-element-23dc65e > .elementor-motion-effects-container > .elementor-motion-effects-layer::before {
-                                    {% if service.image_url %}background-image: url("{{ service.image_url|escape }}");{% endif %}
+                                    background-image: url("{{ service.card_background_url|escape }}");
                                 }
                                 </style>
+                                {% endif %}
                                 <div data-elementor-type="loop-item" data-elementor-id="1745" class="elementor elementor-1745 e-loop-item e-loop-item-s{{ forloop.counter }} service type-service status-publish hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
-                                    <div data-dce-background-color="#005F6B" {% if service.image_url %}data-dce-background-overlay-image-url="{{ service.image_url|escape }}"{% endif %} class="elementor-element elementor-element-23dc65e e-con-full e-flex e-con e-parent" data-id="23dc65e" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
+                                    <div data-dce-background-color="#005F6B" {% if service.card_background_url %}data-dce-background-overlay-image-url="{{ service.card_background_url|escape }}"{% endif %} class="elementor-element elementor-element-23dc65e e-con-full e-flex e-con e-parent" data-id="23dc65e" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
                                         <div class="elementor-element elementor-element-50bd3d6 e-con-full e-flex e-con e-child" data-id="50bd3d6" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
                                             <div class="elementor-element elementor-element-98af8d8 elementor-widget elementor-widget-heading" data-id="98af8d8" data-element_type="widget" data-widget_type="heading.default">
                                                 <div class="elementor-widget-container">
@@ -451,9 +453,9 @@
                                         <div class="elementor-element elementor-element-6fdea98 elementor-align-center elementor-widget elementor-widget-button" data-id="6fdea98" data-element_type="widget" data-widget_type="button.default">
                                             <div class="elementor-widget-container">
                                                 <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/{{ service.page.path }}/">
+                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="{{ service.get_absolute_url }}">
                                                         <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Learn More...</span>
+                                                            <span class="elementor-button-text">{{ service.cta_label|default:"Learn More..." }}</span>
                                                         </span>
                                                     </a>
                                                 </div>

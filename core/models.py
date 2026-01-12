@@ -1,5 +1,8 @@
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
+
+from ckeditor.fields import RichTextField
 class PublishStatus(models.TextChoices):
 	DRAFT = 'draft', 'Draft'
 	PUBLISH = 'publish', 'Published'
@@ -109,17 +112,35 @@ class Post(Timestamped):
 
 
 class Service(Timestamped):
-	"""Homepage Services card model bridging to a detailed Page.
+	"""Homepage services card with an optional long-form detail page."""
 
-	Stores card-specific fields (title, blurb, image) and links to the
-	canonical Page for the service detail view under /services/<slug>/.
-	"""
 	title = models.CharField(max_length=200)
 	slug = models.SlugField(max_length=200, unique=True)
-	excerpt = models.TextField(blank=True)
-	image_url = models.URLField(max_length=1000, blank=True, help_text="Absolute or /static relative URL for card background/image")
-	page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='service_cards')
-	order = models.PositiveIntegerField(default=0, help_text="Controls display ordering on homepage")
+	excerpt = models.TextField(blank=True, help_text="Short blurb shown on the homepage card and detail hero.")
+	image_url = models.URLField(
+		max_length=1000,
+		blank=True,
+		help_text="Optional external/background image URL used when no file is uploaded.",
+	)
+	background_image = models.ImageField(
+		upload_to="services/backgrounds/",
+		blank=True,
+		null=True,
+		help_text="Upload a background image for the card and detail hero.",
+	)
+	cta_label = models.CharField(max_length=80, blank=True, default="Learn More...")
+	hero_heading = models.CharField(max_length=200, blank=True, help_text="Overrides the hero heading on the detail page.")
+	hero_subheading = models.TextField(blank=True, help_text="Intro copy that appears under the hero heading on the detail page.")
+	body = RichTextField(blank=True, help_text="Full detail page content (supports rich text).")
+	page = models.ForeignKey(
+		Page,
+		on_delete=models.SET_NULL,
+		related_name="service_cards",
+		blank=True,
+		null=True,
+		help_text="Optional legacy page to pull content from when no body content is provided.",
+	)
+	order = models.PositiveIntegerField(default=0, help_text="Controls display ordering on the homepage.")
 	status = models.CharField(max_length=50, choices=PublishStatus.choices, default=PublishStatus.PUBLISH)
 
 	class Meta:
@@ -132,3 +153,40 @@ class Service(Timestamped):
 		if not self.slug:
 			self.slug = slugify(self.title)[:200]
 		super().save(*args, **kwargs)
+
+	@property
+	def card_background_url(self) -> str:
+		if self.background_image:
+			try:
+				return self.background_image.url
+			except ValueError:
+				return ""
+		return self.image_url or ""
+
+	@property
+	def hero_title(self) -> str:
+		return self.hero_heading or self.title
+
+	@property
+	def hero_intro(self) -> str:
+		return self.hero_subheading or self.excerpt
+
+	@property
+	def body_html(self) -> str:
+		if self.body:
+			return self.body
+		if self.page:
+			return self.page.content_html
+		return ""
+
+	@property
+	def seo_image_url(self) -> str:
+		if self.background_image:
+			try:
+				return self.background_image.url
+			except ValueError:
+				return ""
+		return self.image_url or ""
+
+	def get_absolute_url(self) -> str:
+		return reverse("service_detail", args=[self.slug])

@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title|default:service.title }} | L+C Psych{% endblock %}
+
+{% block head_extra %}
+<style>
+.service-hero {
+  position: relative;
+  overflow: visible;
+  background-color: #0d3f46;
+  color: #ffffff;
+  padding: 96px 0 120px;
+}
+.service-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 1;
+  filter: brightness(0.85);
+}
+.service-hero::after {
+  content: none;
+}
+.service-hero__inner {
+  position: relative;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.service-hero__wave {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  line-height: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.service-hero__wave svg {
+  display: block;
+  width: calc(100% + 1.3px);
+  height: 30px;
+}
+.service-hero__wave .elementor-shape-fill {
+  fill: #005F6B;
+}
+.service-hero__title {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1.15;
+  margin: 0;
+  text-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+.service-hero__intro {
+  margin: 24px auto 0;
+  max-width: 720px;
+  font-size: 19px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+.service-content {
+  position: relative;
+  background: #005F6B;
+  padding: 96px 0 112px;
+  overflow: visible;
+}
+.service-content__wave {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  line-height: 0;
+  z-index: 2;
+}
+.service-content__wave svg {
+  display: block;
+  width: calc(100% + 1.3px);
+  height: 30px;
+}
+.service-content__wave .elementor-shape-fill {
+  fill: #005F6B;
+}
+.service-content__wave--bottom {
+  bottom: -1px;
+}
+.service-content__wave--bottom .elementor-shape-fill {
+  fill: #92DCE5;
+}
+.service-content__inner {
+  position: relative;
+  z-index: 3;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  color: #f4fbfc;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.service-content__inner h2,
+.service-content__inner h3,
+.service-content__inner h4 {
+  color: #92DCE5;
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  margin-top: 2.2em;
+}
+.service-content__inner h2:first-child,
+.service-content__inner h3:first-child,
+.service-content__inner h4:first-child {
+  margin-top: 0;
+}
+.service-content__inner a {
+  color: #ffe9af;
+  text-decoration: underline;
+}
+.service-content__inner strong,
+.service-content__inner b {
+  color: #ffffff;
+}
+.service-therapists-block {
+  position: relative;
+  background: #92DCE5;
+  padding: 80px 0 96px;
+  margin-top: -1px;
+}
+.service-therapists-block__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+  color: #043b43;
+}
+.service-therapists-block__title {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 34px;
+  text-align: center;
+  color: #045E6A;
+}
+.service-therapists-block__intro {
+  margin: 16px auto 0;
+  max-width: 720px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(4, 59, 67, 0.9);
+}
+.service-therapists-block__grid {
+  margin-top: 36px;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  justify-items: stretch;
+}
+.service-therapist-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 100%;
+  background: #ffffff;
+  box-shadow: -4px 8px 18px rgba(0, 0, 0, 0.16);
+  width: 100%;
+}
+.service-therapist-card__photo {
+  position: relative;
+  padding-top: 60%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: rgba(146, 220, 229, 0.35);
+}
+.service-therapist-card__photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(146, 220, 229, 0) 0%, rgba(4, 94, 106, 0.15) 100%);
+}
+.service-therapist-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px 26px;
+  color: #0f3f46;
+}
+.service-therapist-card__name {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #045E6A;
+}
+.service-therapist-card__license {
+  margin: 0;
+  color: rgba(15, 63, 70, 0.7);
+  font-size: 14px;
+  font-weight: 500;
+}
+.service-therapist-card__tagline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #045E6A;
+}
+.service-therapist-card__tagline li {
+  display: inline-flex;
+  align-items: center;
+}
+.service-therapist-card__tagline li:not(:first-child)::before {
+  content: "•";
+  margin-right: 6px;
+  opacity: 0.65;
+}
+.service-therapist-card__focuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.service-therapist-card__focuses li {
+  background: rgba(146, 220, 229, 0.32);
+  color: #045E6A;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.service-therapist-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1e8e4a 0%, #2fb36a 100%);
+  color: #f9fffb;
+  box-shadow: 0 6px 18px rgba(31, 106, 59, 0.28);
+}
+.service-therapist-card__status.is-closed {
+  background: linear-gradient(135deg, #c62828 0%, #ef4444 100%);
+  color: #fff5f5;
+  box-shadow: 0 6px 18px rgba(185, 28, 28, 0.22);
+}
+.service-therapist-card__services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+.service-therapist-card__services-label {
+  margin: 6px 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #045E6A;
+  letter-spacing: 0.01em;
+}
+.service-therapist-card__services li {
+  background: #e8f6f8;
+  color: #0f3f46;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #b9e1e7;
+}
+.service-therapist-card__cta {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  min-height: 40px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  background: #045E6A;
+  color: #F4FBFC;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.service-therapist-card__cta:hover,
+.service-therapist-card__cta:focus-visible {
+  background: #0f3f46;
+  color: #ffffff;
+}
+.service-therapist-card__cta--secondary {
+  margin-top: 12px;
+  background: transparent;
+  color: #045E6A;
+  border: 2px solid rgba(4, 94, 106, 0.25);
+}
+.service-therapist-card__cta--secondary:hover,
+.service-therapist-card__cta--secondary:focus-visible {
+  background: #92DCE5;
+  color: #045E6A;
+  border-color: transparent;
+}
+.service-therapists-block__wave {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  line-height: 0;
+}
+.service-therapists-block__wave svg {
+  display: block;
+  width: calc(100% + 1.3px);
+  height: 30px;
+}
+.service-therapists-block__wave--bottom {
+  bottom: -1px;
+}
+.service-therapists-block__wave--bottom .elementor-shape-fill {
+  fill: #F4FBFC;
+}
+.service-related {
+  background-color: #F4FBFC;
+  padding: 64px 0 96px;
+}
+.service-related__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.service-related__title {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 34px;
+  color: #045E6A;
+  margin: 0 0 32px;
+  text-align: center;
+}
+.service-related__grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.service-related-card {
+  position: relative;
+  border-radius: 18px;
+  padding: 32px 28px 96px;
+  color: #FFFFFF;
+  background: #005F6B;
+  overflow: hidden;
+  box-shadow: -6px 12px 24px rgba(0, 0, 0, 0.25);
+  min-height: 240px;
+}
+.service-related-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.35;
+  z-index: 0;
+  pointer-events: none;
+}
+.service-related-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 95, 107, 0.72) 0%, rgba(0, 95, 107, 0.38) 55%, rgba(0, 95, 107, 0.72) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+.service-related-card__content {
+  position: relative;
+  z-index: 1;
+}
+.service-related-card__title {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0;
+}
+.service-related-card__excerpt {
+  margin: 16px 0 24px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+.service-related-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 26px;
+  border-radius: 999px;
+  background: #3C9C64;
+  color: #FFFFFF;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.service-related-card__cta:hover,
+.service-related-card__cta:focus-visible {
+  background: #92DCE5;
+  color: #045E6A;
+}
+@media (max-width: 767px) {
+  .service-hero {
+    padding: 72px 0 88px;
+  }
+  .service-hero__title {
+    font-size: 36px;
+  }
+  .service-hero__intro {
+    font-size: 17px;
+  }
+  .service-therapists-block {
+    padding: 56px 0 72px;
+  }
+  .service-therapists-block__title {
+    font-size: 28px;
+  }
+  .service-therapists-block__intro {
+    font-size: 16px;
+  }
+}
+</style>
+{% if service.card_background_url %}
+<style>
+.service-hero::before {
+  background-image: url("{{ service.card_background_url|escape }}");
+}
+</style>
+{% endif %}
+{% if other_services %}
+{% for related in other_services %}
+{% if related.card_background_url %}
+<style>
+.service-related-card--{{ related.pk }}::before {
+  background-image: url("{{ related.card_background_url|escape }}");
+}
+</style>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <section class="service-hero">
+    <div class="service-hero__inner">
+      <h1 class="service-hero__title">{{ service.hero_title }}</h1>
+      {% if hero_intro %}
+      <p class="service-hero__intro">{{ hero_intro|linebreaksbr }}</p>
+      {% endif %}
+    </div>
+    <div class="service-hero__wave elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+        <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+        <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+        <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+        <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+        <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+        <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+        <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+        <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+        <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+      </svg>
+    </div>
+  </section>
+  <section class="service-content" id="service-details">
+    <div class="service-content__inner">
+      <div class="service-content__body">
+        {{ body_html|safe }}
+      </div>
+    </div>
+    <div class="service-content__wave service-content__wave--bottom elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+        <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+        <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+        <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+        <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+        <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+        <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+        <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+        <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+        <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+      </svg>
+    </div>
+  </section>
+  {% if therapists %}
+  <section class="service-therapists-block" id="service-therapists" aria-labelledby="service-therapists-heading">
+    <div class="service-therapists-block__inner">
+      <h2 id="service-therapists-heading" class="service-therapists-block__title">Meet the Therapists Supporting {{ service.title }}</h2>
+      <p class="service-therapists-block__intro">Each clinician below offers {{ service.title }} support. Explore their profiles to learn more about their approach and availability.</p>
+      <div class="service-therapists-block__grid">
+        {% for therapist in therapists %}
+        {% with profile=therapist.profile %}
+        <article class="service-therapist-card">
+          <div class="service-therapist-card__photo"{% if therapist.photo_url %} style="background-image: url('{{ therapist.photo_url }}');"{% endif %}></div>
+          <div class="service-therapist-card__body">
+            <h3 class="service-therapist-card__name">{{ profile.display_name }}</h3>
+            {% if therapist.license_name %}<p class="service-therapist-card__license">{{ therapist.license_name }}</p>{% endif %}
+            {% if therapist.services %}
+            <p class="service-therapist-card__services-label">Services</p>
+            <ul class="service-therapist-card__services">
+              {% for svc in therapist.services|slice:":3" %}
+              <li>{{ svc }}</li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+            <span class="service-therapist-card__status{% if not therapist.accepts_new_clients %} is-closed{% endif %}">
+              {% if therapist.accepts_new_clients %}Accepting New Clients{% else %}Waitlist Only{% endif %}
+            </span>
+            <a class="service-therapist-card__cta" href="{% url 'profiles:profile_detail' profile.slug %}">View Profile</a>
+            <a class="service-therapist-card__cta service-therapist-card__cta--secondary" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" target="_blank" rel="noopener">Schedule Now</a>
+          </div>
+        </article>
+        {% endwith %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="service-therapists-block__wave service-therapists-block__wave--bottom elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+        <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+        <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+        <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+        <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+        <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+        <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+        <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+        <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+        <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+      </svg>
+    </div>
+  </section>
+  {% endif %}
+  {% if other_services %}
+  <section class="service-related" aria-labelledby="service-related-heading">
+    <div class="service-related__inner">
+      <h2 id="service-related-heading" class="service-related__title">Explore Other Services</h2>
+      <div class="service-related__grid">
+        {% for related in other_services %}
+        <article class="service-related-card service-related-card--{{ related.pk }}">
+          <div class="service-related-card__content">
+            <h3 class="service-related-card__title">{{ related.title }}</h3>
+            {% if related.excerpt %}
+            <p class="service-related-card__excerpt">{{ related.excerpt }}</p>
+            {% endif %}
+            <a class="service-related-card__cta" href="{{ related.get_absolute_url }}">{{ related.cta_label|default:"Learn More..." }}</a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

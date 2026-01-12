@@ -192,6 +192,31 @@
                                     color: var(--e-global-color-accent);
                                 }
 
+                                .elementor-1598 .therapist-card__tagline {
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 8px;
+                                    margin: 8px 0 0;
+                                    padding: 0;
+                                    list-style: none;
+                                    color: #FFFFFF;
+                                    font-family: "Figtree", Sans-serif;
+                                    font-size: 14px;
+                                    font-weight: 600;
+                                }
+
+                                .elementor-1598 .therapist-card__tagline li {
+                                    display: inline-flex;
+                                    align-items: center;
+                                }
+
+                                .elementor-1598 .therapist-card__tagline li:not(:first-child)::before {
+                                    content: "•";
+                                    margin-right: 6px;
+                                    opacity: 0.85;
+                                }
+
                                 .elementor-1598 .elementor-element.elementor-element-31e2ef9 {
                                     width: auto;
                                     max-width: auto;
@@ -313,13 +338,125 @@
                                     overflow: hidden;
                                 }
 
-                                .elementor-1598 .elementor-element.elementor-element-3c511dc {
-                                    margin-top: auto
+                                .elementor-1598 .therapist-card__meta {
+                                    padding: 16px 24px 0;
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 12px;
                                 }
 
-                                ;
+                                .elementor-1598 .therapist-card__status {
+                                    display: inline-flex;
+                                    align-items: center;
+                                    font-family: "Figtree", Sans-serif;
+                                    font-size: 13px;
+                                    letter-spacing: 0.02em;
+                                    font-weight: 700;
+                                    border-radius: 999px;
+                                    padding: 7px 14px;
+                                    background: linear-gradient(135deg, #1e8e4a 0%, #2fb36a 100%);
+                                    color: #f9fffb;
+                                    width: fit-content;
+                                    box-shadow: 0 6px 18px rgba(31, 106, 59, 0.28);
+                                }
+
+                                .elementor-1598 .therapist-card__status.is-open {
+                                    background: linear-gradient(135deg, #1e8e4a 0%, #2fb36a 100%);
+                                    color: #f9fffb;
+                                }
+
+                                .elementor-1598 .therapist-card__status.is-closed {
+                                    background: linear-gradient(135deg, #c62828 0%, #ef4444 100%);
+                                    color: #fff5f5;
+                                    box-shadow: 0 6px 18px rgba(185, 28, 28, 0.22);
+                                }
+
+                                .elementor-1598 .therapist-card__services {
+                                    display: flex;
+                                    flex-wrap: wrap;
+                                    gap: 8px;
+                                    list-style: none;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+
+                                .elementor-1598 .therapist-card__services-label {
+                                    margin: 6px 0 2px;
+                                    font-size: 13px;
+                                    font-weight: 700;
+                                    color: #FFFFFF;
+                                    letter-spacing: 0.01em;
+                                }
+
+                                .elementor-1598 .therapist-card__services li {
+                                    background: #e8f6f8;
+                                    color: #0f3f46;
+                                    font-size: 12px;
+                                    font-weight: 700;
+                                    padding: 6px 10px;
+                                    border-radius: 999px;
+                                    border: 1px solid #b9e1e7;
+                                }
+
+                                .elementor-1598 .therapist-specialties {
+                                    display: flex;
+                                    flex-wrap: wrap;
+                                    gap: 8px;
+                                    list-style: none;
+                                    margin: 0;
+                                    padding: 0;
+                                }
+
+                                .elementor-1598 .therapist-specialties li {
+                                    background-color: #FFFFFF;
+                                    color: #005F6B;
+                                    font-family: "Figtree", Sans-serif;
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                    border-radius: 999px;
+                                    padding: 6px 12px;
+                                }
+
+                                .elementor-1598 .therapist-card__placeholder {
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    min-height: 280px;
+                                    width: 100%;
+                                    background-color: #BEE3DB;
+                                    color: #005F6B;
+                                    font-family: "Poppins", Sans-serif;
+                                    font-size: 16px;
+                                    font-weight: 600;
+                                    text-align: center;
+                                    padding: 24px;
+                                    border-radius: 10px 10px 0 0;
+                                }
+
+                                .elementor-1598 .therapist-card__empty {
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    min-height: 200px;
+                                    width: 100%;
+                                    background-color: #005F6B;
+                                    color: #FFFFFF;
+                                    font-family: "Poppins", Sans-serif;
+                                    font-size: 20px;
+                                    font-weight: 600;
+                                    text-align: center;
+                                    border-radius: 15px;
+                                }
+
+                                .elementor-1598 .elementor-element.elementor-element-3c511dc {
+                                    margin-top: auto;
+                                }
+
                                 </style>
-                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item e-loop-item-1594 post-1594 team-member type-team-member status-publish has-post-thumbnail hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
+                                {% if therapists %}
+                                {% for card in therapists %}
+                                {% with profile=card.profile %}
+                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item therapist-card" data-elementor-post-type="elementor_library">
                                     <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-0e35d59 e-con-full e-flex e-con e-parent" data-id="0e35d59" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
                                         <div class="elementor-element elementor-element-40b854c e-con-full e-flex e-con e-child" data-id="40b854c" data-element_type="container" data-settings="{&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;}">
                                             <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
@@ -337,8 +474,12 @@
                                             </div>
                                             <div class="elementor-element elementor-element-d3020b6 imagehover dce_masking-none elementor-widget elementor-widget-image" data-id="d3020b6" data-element_type="widget" data-widget_type="image.default">
                                                 <div class="elementor-widget-container">
-                                                    <a href="/team-member/suzanne-collins/">
-                                                        <img loading="lazy" decoding="async" width="800" height="697" src="/static/media/Suzi-OurTeam2.jpg" class="attachment-large size-large wp-image-930" alt="Suzanne Collins | Child Psychologist in Northern Kentucky" srcset="/static/media/Suzi-OurTeam2.jpg 1003w, /static/media/Suzi-OurTeam2-300x261.jpg 300w, /static/media/Suzi-OurTeam2-768x669.jpg 768w, /static/media/Suzi-OurTeam2-585x510.jpg 585w" sizes="(max-width: 800px) 100vw, 800px"/>
+                                                    <a href="{% url 'profiles:profile_detail' card.slug %}">
+                                                        {% if card.photo_url %}
+                                                        <img loading="lazy" decoding="async" width="800" height="697" src="{{ card.photo_url }}" alt="{{ profile.display_name }} headshot"/>
+                                                        {% else %}
+                                                        <div class="therapist-card__placeholder">Photo coming soon</div>
+                                                        {% endif %}
                                                     </a>
                                                 </div>
                                             </div>
@@ -346,30 +487,40 @@
                                         <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c6ea60c e-con-full e-flex e-con e-child" data-id="c6ea60c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
                                             <div class="elementor-element elementor-element-fa7b104 elementor-widget elementor-widget-heading" data-id="fa7b104" data-element_type="widget" data-widget_type="heading.default">
                                                 <div class="elementor-widget-container">
-                                                    <h3 class="elementor-heading-title elementor-size-default">Dr. Suzanne Collins</h3>
+                                                    <h3 class="elementor-heading-title elementor-size-default">{{ profile.display_name }}</h3>
                                                 </div>
                                             </div>
                                         </div>
                                         <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-a4e0a4c e-flex e-con-boxed e-con e-child" data-id="a4e0a4c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
                                             <div class="e-con-inner">
+                                                {% if card.title %}
                                                 <div class="elementor-element elementor-element-86548fa elementor-widget elementor-widget-heading" data-id="86548fa" data-element_type="widget" data-widget_type="heading.default">
                                                     <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Clinical Psychologist</h3>
+                                                        <h3 class="elementor-heading-title elementor-size-default">{{ card.title }}</h3>
                                                     </div>
                                                 </div>
-                                                <div class="elementor-element elementor-element-31e2ef9 elementor-widget__width-auto elementor-widget elementor-widget-heading" data-id="31e2ef9" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Child &amp; Adolescent</h3>
-                                                    </div>
-                                                </div>
+                                                {% endif %}
                                             </div>
+                                        </div>
+                                        <div class="therapist-card__meta">
+                                            <div class="therapist-card__status {% if card.accepts_new_clients %}is-open{% else %}is-closed{% endif %}">
+                                                {% if card.accepts_new_clients %}Accepting new clients{% else %}Currently full{% endif %}
+                                            </div>
+                                            {% if card.services %}
+                                            <p class="therapist-card__services-label">Services</p>
+                                            <ul class="therapist-card__services">
+                                                {% for name in card.services|slice:":3" %}
+                                                <li>{{ name }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% endif %}
                                         </div>
                                         <div class="elementor-element elementor-element-3c511dc elementor-align-center elementor-widget elementor-widget-button" data-id="3c511dc" data-element_type="widget" data-widget_type="button.default">
                                             <div class="elementor-widget-container">
                                                 <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/team-member/suzanne-collins/">
+                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="{% url 'profiles:profile_detail' card.slug %}">
                                                         <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Dr. Suzanne Collins</span>
+                                                            <span class="elementor-button-text">View Profile</span>
                                                         </span>
                                                     </a>
                                                 </div>
@@ -377,354 +528,13 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item e-loop-item-1670 post-1670 team-member type-team-member status-publish has-post-thumbnail hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
-                                    <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-0e35d59 e-con-full e-flex e-con e-parent" data-id="0e35d59" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
-                                        <div class="elementor-element elementor-element-40b854c e-con-full e-flex e-con e-child" data-id="40b854c" data-element_type="container" data-settings="{&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;}">
-                                            <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-                                                    <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
-                                                    <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
-                                                    <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
-                                                    <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
-                                                    <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
-                                                    <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
-                                                    <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
-                                                    <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
-                                                    <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
-                                                </svg>
-                                            </div>
-                                            <div class="elementor-element elementor-element-d3020b6 imagehover dce_masking-none elementor-widget elementor-widget-image" data-id="d3020b6" data-element_type="widget" data-widget_type="image.default">
-                                                <div class="elementor-widget-container">
-                                                    <a href="/team-member/dr-kirk-little/">
-                                                        <img loading="lazy" decoding="async" width="800" height="697" src="/static/media/Kirk-OurTeam.jpg" class="attachment-large size-large wp-image-934" alt="a man wearing glasses and a black jacket" srcset="/static/media/Kirk-OurTeam.jpg 1003w, /static/media/Kirk-OurTeam-300x261.jpg 300w, /static/media/Kirk-OurTeam-768x669.jpg 768w, /static/media/Kirk-OurTeam-585x510.jpg 585w" sizes="(max-width: 800px) 100vw, 800px"/>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c6ea60c e-con-full e-flex e-con e-child" data-id="c6ea60c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="elementor-element elementor-element-fa7b104 elementor-widget elementor-widget-heading" data-id="fa7b104" data-element_type="widget" data-widget_type="heading.default">
-                                                <div class="elementor-widget-container">
-                                                    <h3 class="elementor-heading-title elementor-size-default">Dr. Kirk Little</h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-a4e0a4c e-flex e-con-boxed e-con e-child" data-id="a4e0a4c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="e-con-inner">
-                                                <div class="elementor-element elementor-element-86548fa elementor-widget elementor-widget-heading" data-id="86548fa" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Clinical Psychologist</h3>
-                                                    </div>
-                                                </div>
-                                                <div class="elementor-element elementor-element-31e2ef9 elementor-widget__width-auto elementor-widget elementor-widget-heading" data-id="31e2ef9" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Adult</h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="elementor-element elementor-element-3c511dc elementor-align-center elementor-widget elementor-widget-button" data-id="3c511dc" data-element_type="widget" data-widget_type="button.default">
-                                            <div class="elementor-widget-container">
-                                                <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/team-member/dr-kirk-little/">
-                                                        <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Dr. Kirk Little</span>
-                                                        </span>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {% endwith %}
+                                {% endfor %}
+                                {% else %}
+                                <div class="therapist-card__empty">
+                                    New therapist profiles are coming soon.
                                 </div>
-                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item e-loop-item-1686 post-1686 team-member type-team-member status-publish has-post-thumbnail hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
-                                    <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-0e35d59 e-con-full e-flex e-con e-parent" data-id="0e35d59" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
-                                        <div class="elementor-element elementor-element-40b854c e-con-full e-flex e-con e-child" data-id="40b854c" data-element_type="container" data-settings="{&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;}">
-                                            <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-                                                    <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
-                                                    <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
-                                                    <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
-                                                    <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
-                                                    <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
-                                                    <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
-                                                    <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
-                                                    <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
-                                                    <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
-                                                </svg>
-                                            </div>
-                                            <div class="elementor-element elementor-element-d3020b6 imagehover dce_masking-none elementor-widget elementor-widget-image" data-id="d3020b6" data-element_type="widget" data-widget_type="image.default">
-                                                <div class="elementor-widget-container">
-                                                    <a href="/team-member/dr-taryn-wise/">
-                                                        <img loading="lazy" decoding="async" width="800" height="697" src="/static/media/TarynNewResize.webp" class="attachment-large size-large wp-image-1170" alt="a woman smiling at camera" srcset="/static/media/TarynNewResize.webp 1003w, /static/media/TarynNewResize-300x261.webp 300w, /static/media/TarynNewResize-768x669.webp 768w, /static/media/TarynNewResize-585x510.webp 585w" sizes="(max-width: 800px) 100vw, 800px"/>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c6ea60c e-con-full e-flex e-con e-child" data-id="c6ea60c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="elementor-element elementor-element-fa7b104 elementor-widget elementor-widget-heading" data-id="fa7b104" data-element_type="widget" data-widget_type="heading.default">
-                                                <div class="elementor-widget-container">
-                                                    <h3 class="elementor-heading-title elementor-size-default">Dr. Taryn Wise</h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-a4e0a4c e-flex e-con-boxed e-con e-child" data-id="a4e0a4c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="e-con-inner">
-                                                <div class="elementor-element elementor-element-86548fa elementor-widget elementor-widget-heading" data-id="86548fa" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Clinical Psychologist</h3>
-                                                    </div>
-                                                </div>
-                                                <div class="elementor-element elementor-element-31e2ef9 elementor-widget__width-auto elementor-widget elementor-widget-heading" data-id="31e2ef9" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Child &amp; Adolescent</h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="elementor-element elementor-element-3c511dc elementor-align-center elementor-widget elementor-widget-button" data-id="3c511dc" data-element_type="widget" data-widget_type="button.default">
-                                            <div class="elementor-widget-container">
-                                                <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/team-member/dr-taryn-wise/">
-                                                        <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Dr. Taryn Wise</span>
-                                                        </span>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item e-loop-item-1687 post-1687 team-member type-team-member status-publish has-post-thumbnail hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
-                                    <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-0e35d59 e-con-full e-flex e-con e-parent" data-id="0e35d59" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
-                                        <div class="elementor-element elementor-element-40b854c e-con-full e-flex e-con e-child" data-id="40b854c" data-element_type="container" data-settings="{&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;}">
-                                            <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-                                                    <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
-                                                    <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
-                                                    <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
-                                                    <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
-                                                    <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
-                                                    <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
-                                                    <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
-                                                    <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
-                                                    <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
-                                                </svg>
-                                            </div>
-                                            <div class="elementor-element elementor-element-d3020b6 imagehover dce_masking-none elementor-widget elementor-widget-image" data-id="d3020b6" data-element_type="widget" data-widget_type="image.default">
-                                                <div class="elementor-widget-container">
-                                                    <a href="/team-member/dr-debra-goran/">
-                                                        <img loading="lazy" decoding="async" width="800" height="697" src="/static/media/Debra-OurTeam.jpg" class="attachment-large size-large wp-image-937" alt="a woman with curly blonde hair" srcset="/static/media/Debra-OurTeam.jpg 1003w, /static/media/Debra-OurTeam-300x261.jpg 300w, /static/media/Debra-OurTeam-768x669.jpg 768w, /static/media/Debra-OurTeam-585x510.jpg 585w" sizes="(max-width: 800px) 100vw, 800px"/>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c6ea60c e-con-full e-flex e-con e-child" data-id="c6ea60c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="elementor-element elementor-element-fa7b104 elementor-widget elementor-widget-heading" data-id="fa7b104" data-element_type="widget" data-widget_type="heading.default">
-                                                <div class="elementor-widget-container">
-                                                    <h3 class="elementor-heading-title elementor-size-default">Dr. Debra Goran</h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-a4e0a4c e-flex e-con-boxed e-con e-child" data-id="a4e0a4c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="e-con-inner">
-                                                <div class="elementor-element elementor-element-86548fa elementor-widget elementor-widget-heading" data-id="86548fa" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Clinical Psychologist</h3>
-                                                    </div>
-                                                </div>
-                                                <div class="elementor-element elementor-element-31e2ef9 elementor-widget__width-auto elementor-widget elementor-widget-heading" data-id="31e2ef9" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Adult</h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="elementor-element elementor-element-3c511dc elementor-align-center elementor-widget elementor-widget-button" data-id="3c511dc" data-element_type="widget" data-widget_type="button.default">
-                                            <div class="elementor-widget-container">
-                                                <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/team-member/dr-debra-goran/">
-                                                        <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Dr. Debra Goran</span>
-                                                        </span>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item e-loop-item-1688 post-1688 team-member type-team-member status-publish has-post-thumbnail hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
-                                    <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-0e35d59 e-con-full e-flex e-con e-parent" data-id="0e35d59" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
-                                        <div class="elementor-element elementor-element-40b854c e-con-full e-flex e-con e-child" data-id="40b854c" data-element_type="container" data-settings="{&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;}">
-                                            <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-                                                    <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
-                                                    <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
-                                                    <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
-                                                    <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
-                                                    <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
-                                                    <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
-                                                    <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
-                                                    <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
-                                                    <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
-                                                </svg>
-                                            </div>
-                                            <div class="elementor-element elementor-element-d3020b6 imagehover dce_masking-none elementor-widget elementor-widget-image" data-id="d3020b6" data-element_type="widget" data-widget_type="image.default">
-                                                <div class="elementor-widget-container">
-                                                    <a href="/team-member/dr-karen-lenhoff/">
-                                                        <img loading="lazy" decoding="async" width="800" height="697" src="/static/media/KarenNewResize.webp" class="attachment-large size-large wp-image-1171" alt="a woman in a pink shirt" srcset="/static/media/KarenNewResize.webp 1003w, /static/media/KarenNewResize-300x261.webp 300w, /static/media/KarenNewResize-768x669.webp 768w, /static/media/KarenNewResize-585x510.webp 585w" sizes="(max-width: 800px) 100vw, 800px"/>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c6ea60c e-con-full e-flex e-con e-child" data-id="c6ea60c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="elementor-element elementor-element-fa7b104 elementor-widget elementor-widget-heading" data-id="fa7b104" data-element_type="widget" data-widget_type="heading.default">
-                                                <div class="elementor-widget-container">
-                                                    <h3 class="elementor-heading-title elementor-size-default">Dr. Karen Lenhoff</h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-a4e0a4c e-flex e-con-boxed e-con e-child" data-id="a4e0a4c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="e-con-inner">
-                                                <div class="elementor-element elementor-element-86548fa elementor-widget elementor-widget-heading" data-id="86548fa" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Clinical Psychologist</h3>
-                                                    </div>
-                                                </div>
-                                                <div class="elementor-element elementor-element-31e2ef9 elementor-widget__width-auto elementor-widget elementor-widget-heading" data-id="31e2ef9" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Adult</h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="elementor-element elementor-element-3c511dc elementor-align-center elementor-widget elementor-widget-button" data-id="3c511dc" data-element_type="widget" data-widget_type="button.default">
-                                            <div class="elementor-widget-container">
-                                                <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/team-member/dr-karen-lenhoff/">
-                                                        <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Dr. Karen Lenhoff</span>
-                                                        </span>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item e-loop-item-1689 post-1689 team-member type-team-member status-publish has-post-thumbnail hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
-                                    <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-0e35d59 e-con-full e-flex e-con e-parent" data-id="0e35d59" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
-                                        <div class="elementor-element elementor-element-40b854c e-con-full e-flex e-con e-child" data-id="40b854c" data-element_type="container" data-settings="{&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;}">
-                                            <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-                                                    <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
-                                                    <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
-                                                    <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
-                                                    <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
-                                                    <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
-                                                    <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
-                                                    <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
-                                                    <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
-                                                    <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
-                                                </svg>
-                                            </div>
-                                            <div class="elementor-element elementor-element-d3020b6 imagehover dce_masking-none elementor-widget elementor-widget-image" data-id="d3020b6" data-element_type="widget" data-widget_type="image.default">
-                                                <div class="elementor-widget-container">
-                                                    <a href="/team-member/jennifer-lyon/">
-                                                        <img loading="lazy" decoding="async" width="800" height="697" src="/static/media/JenniferLyonResize.webp" class="attachment-large size-large wp-image-1177" alt="a woman in a denim jacket" srcset="/static/media/JenniferLyonResize.webp 1003w, /static/media/JenniferLyonResize-300x261.webp 300w, /static/media/JenniferLyonResize-768x669.webp 768w, /static/media/JenniferLyonResize-585x510.webp 585w" sizes="(max-width: 800px) 100vw, 800px"/>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c6ea60c e-con-full e-flex e-con e-child" data-id="c6ea60c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="elementor-element elementor-element-fa7b104 elementor-widget elementor-widget-heading" data-id="fa7b104" data-element_type="widget" data-widget_type="heading.default">
-                                                <div class="elementor-widget-container">
-                                                    <h3 class="elementor-heading-title elementor-size-default">Jennifer Lyon</h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-a4e0a4c e-flex e-con-boxed e-con e-child" data-id="a4e0a4c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="e-con-inner">
-                                                <div class="elementor-element elementor-element-86548fa elementor-widget elementor-widget-heading" data-id="86548fa" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Licensed Clinical Social Worker</h3>
-                                                    </div>
-                                                </div>
-                                                <div class="elementor-element elementor-element-31e2ef9 elementor-widget__width-auto elementor-widget elementor-widget-heading" data-id="31e2ef9" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Adult</h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="elementor-element elementor-element-3c511dc elementor-align-center elementor-widget elementor-widget-button" data-id="3c511dc" data-element_type="widget" data-widget_type="button.default">
-                                            <div class="elementor-widget-container">
-                                                <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/team-member/jennifer-lyon/">
-                                                        <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Jennifer Lyon</span>
-                                                        </span>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div data-elementor-type="loop-item" data-elementor-id="1598" class="elementor elementor-1598 e-loop-item e-loop-item-2233 post-2233 team-member type-team-member status-publish has-post-thumbnail hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
-                                    <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-0e35d59 e-con-full e-flex e-con e-parent" data-id="0e35d59" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
-                                        <div class="elementor-element elementor-element-40b854c e-con-full e-flex e-con e-child" data-id="40b854c" data-element_type="container" data-settings="{&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;}">
-                                            <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-                                                    <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
-                                                    <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
-                                                    <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
-                                                    <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
-                                                    <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
-                                                    <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
-                                                    <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
-                                                    <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
-                                                    <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
-                                                </svg>
-                                            </div>
-                                            <div class="elementor-element elementor-element-d3020b6 imagehover dce_masking-none elementor-widget elementor-widget-image" data-id="d3020b6" data-element_type="widget" data-widget_type="image.default">
-                                                <div class="elementor-widget-container">
-                                                    <a href="/team-member/kerry-evans/">
-                                                        <img loading="lazy" decoding="async" width="800" height="677" src="/static/media/photo-KE-fotor-20231027133416-1024x866.webp" class="attachment-large size-large wp-image-1198" alt="a woman with blonde hair smiling" srcset="/static/media/photo-KE-fotor-20231027133416-1024x866.webp 1024w, /static/media/photo-KE-fotor-20231027133416-300x254.webp 300w, /static/media/photo-KE-fotor-20231027133416-768x650.webp 768w, /static/media/photo-KE-fotor-20231027133416-585x495.webp 585w, /static/media/photo-KE-fotor-20231027133416.webp 1033w" sizes="(max-width: 800px) 100vw, 800px"/>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c6ea60c e-con-full e-flex e-con e-child" data-id="c6ea60c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="elementor-element elementor-element-fa7b104 elementor-widget elementor-widget-heading" data-id="fa7b104" data-element_type="widget" data-widget_type="heading.default">
-                                                <div class="elementor-widget-container">
-                                                    <h3 class="elementor-heading-title elementor-size-default">Kerry Evans</h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-a4e0a4c e-flex e-con-boxed e-con e-child" data-id="a4e0a4c" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                                            <div class="e-con-inner">
-                                                <div class="elementor-element elementor-element-86548fa elementor-widget elementor-widget-heading" data-id="86548fa" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Licensed Clinical Professional Counselor</h3>
-                                                    </div>
-                                                </div>
-                                                <div class="elementor-element elementor-element-31e2ef9 elementor-widget__width-auto elementor-widget elementor-widget-heading" data-id="31e2ef9" data-element_type="widget" data-widget_type="heading.default">
-                                                    <div class="elementor-widget-container">
-                                                        <h3 class="elementor-heading-title elementor-size-default">Child &amp; Adolescent</h3>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="elementor-element elementor-element-3c511dc elementor-align-center elementor-widget elementor-widget-button" data-id="3c511dc" data-element_type="widget" data-widget_type="button.default">
-                                            <div class="elementor-widget-container">
-                                                <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="/team-member/kerry-evans/">
-                                                        <span class="elementor-button-content-wrapper">
-                                                            <span class="elementor-button-text">Kerry Evans</span>
-                                                        </span>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

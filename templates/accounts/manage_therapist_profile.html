@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Edit Therapist Profile | Admin{% endblock %}
+
+{% block head_extra %}
+<style>
+.form-grid { display: grid; gap: 1.5rem; }
+.form-grid.two-col { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.field-wrapper label { display: block; font-weight: 600; color: #0f3f46; margin-bottom: 0.35rem; }
+.field-wrapper input[type="text"],
+.field-wrapper input[type="url"],
+.field-wrapper select,
+.field-wrapper input[type="file"] { width: 100%; padding: 0.65rem 0.85rem; border-radius: 0.75rem; border: 1.5px solid rgba(146, 220, 229, 0.7); background: #fff; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.field-wrapper input:focus,
+.field-wrapper select:focus,
+.field-wrapper textarea:focus { border-color: #92DCE5; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.35); outline: none; }
+.checkbox-list { border: 1px solid rgba(146, 220, 229, 0.6); background: #f7fcfb; border-radius: 1rem; padding: 1rem; max-height: 260px; overflow-y: auto; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; }
+.btn-primary { background: #3C9C64; color: #fff; border-radius: 999px; padding: 0.75rem 1.8rem; font-weight: 600; border: none; transition: background 0.2s ease, color 0.2s ease; }
+.btn-primary:hover,
+.btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
+.btn-secondary { border-radius: 999px; border: 1px solid rgba(15, 63, 70, 0.18); padding: 0.7rem 1.6rem; font-weight: 600; color: #0f3f46; background: #fff; transition: all 0.2s ease; display: inline-flex; align-items: center; }
+.btn-secondary:hover,
+.btn-secondary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.35); }
+.error-text { color: #b91c1c; font-size: 0.85rem; margin-top: 0.35rem; }
+.badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.15rem 0.75rem; font-size: 0.75rem; font-weight: 600; gap: 0.35rem; }
+.badge.success { background: rgba(60, 156, 100, 0.16); color: #1f6a3b; }
+.badge.muted { background: rgba(15, 63, 70, 0.1); color: #0f3f46; }
+.photo-preview { width: 120px; height: 120px; border-radius: 1rem; object-fit: cover; background: #f0f6f5; border: 2px dashed rgba(146, 220, 229, 0.6); }
+.profile-editor .django-ckeditor-widget,
+.profile-editor .django-ckeditor-widget .cke,
+.profile-editor .django-ckeditor-widget .cke_chrome,
+.profile-editor .django-ckeditor-widget .cke_inner,
+.profile-editor .django-ckeditor-widget .cke_contents,
+.profile-editor .django-ckeditor-widget iframe {
+  width: 100% !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-sm uppercase tracking-[0.4em] text-white/60 mb-2">Therapist profile</p>
+          <h1 class="text-4xl leading-tight font-semibold m-0">{{ profile.display_name }}</h1>
+          <p class="mt-3 max-w-[620px] text-white/85">Adjust the public profile details for this therapist. Changes save immediately after you hit save.</p>
+        </div>
+        <div class="flex flex-col gap-2 items-start md:items-end">
+          <span class="badge {% if profile.is_published %}success{% else %}muted{% endif %}">
+            {% if profile.is_published %}Published{% else %}Hidden{% endif %}
+          </span>
+          <a href="{% url 'accounts:therapists' %}" class="btn-secondary">Back to therapist dashboard</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="max-w-[900px] mx-auto px-4">
+      {% if messages %}
+        <div class="space-y-3 mb-6">
+          {% for message in messages %}
+            <div class="rounded-xl border border-[#BEE3DB] bg-white px-4 py-3 text-sm text-[#0f3f46]">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="bg-white rounded-2xl ring-1 ring-[#BEE3DB] shadow p-6 md:p-8">
+        {{ form.media }}
+  <form method="post" enctype="multipart/form-data" class="profile-editor space-y-8">
+          {% csrf_token %}
+          <div class="form-grid two-col">
+            <div class="field-wrapper">
+              <label for="id_salutation">Salutation</label>
+              {{ form.salutation }}
+              {% if form.salutation.errors %}<div class="error-text">{{ form.salutation.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="field-wrapper">
+              <label for="id_license_type">License type</label>
+              {{ form.license_type }}
+              {% if form.license_type.errors %}<div class="error-text">{{ form.license_type.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="field-wrapper">
+              <label for="id_first_name">First name</label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}<div class="error-text">{{ form.first_name.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="field-wrapper">
+              <label for="id_last_name">Last name</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}<div class="error-text">{{ form.last_name.errors|striptags }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="field-wrapper">
+            <label>Client focus</label>
+            <div class="checkbox-list">
+              {{ form.client_focuses }}
+            </div>
+            {% if form.client_focuses.errors %}<div class="error-text">{{ form.client_focuses.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="field-wrapper">
+            <label>Services</label>
+            <div class="checkbox-list">
+              {{ form.services }}
+            </div>
+            {% if form.services.help_text %}<p class="text-xs text-slate-500 mt-1">{{ form.services.help_text }}</p>{% endif %}
+            {% if form.services.errors %}<div class="error-text">{{ form.services.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="field-wrapper">
+            <label>Featured services (max 3)</label>
+            <div class="checkbox-list">
+              {{ form.top_services }}
+            </div>
+            {% if form.top_services.help_text %}<p class="text-xs text-slate-500 mt-1">{{ form.top_services.help_text }}</p>{% endif %}
+            {% if form.top_services.errors %}<div class="error-text">{{ form.top_services.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="field-wrapper">
+            <label for="id_bio">Bio</label>
+            {{ form.bio }}
+            {% if form.bio.help_text %}<p class="text-xs text-slate-500 mt-1">{{ form.bio.help_text }}</p>{% endif %}
+            {% if form.bio.errors %}<div class="error-text">{{ form.bio.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="form-grid two-col">
+            <div class="field-wrapper">
+              <label for="id_intro_video_url">Intro video URL <span class="text-xs text-slate-500">(optional)</span></label>
+              {{ form.intro_video_url }}
+              {% if form.intro_video_url.errors %}<div class="error-text">{{ form.intro_video_url.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="field-wrapper">
+              <label for="id_photo">Photo</label>
+              {{ form.photo }}
+              {% if profile.photo %}
+                <div class="mt-3">
+                  <img src="{{ profile.photo.url }}" alt="{{ profile.display_name }}" class="photo-preview">
+                </div>
+              {% endif %}
+              {% if form.photo.errors %}<div class="error-text">{{ form.photo.errors|striptags }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="form-grid two-col">
+            <div class="field-wrapper">
+              <label for="id_accepts_new_clients">Accepting new clients</label>
+              <div class="flex items-center gap-3">
+                {{ form.accepts_new_clients }}
+                <span class="text-sm text-slate-600">Toggle availability on the public profile.</span>
+              </div>
+              {% if form.accepts_new_clients.errors %}<div class="error-text">{{ form.accepts_new_clients.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="field-wrapper">
+              <label for="id_is_published">Published</label>
+              <div class="flex items-center gap-3">
+                {{ form.is_published }}
+                <span class="text-sm text-slate-600">Only published profiles appear on the site.</span>
+              </div>
+              {% if form.is_published.errors %}<div class="error-text">{{ form.is_published.errors|striptags }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div class="flex gap-3 flex-wrap items-center">
+              <button type="submit" class="btn-primary">Save changes</button>
+              <a href="{% url 'profiles:profile_detail' profile.slug %}" class="btn-secondary">View public profile</a>
+            </div>
+            <div class="text-sm text-slate-500">Last updated {{ profile.updated_at|date:"M j, Y" }}</div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block before_footer %}
+  <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
+{% endblock %}

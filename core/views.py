@@ -7,31 +7,182 @@ from django.template.loader import select_template
 import re
 from pathlib import Path
 from .models import Page, Post, PublishStatus, Service
+from profiles.models import TherapistProfile
+
+
+def _build_therapist_cards(profiles):
+	cards = []
+	for profile in profiles:
+		focus_names = [focus.name for focus in profile.client_focuses.all()]
+		tagline_items = focus_names[:2]
+		if profile.license_type:
+			license_label = (profile.license_type.description or '').strip()
+			license_name = license_label or profile.license_type.name
+		else:
+			license_name = ''
+
+		top_service_titles = [service.title for service in profile.top_services.all()]
+		service_titles = top_service_titles or [service.title for service in profile.services.all()]
+
+		cards.append({
+			'profile': profile,
+			'title': license_name,
+			'license_name': license_name,
+			'tagline': ' • '.join(tagline_items) if tagline_items else '',
+			'tagline_items': tagline_items,
+			'photo_url': profile.photo.url if profile.photo else '',
+			'focuses': focus_names,
+			'services': service_titles[:3],
+			'slug': profile.slug,
+			'accepts_new_clients': profile.accepts_new_clients,
+		})
+
+	return cards
+
+
+def _published_therapists_queryset():
+    return (
+        TherapistProfile.objects.filter(is_published=True)
+		.select_related('license_type')
+		.prefetch_related('client_focuses', 'services', 'top_services')
+        .order_by('last_name', 'first_name')
+    )
 
 
 def home(request):
-	# Render the home page and, if available, apply SEO overrides from the Page with path='home'
-	seo_ctx = {}
-	try:
-		page = Page.objects.get(path='home')
-		from django.utils.html import strip_tags
-		def _truncate(s, n=155):
-			s = (s or '').strip()
-			return (s[: n - 1] + '…') if len(s) > n else s
-		seo_ctx = {
-			'seo_title': page.seo_title or page.title,
-			'seo_description': page.seo_description or _truncate(strip_tags(page.excerpt_html or '')),
-			'seo_keywords': page.seo_keywords,
-			'og_image_url': page.seo_image_url or None,
-			# Expose a title the homepage template/partials can use for H1
-			'page_title': page.title,
-		}
-	except Page.DoesNotExist:
-		pass
-	# Services cards for homepage: only published, ordered
-	services = list(Service.objects.filter(status=PublishStatus.PUBLISH).select_related('page').order_by('order', 'title'))
-	ctx = {**seo_ctx, 'services': services}
-	return render(request, 'home.html', ctx)
+    # Render the home page and, if available, apply SEO overrides from the Page with path='home'
+    seo_ctx = {}
+    try:
+        page = Page.objects.get(path='home')
+        from django.utils.html import strip_tags
+
+        def _truncate(s, n=155):
+            s = (s or '').strip()
+            return (s[: n - 1] + '…') if len(s) > n else s
+
+        seo_ctx = {
+            'seo_title': page.seo_title or page.title,
+            'seo_description': page.seo_description or _truncate(strip_tags(page.excerpt_html or '')),
+            'seo_keywords': page.seo_keywords,
+            'og_image_url': page.seo_image_url or None,
+            # Expose a title the homepage template/partials can use for H1
+            'page_title': page.title,
+        }
+    except Page.DoesNotExist:
+        pass
+    # Services cards for homepage: only published, ordered
+    services = list(
+        Service.objects.filter(status=PublishStatus.PUBLISH)
+        .select_related('page')
+        .order_by('order', 'title')
+    )
+
+    therapists = _build_therapist_cards(_published_therapists_queryset())
+
+    ctx = {**seo_ctx, 'services': services, 'therapists': therapists}
+    return render(request, 'home.html', ctx)
+
+
+def our_team(request):
+    therapists = _build_therapist_cards(_published_therapists_queryset())
+    context = {
+        'seo_title': 'Our Team | L+C Psychological Services',
+        'seo_description': 'Meet the licensed psychologists and therapists at L+C Psychological Services serving Northern Kentucky and Kentucky telehealth clients.',
+        'og_type': 'website',
+        'page_title': 'Our Team',
+        'therapists': therapists,
+    }
+    return render(request, 'pages/our_team.html', context)
+
+
+def about_us(request):
+    context = {
+        'seo_title': 'About L+C Psychological Services',
+        'seo_description': 'Learn how L+C Psychological Services supports clients with compassionate therapy, psychological testing, and a mission built on genuine connection.',
+        'og_type': 'website',
+        'page_title': 'About Us',
+    }
+    return render(request, 'pages/about_us.html', context)
+
+
+def insurance(request):
+    context = {
+        'seo_title': 'Insurance & Payment Options | L+C Psych',
+        'seo_description': 'Review accepted insurance plans, Medicare coverage, and payment details for therapy and psychological services at L+C Psychological Services.',
+        'og_type': 'website',
+        'page_title': 'Insurance & Payment',
+    }
+    return render(request, 'pages/insurance.html', context)
+
+
+def contact_us(request):
+    context = {
+        'seo_title': 'Contact L+C Psychological Services',
+        'seo_description': 'Get directions to our Florence, Kentucky office, review hours, and contact L+C Psychological Services by phone, fax, or email.',
+        'og_type': 'website',
+        'page_title': 'Contact Us',
+    }
+    return render(request, 'pages/contact_us.html', context)
+
+
+def faq(request):
+    context = {
+        'seo_title': 'Therapy FAQs | L+C Psych',
+        'seo_description': 'Find answers to common questions about therapy costs, insurance coverage, first appointments, and what to expect at L+C Psychological Services.',
+        'og_type': 'website',
+        'page_title': 'Frequently Asked Questions',
+    }
+    return render(request, 'pages/faq.html', context)
+
+
+def service_detail(request, slug: str):
+	service = get_object_or_404(
+		Service.objects.select_related('page').prefetch_related(
+			'therapists__license_type',
+			'therapists__client_focuses',
+		),
+		slug=slug,
+		status=PublishStatus.PUBLISH,
+	)
+	from django.utils.html import strip_tags
+
+	def _truncate(s, n=155):
+		s = (s or '').strip()
+		return (s[: n - 1] + '…') if len(s) > n else s
+
+	body_html = service.body_html
+	intro_text = service.hero_intro
+	if intro_text:
+		description_source = intro_text
+	elif body_html:
+		description_source = strip_tags(body_html)
+	else:
+		description_source = ''
+	seo_description = _truncate(description_source)
+	seo_title = service.hero_title
+	other_services = (
+		Service.objects.filter(status=PublishStatus.PUBLISH)
+		.exclude(pk=service.pk)
+		.order_by('order', 'title')[:6]
+	)
+	therapists_qs = (
+		service.therapists.filter(is_published=True)
+		.select_related('license_type')
+		.prefetch_related('client_focuses')
+		.order_by('last_name', 'first_name')
+	)
+	therapists = _build_therapist_cards(therapists_qs)
+	context = {
+		'service': service,
+		'body_html': mark_safe(body_html),
+		'hero_intro': intro_text,
+		'seo_title': seo_title,
+		'seo_description': seo_description,
+		'og_image_url': service.seo_image_url,
+		'other_services': other_services,
+		'therapists': therapists,
+	}
+	return render(request, 'core/service_detail.html', context)
 
 
 def page_detail(request, path: str):

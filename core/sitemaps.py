@@ -11,7 +11,7 @@ class StaticViewSitemap(Sitemap):
 
     def items(self):
         # Add named URL patterns for static views if any
-        return ['home']
+        return ['home', 'our_team', 'about_us', 'insurance', 'contact_us', 'faq']
 
     def location(self, item):
         return reverse(item)
