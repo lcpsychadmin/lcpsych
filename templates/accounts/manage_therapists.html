@@ -26,6 +26,19 @@
 .btn-primary:hover,
 .btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
 .card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.input-basic { width: 100%; padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 1.5px solid rgba(146, 220, 229, 0.7); background: rgba(255, 255, 255, 0.96); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.input-basic:focus { border-color: #92DCE5; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.55); outline: none; }
+.fee-table { width: 100%; border-collapse: collapse; }
+.fee-table th, .fee-table td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid rgba(15,63,70,0.08); }
+.fee-table th { background: #f0f7f8; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.04em; color: rgba(15,63,70,0.7); }
+.pill { display: inline-flex; padding: 0.2rem 0.65rem; border-radius: 999px; background: rgba(146,220,229,0.28); color: #0f3f46; font-weight: 600; font-size: 0.8rem; }
+.text-muted { color: #6b7280; }
+.card-accordion { border: 1px solid rgba(146, 220, 229, 0.35); border-radius: 1.25rem; background: #fff; overflow: hidden; }
+.card-accordion summary { cursor: pointer; list-style: none; padding: 0.9rem 1.1rem; background: #f0f7f8; color: #0f3f46; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.card-accordion summary::-webkit-details-marker { display: none; }
+.card-accordion summary::after { content: "›"; font-size: 1.1rem; transition: transform 0.2s ease; color: #0f3f46; }
+.card-accordion[open] summary::after { transform: rotate(90deg); }
+.card-accordion .card-surface { border: 0; border-radius: 0; box-shadow: none; }
 </style>
 {% endblock %}
 
@@ -82,125 +95,583 @@
         </script>
       {% endif %}
 
-      <div class="card-surface p-6 md:p-8 invite-card">
-        <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Send an invitation</h2>
-        <form method="post" class="space-y-4">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="invite">
-          {{ invite_form.as_p }}
-          <div class="pt-2">
-            <button type="submit" class="btn-primary">Send invite</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="card-surface p-6 md:p-8">
-        <h2 class="text-2xl font-semibold text-[#0f3f46] mb-4">Profile lookup lists</h2>
-        <p class="text-slate-600 mb-6">Keep the shared options tidy so every therapist works from the same set of license types and client focus categories.</p>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <a href="{% url 'accounts:license_types' %}" class="action-btn inline-flex items-center justify-center">Manage license types</a>
-          <a href="{% url 'accounts:client_focuses' %}" class="action-btn inline-flex items-center justify-center">Manage client focuses</a>
+      <details class="card-accordion">
+        <summary>Send an invitation</summary>
+        <div class="card-surface p-6 md:p-8 invite-card">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Send an invitation</h2>
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="invite">
+            {{ invite_form.as_p }}
+            <div class="pt-2">
+              <button type="submit" class="btn-primary">Send invite</button>
+            </div>
+          </form>
         </div>
-      </div>
+      </details>
 
-      <div class="card-surface p-6 md:p-8">
-        <h2 class="text-2xl font-semibold text-[#0f3f46] mb-4">Services &amp; homepage cards</h2>
-        <p class="text-slate-600 mb-6">Refresh the homepage services grid and edit the rich content that powers each service detail page.</p>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <a href="{% url 'accounts:services' %}" class="action-btn inline-flex items-center justify-center">Manage services</a>
-        </div>
-      </div>
-
-      <div class="card-surface p-6 md:p-8">
-        <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Published therapists</h2>
-        {% if therapists %}
-          <div class="overflow-x-auto">
-            <table class="table-card min-w-full">
-              <thead>
-                <tr>
-                  <th class="no-wrap">Therapist</th>
-                  <th>Email</th>
-                  <th class="no-wrap">Published</th>
-                  <th class="no-wrap">Accepting new clients</th>
-                  <th>Last updated</th>
-                  <th class="no-wrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for therapist in therapists %}
-                  <tr>
-                    <td>
-                      <div class="font-semibold text-[#0f3f46]">{{ therapist.display_name|default:therapist.user.get_full_name|default:therapist.user.email }}</div>
-                      {% if therapist.license_type %}<div class="text-sm text-slate-600">{{ therapist.license_type }}</div>{% endif %}
-                    </td>
-                    <td class="text-sm text-slate-700">{{ therapist.user.email }}</td>
-                    <td>
-                      <span class="chip">
-                        <span class="status-dot {% if therapist.is_published %}is-on{% else %}is-off{% endif %}"></span>
-                        {% if therapist.is_published %}Published{% else %}Hidden{% endif %}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="chip">
-                        <span class="status-dot {% if therapist.accepts_new_clients %}is-on{% else %}is-off{% endif %}"></span>
-                        {% if therapist.accepts_new_clients %}Accepting{% else %}Not accepting{% endif %}
-                      </span>
-                    </td>
-                    <td class="text-sm text-slate-600">{{ therapist.updated_at|date:"M j, Y" }}</td>
-                    <td class="space-y-2">
-                      <form method="post" class="inline">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="set_publish">
-                        <input type="hidden" name="profile_id" value="{{ therapist.id }}">
-                        <input type="hidden" name="value" value="{% if therapist.is_published %}0{% else %}1{% endif %}">
-                        <button type="submit" class="action-btn">
-                          {% if therapist.is_published %}Hide profile{% else %}Publish profile{% endif %}
-                        </button>
-                      </form>
-                      <form method="post" class="inline">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="set_accepts">
-                        <input type="hidden" name="profile_id" value="{{ therapist.id }}">
-                        <input type="hidden" name="value" value="{% if therapist.accepts_new_clients %}0{% else %}1{% endif %}">
-                        <button type="submit" class="action-btn">
-                          {% if therapist.accepts_new_clients %}Pause intake{% else %}Accept clients{% endif %}
-                        </button>
-                      </form>
-                      <a class="action-btn inline-flex items-center gap-1" href="{% url 'accounts:therapist_edit' therapist.id %}">Edit profile</a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+      <details class="card-accordion">
+        <summary>Profile lookup lists</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-4">Profile lookup lists</h2>
+          <p class="text-slate-600 mb-6">Keep the shared options tidy so every therapist works from the same set of license types and client focus categories.</p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="{% url 'accounts:license_types' %}" class="action-btn inline-flex items-center justify-center">Manage license types</a>
+            <a href="{% url 'accounts:client_focuses' %}" class="action-btn inline-flex items-center justify-center">Manage client focuses</a>
           </div>
-        {% else %}
-          <p class="text-slate-600 m-0">No therapist profiles found yet.</p>
-        {% endif %}
-      </div>
+        </div>
+      </details>
 
-      <div class="card-surface p-6 md:p-8">
-        <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Therapist accounts without profiles</h2>
-        {% if unassigned_users %}
-          <ul class="space-y-4">
-            {% for user in unassigned_users %}
-              <li class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-[#BEE3DB] rounded-xl px-4 py-3">
+      <details class="card-accordion">
+        <summary>Services &amp; homepage cards</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-4">Services &amp; homepage cards</h2>
+          <p class="text-slate-600 mb-6">Refresh the homepage services grid and edit the rich content that powers each service detail page.</p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="{% url 'accounts:services' %}" class="action-btn inline-flex items-center justify-center">Manage services</a>
+          </div>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>About Us &amp; Mission</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">About Us &amp; Mission</h2>
+          <p class="text-slate-600 text-sm mb-4">Edit the homepage About Us and mission statement content.</p>
+
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="about_save">
+            <div>
+              <label class="block text-sm font-semibold mb-1">About title</label>
+              {{ about_section_form.about_title }}
+              {{ about_section_form.about_title.errors }}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">About body</label>
+              {{ about_section_form.about_body }}
+              {{ about_section_form.about_body.errors }}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Mission title</label>
+              {{ about_section_form.mission_title }}
+              {{ about_section_form.mission_title.errors }}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Mission body</label>
+              {{ about_section_form.mission_body }}
+              {{ about_section_form.mission_body.errors }}
+            </div>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold mb-1">CTA label</label>
+                {{ about_section_form.cta_label }}
+                {{ about_section_form.cta_label.errors }}
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1">CTA URL</label>
+                {{ about_section_form.cta_url }}
+                {% if about_section_form.cta_url.help_text %}<p class="text-xs text-muted mt-1">{{ about_section_form.cta_url.help_text }}</p>{% endif %}
+                {{ about_section_form.cta_url.errors }}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              {{ about_section_form.is_active }}
+              <label for="{{ about_section_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ about_section_form.is_active.label }}</label>
+            </div>
+            <button type="submit" class="btn-primary">Save About section</button>
+          </form>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>Our Philosophy</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Our Philosophy</h2>
+          <p class="text-slate-600 text-sm mb-4">Edit the philosophy heading and body shown on the homepage.</p>
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="philosophy_save">
+            <div>
+              <label class="block text-sm font-semibold mb-1">Title</label>
+              {{ philosophy_form.title }}
+              {{ philosophy_form.title.errors }}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Body</label>
+              {{ philosophy_form.body }}
+              {{ philosophy_form.body.errors }}
+            </div>
+            <div class="flex items-center gap-2">
+              {{ philosophy_form.is_active }}
+              <label for="{{ philosophy_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ philosophy_form.is_active.label }}</label>
+            </div>
+            <button type="submit" class="btn-primary">Save philosophy</button>
+          </form>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>Inspirational Quote</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Inspirational Quote</h2>
+          <p class="text-slate-600 text-sm mb-4">Edit the inspirational quote block shown above What We Do.</p>
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="inspirational_save">
+            <div>
+              <label class="block text-sm font-semibold mb-1">Quote</label>
+              {{ inspirational_form.quote }}
+              {{ inspirational_form.quote.errors }}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Author</label>
+              {{ inspirational_form.author }}
+              {{ inspirational_form.author.errors }}
+            </div>
+            <div class="flex items-center gap-2">
+              {{ inspirational_form.is_active }}
+              <label for="{{ inspirational_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ inspirational_form.is_active.label }}</label>
+            </div>
+            <button type="submit" class="btn-primary">Save inspirational quote</button>
+          </form>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>Company Quote</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Company Quote</h2>
+          <p class="text-slate-600 text-sm mb-4">Edit the company quote block shown near the bottom of the homepage.</p>
+          <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="company_save">
+            <div>
+              <label class="block text-sm font-semibold mb-1">Quote</label>
+              {{ company_form.quote }}
+              {{ company_form.quote.errors }}
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Author</label>
+              {{ company_form.author }}
+              {{ company_form.author.errors }}
+            </div>
+            <div class="flex items-center gap-2">
+              {{ company_form.is_active }}
+              <label for="{{ company_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ company_form.is_active.label }}</label>
+            </div>
+            <button type="submit" class="btn-primary">Save company quote</button>
+          </form>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>What We Do</summary>
+        <div class="card-surface p-6 md:p-8">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:gap-8">
+            <div class="lg:w-2/5 space-y-4">
+              <div class="flex items-center justify-between gap-3">
+                <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">What We Do section</h2>
+                {% if whatwedo_item_editing %}<span class="pill">Editing item</span>{% endif %}
+              </div>
+              <p class="text-slate-600 text-sm mb-2">Edit the intro copy and bullet points shown in the homepage "What We Do" block.</p>
+
+              <form method="post" class="space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="whatwedo_section_save">
                 <div>
-                  <div class="font-semibold text-[#0f3f46]">{{ user.get_full_name|default:user.email }}</div>
-                  <div class="text-sm text-slate-600">{{ user.email }}</div>
+                  <label class="block text-sm font-semibold mb-1">Title</label>
+                  {{ whatwedo_section_form.title }}
+                  {{ whatwedo_section_form.title.errors }}
+                  {% if whatwedo_section_form.title.help_text %}<p class="text-xs text-muted mt-1">{{ whatwedo_section_form.title.help_text }}</p>{% endif %}
                 </div>
-                <form method="post" class="md:ml-auto">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Description</label>
+                  {{ whatwedo_section_form.description }}
+                  {{ whatwedo_section_form.description.errors }}
+                </div>
+                <div class="flex items-center gap-2">
+                  {{ whatwedo_section_form.is_active }}
+                  <label for="{{ whatwedo_section_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ whatwedo_section_form.is_active.label }}</label>
+                </div>
+                <button type="submit" class="btn-primary">Save section</button>
+              </form>
+
+              <div class="pt-4 border-t border-slate-200">
+                <h3 class="text-xl font-semibold text-[#0f3f46] mb-2">Add bullet</h3>
+                <form method="post" class="space-y-3">
                   {% csrf_token %}
-                  <input type="hidden" name="action" value="create_profile">
-                  <input type="hidden" name="user_id" value="{{ user.id }}">
-                  <button type="submit" class="action-btn">Create profile</button>
+                  <input type="hidden" name="action" value="whatwedo_item_save">
+                  {% if whatwedo_item_editing %}<input type="hidden" name="object_id" value="{{ whatwedo_item_editing.id }}">{% endif %}
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Text</label>
+                    {{ whatwedo_item_form.text }}
+                    {{ whatwedo_item_form.text.errors }}
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 items-center">
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Order</label>
+                      {{ whatwedo_item_form.order }}
+                      {% if whatwedo_item_form.order.help_text %}<p class="text-xs text-muted mt-1">{{ whatwedo_item_form.order.help_text }}</p>{% endif %}
+                      {{ whatwedo_item_form.order.errors }}
+                    </div>
+                    <div class="flex items-center gap-2 mt-6">
+                      {{ whatwedo_item_form.is_active }}
+                      <label for="{{ whatwedo_item_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ whatwedo_item_form.is_active.label }}</label>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 pt-1">
+                    <button type="submit" class="btn-primary">{% if whatwedo_item_editing %}Update item{% else %}Add item{% endif %}</button>
+                    {% if whatwedo_item_editing %}<a href="{% url 'accounts:therapists' %}" class="action-btn">Cancel</a>{% endif %}
+                  </div>
                 </form>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="text-slate-600 m-0">All therapist accounts have profiles created.</p>
-        {% endif %}
-      </div>
+              </div>
+            </div>
+
+            <div class="lg:w-3/5 mt-6 lg:mt-0 w-full">
+              <div class="overflow-x-auto">
+                <table class="fee-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th class="no-wrap">Status</th>
+                      <th class="no-wrap">Order</th>
+                      <th class="no-wrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in whatwedo_items %}
+                    <tr>
+                      <td class="text-sm text-[#0f3f46] font-semibold">{{ item.text }}</td>
+                      <td>
+                        <span class="chip">
+                          <span class="status-dot {% if item.is_active %}is-on{% else %}is-off{% endif %}"></span>
+                          {% if item.is_active %}Active{% else %}Hidden{% endif %}
+                        </span>
+                      </td>
+                      <td class="text-sm text-muted">{{ item.order }}</td>
+                      <td class="no-wrap space-x-2">
+                        <a href="{% url 'accounts:therapists' %}?edit_whatwedo_item={{ item.id }}" class="action-btn inline-flex items-center">Edit</a>
+                        <form method="post" class="inline" onsubmit="return confirm('Delete this bullet?');">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="whatwedo_item_delete">
+                          <input type="hidden" name="object_id" value="{{ item.id }}">
+                          <button type="submit" class="action-btn">Delete</button>
+                        </form>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="4" class="text-sm text-muted">No bullet points yet. Add the first one with the form on the left.</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>Frequently asked questions</summary>
+        <div class="card-surface p-6 md:p-8">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:gap-8">
+            <div class="lg:w-2/5 space-y-4">
+              <div class="flex items-center justify-between gap-3">
+                <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Frequently asked questions</h2>
+                {% if faq_editing %}
+                  <span class="pill">Editing</span>
+                {% endif %}
+              </div>
+              <p class="text-slate-600 text-sm mb-2">Manage the questions and answers shown on the public FAQ section.</p>
+              <form method="post" class="space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="faq_save">
+                {% if faq_editing %}<input type="hidden" name="object_id" value="{{ faq_editing.id }}">{% endif %}
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Question</label>
+                  {{ faq_form.question }}
+                  {{ faq_form.question.errors }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Answer</label>
+                  {{ faq_form.answer }}
+                  {% if faq_form.answer.help_text %}<p class="text-xs text-muted mt-1">{{ faq_form.answer.help_text }}</p>{% endif %}
+                  {{ faq_form.answer.errors }}
+                </div>
+                <div class="grid grid-cols-2 gap-3 items-center">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Order</label>
+                    {{ faq_form.order }}
+                    {% if faq_form.order.help_text %}<p class="text-xs text-muted mt-1">{{ faq_form.order.help_text }}</p>{% endif %}
+                    {{ faq_form.order.errors }}
+                  </div>
+                  <div class="flex items-center gap-2 mt-6">
+                    {{ faq_form.is_active }}
+                    <label for="{{ faq_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ faq_form.is_active.label }}</label>
+                  </div>
+                </div>
+                {{ faq_form.is_active.errors }}
+                <div class="flex items-center gap-3 pt-1">
+                  <button type="submit" class="btn-primary">{% if faq_editing %}Update FAQ{% else %}Add FAQ{% endif %}</button>
+                  {% if faq_editing %}
+                    <a href="{% url 'accounts:therapists' %}" class="action-btn">Cancel</a>
+                  {% endif %}
+                </div>
+              </form>
+            </div>
+
+            <div class="lg:w-3/5 mt-6 lg:mt-0 w-full">
+              <div class="overflow-x-auto">
+                <table class="fee-table">
+                  <thead>
+                    <tr>
+                      <th>Question</th>
+                      <th class="no-wrap">Status</th>
+                      <th class="no-wrap">Order</th>
+                      <th class="no-wrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for faq in faq_items %}
+                    <tr>
+                      <td class="text-sm text-[#0f3f46] font-semibold">{{ faq.question }}</td>
+                      <td>
+                        <span class="chip">
+                          <span class="status-dot {% if faq.is_active %}is-on{% else %}is-off{% endif %}"></span>
+                          {% if faq.is_active %}Active{% else %}Hidden{% endif %}
+                        </span>
+                      </td>
+                      <td class="text-sm text-muted">{{ faq.order }}</td>
+                      <td class="no-wrap space-x-2">
+                        <a href="{% url 'accounts:therapists' %}?edit_faq={{ faq.id }}" class="action-btn inline-flex items-center">Edit</a>
+                        <form method="post" class="inline" onsubmit="return confirm('Delete this FAQ?');">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="faq_delete">
+                          <input type="hidden" name="object_id" value="{{ faq.id }}">
+                          <button type="submit" class="action-btn">Delete</button>
+                        </form>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="4" class="text-sm text-muted">No FAQs yet. Add the first one with the form on the left.</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>Payment options table</summary>
+        <div class="card-surface p-6 md:p-8">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:gap-8">
+            <div class="lg:w-2/5 space-y-4">
+              <div class="flex items-center justify-between gap-3">
+                <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Payment options table</h2>
+                {% if payment_fee_editing %}
+                  <span class="pill">Editing</span>
+                {% endif %}
+              </div>
+              <p class="text-slate-600 text-sm mb-2">Add or edit rows shown in the public Payment Options table.</p>
+              <form method="post" class="space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="payment_save">
+                {% if payment_fee_editing %}<input type="hidden" name="object_id" value="{{ payment_fee_editing.id }}">{% endif %}
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Name</label>
+                  {{ payment_fee_form.name }}
+                  {{ payment_fee_form.name.errors }}
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Category</label>
+                    {{ payment_fee_form.category }}
+                    {{ payment_fee_form.category.errors }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Order</label>
+                    {{ payment_fee_form.order }}
+                    {{ payment_fee_form.order.errors }}
+                    {% if payment_fee_form.order.help_text %}<p class="text-xs text-muted mt-1">{{ payment_fee_form.order.help_text }}</p>{% endif %}
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-3 gap-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Doctoral fee</label>
+                    {{ payment_fee_form.doctoral_fee }}
+                    {{ payment_fee_form.doctoral_fee.errors }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Master's fee</label>
+                    {{ payment_fee_form.masters_fee }}
+                    {{ payment_fee_form.masters_fee.errors }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Supervised fee</label>
+                    {{ payment_fee_form.supervised_fee }}
+                    {{ payment_fee_form.supervised_fee.errors }}
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Notes</label>
+                  {{ payment_fee_form.notes }}
+                  {{ payment_fee_form.notes.errors }}
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                  <button type="submit" class="btn-primary">{% if payment_fee_editing %}Update row{% else %}Add row{% endif %}</button>
+                  {% if payment_fee_editing %}
+                    <a href="{% url 'accounts:therapists' %}" class="action-btn">Cancel</a>
+                  {% endif %}
+                </div>
+              </form>
+            </div>
+
+            <div class="lg:w-3/5 mt-6 lg:mt-0 w-full">
+              <div class="overflow-x-auto">
+                <table class="fee-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Category</th>
+                      <th>Doctoral</th>
+                      <th>Master's</th>
+                      <th>Supervised</th>
+                      <th class="no-wrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in payment_fees %}
+                    <tr>
+                      <td>{{ row.name }}</td>
+                      <td class="text-sm text-muted">{{ row.get_category_display }}</td>
+                      <td class="text-sm">{{ row.doctoral_fee|default:"—" }}</td>
+                      <td class="text-sm">{{ row.masters_fee|default:"—" }}</td>
+                      <td class="text-sm">{{ row.supervised_fee|default:"—" }}</td>
+                      <td class="no-wrap space-x-2">
+                        <a href="{% url 'accounts:therapists' %}?edit_fee={{ row.id }}" class="action-btn inline-flex items-center">Edit</a>
+                        <form method="post" class="inline" onsubmit="return confirm('Delete this row?');">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="payment_delete">
+                          <input type="hidden" name="object_id" value="{{ row.id }}">
+                          <button type="submit" class="action-btn">Delete</button>
+                        </form>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="6" class="text-sm text-muted">No payment rows yet. Add one with the form on the left.</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>Published therapists</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Published therapists</h2>
+          {% if therapists %}
+            <div class="overflow-x-auto">
+              <table class="table-card min-w-full">
+                <thead>
+                  <tr>
+                    <th class="no-wrap">Therapist</th>
+                    <th>Email</th>
+                    <th class="no-wrap">Published</th>
+                    <th class="no-wrap">Accepting new clients</th>
+                    <th>Last updated</th>
+                    <th class="no-wrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for therapist in therapists %}
+                    <tr>
+                      <td>
+                        <div class="font-semibold text-[#0f3f46]">{{ therapist.display_name|default:therapist.user.get_full_name|default:therapist.user.email }}</div>
+                        {% if therapist.license_type %}<div class="text-sm text-slate-600">{{ therapist.license_type }}</div>{% endif %}
+                      </td>
+                      <td class="text-sm text-slate-700">{{ therapist.user.email }}</td>
+                      <td>
+                        <span class="chip">
+                          <span class="status-dot {% if therapist.is_published %}is-on{% else %}is-off{% endif %}"></span>
+                          {% if therapist.is_published %}Published{% else %}Hidden{% endif %}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="chip">
+                          <span class="status-dot {% if therapist.accepts_new_clients %}is-on{% else %}is-off{% endif %}"></span>
+                          {% if therapist.accepts_new_clients %}Accepting{% else %}Not accepting{% endif %}
+                        </span>
+                      </td>
+                      <td class="text-sm text-slate-600">{{ therapist.updated_at|date:"M j, Y" }}</td>
+                      <td class="space-y-2">
+                        <form method="post" class="inline">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="set_publish">
+                          <input type="hidden" name="profile_id" value="{{ therapist.id }}">
+                          <input type="hidden" name="value" value="{% if therapist.is_published %}0{% else %}1{% endif %}">
+                          <button type="submit" class="action-btn">
+                            {% if therapist.is_published %}Hide profile{% else %}Publish profile{% endif %}
+                          </button>
+                        </form>
+                        <form method="post" class="inline">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="set_accepts">
+                          <input type="hidden" name="profile_id" value="{{ therapist.id }}">
+                          <input type="hidden" name="value" value="{% if therapist.accepts_new_clients %}0{% else %}1{% endif %}">
+                          <button type="submit" class="action-btn">
+                            {% if therapist.accepts_new_clients %}Pause intake{% else %}Accept clients{% endif %}
+                          </button>
+                        </form>
+                        <a class="action-btn inline-flex items-center gap-1" href="{% url 'accounts:therapist_edit' therapist.id %}">Edit profile</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-slate-600 m-0">No therapist profiles found yet.</p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="card-accordion">
+        <summary>Therapist accounts without profiles</summary>
+        <div class="card-surface p-6 md:p-8">
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Therapist accounts without profiles</h2>
+          {% if unassigned_users %}
+            <ul class="space-y-4">
+              {% for user in unassigned_users %}
+                <li class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-[#BEE3DB] rounded-xl px-4 py-3">
+                  <div>
+                    <div class="font-semibold text-[#0f3f46]">{{ user.get_full_name|default:user.email }}</div>
+                    <div class="text-sm text-slate-600">{{ user.email }}</div>
+                  </div>
+                  <form method="post" class="md:ml-auto">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_profile">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <button type="submit" class="action-btn">Create profile</button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-slate-600 m-0">All therapist accounts have profiles created.</p>
+          {% endif %}
+        </div>
+      </details>
     </div>
   </section>
 </main>

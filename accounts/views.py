@@ -15,9 +15,31 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
-from .forms import ActivationSetPasswordForm, InviteUserForm, ServiceForm
+from .forms import (
+    ActivationSetPasswordForm,
+    InviteUserForm,
+    ServiceForm,
+    PaymentFeeRowForm,
+    FAQItemForm,
+    WhatWeDoItemForm,
+    WhatWeDoSectionForm,
+    AboutSectionForm,
+    OurPhilosophyForm,
+    InspirationalQuoteForm,
+    CompanyQuoteForm,
+)
 from .models import EmailConfirmation
-from core.models import Service
+from core.models import (
+    Service,
+    PaymentFeeRow,
+    FAQItem,
+    WhatWeDoItem,
+    WhatWeDoSection,
+    AboutSection,
+    OurPhilosophy,
+    InspirationalQuote,
+    CompanyQuote,
+)
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
 
@@ -120,6 +142,17 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         form: InviteUserForm | None = None,
         debug_activation_url: str = "",
         debug_email: str = "",
+        fee_form: PaymentFeeRowForm | None = None,
+        editing_fee: PaymentFeeRow | None = None,
+        faq_form: FAQItemForm | None = None,
+        editing_faq: FAQItem | None = None,
+        whatwedo_section_form: WhatWeDoSectionForm | None = None,
+        whatwedo_item_form: WhatWeDoItemForm | None = None,
+        editing_whatwedo_item: WhatWeDoItem | None = None,
+        about_section_form: AboutSectionForm | None = None,
+        philosophy_form: OurPhilosophyForm | None = None,
+        inspirational_form: InspirationalQuoteForm | None = None,
+        company_form: CompanyQuoteForm | None = None,
     ) -> dict:
         invite_form = form or InviteUserForm(initial={"is_therapist": True})
         therapists = (
@@ -133,21 +166,94 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by("email")
             .distinct()
         )
+        payment_fees = PaymentFeeRow.objects.order_by("category", "order", "id")
+        faq_items = FAQItem.objects.order_by("order", "id")
+        whatwedo_section = WhatWeDoSection.objects.order_by("id").first()
+        if not whatwedo_section:
+            whatwedo_section = WhatWeDoSection.objects.create()
+        whatwedo_items = WhatWeDoItem.objects.order_by("order", "id")
+        about_section = AboutSection.objects.order_by("id").first()
+        if not about_section:
+            about_section = AboutSection.objects.create()
+        philosophy_section = OurPhilosophy.objects.order_by("id").first()
+        if not philosophy_section:
+            philosophy_section = OurPhilosophy.objects.create()
+        inspirational_quote = InspirationalQuote.objects.order_by("id").first()
+        if not inspirational_quote:
+            inspirational_quote = InspirationalQuote.objects.create(
+                quote=(
+                    "Say yes. Whatever it is, say yes with your whole heart & simple as it sounds, "
+                    "that's all the excuse life needs to grab you by the hands & start to dance."
+                ),
+                author="Brian Andreas",
+            )
+        company_quote = CompanyQuote.objects.order_by("id").first()
+        if not company_quote:
+            company_quote = CompanyQuote.objects.create(
+                quote=(
+                    "Your mental health is a journey, not a destination. "
+                    "We're here to walk with you every step of the way."
+                ),
+                author="L+C Psychological Services",
+            )
         return {
             "invite_form": invite_form,
             "therapists": therapists,
             "unassigned_users": unassigned_users,
             "debug_activation_url": debug_activation_url,
             "debug_activation_email": debug_email,
+            "payment_fees": payment_fees,
+            "payment_fee_form": fee_form or PaymentFeeRowForm(),
+            "payment_fee_editing": editing_fee,
+            "faq_items": faq_items,
+            "faq_form": faq_form or FAQItemForm(),
+            "faq_editing": editing_faq,
+            "whatwedo_section": whatwedo_section,
+            "whatwedo_section_form": whatwedo_section_form or WhatWeDoSectionForm(instance=whatwedo_section),
+            "whatwedo_items": whatwedo_items,
+            "whatwedo_item_form": whatwedo_item_form or WhatWeDoItemForm(),
+            "whatwedo_item_editing": editing_whatwedo_item,
+            "about_section": about_section,
+            "about_section_form": about_section_form or AboutSectionForm(instance=about_section),
+            "philosophy_section": philosophy_section,
+            "philosophy_form": philosophy_form or OurPhilosophyForm(instance=philosophy_section),
+            "inspirational_quote": inspirational_quote,
+            "inspirational_form": inspirational_form or InspirationalQuoteForm(instance=inspirational_quote),
+            "company_quote": company_quote,
+            "company_form": company_form or CompanyQuoteForm(instance=company_quote),
         }
 
     def get(self, request: HttpRequest) -> HttpResponse:
         debug_activation_url = request.GET.get("activation_url", "") if settings.DEBUG else ""
         debug_email = request.GET.get("email", "") if settings.DEBUG else ""
+        edit_fee_id = request.GET.get("edit_fee")
+        edit_faq_id = request.GET.get("edit_faq")
+        edit_whatwedo_item_id = request.GET.get("edit_whatwedo_item")
+        editing_fee = None
+        fee_form = None
+        editing_faq = None
+        faq_form = None
+        editing_whatwedo_item = None
+        whatwedo_item_form = None
+        if edit_fee_id:
+            editing_fee = get_object_or_404(PaymentFeeRow, pk=edit_fee_id)
+            fee_form = PaymentFeeRowForm(instance=editing_fee)
+        if edit_faq_id:
+            editing_faq = get_object_or_404(FAQItem, pk=edit_faq_id)
+            faq_form = FAQItemForm(instance=editing_faq)
+        if edit_whatwedo_item_id:
+            editing_whatwedo_item = get_object_or_404(WhatWeDoItem, pk=edit_whatwedo_item_id)
+            whatwedo_item_form = WhatWeDoItemForm(instance=editing_whatwedo_item)
         ctx = self._build_context(
             request,
             debug_activation_url=debug_activation_url,
             debug_email=debug_email,
+            fee_form=fee_form,
+            editing_fee=editing_fee,
+            faq_form=faq_form,
+            editing_faq=editing_faq,
+            whatwedo_item_form=whatwedo_item_form,
+            editing_whatwedo_item=editing_whatwedo_item,
         )
         return render(request, self.template_name, ctx)
 
@@ -185,6 +291,161 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if settings.DEBUG:
                 redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(email)}"
             return redirect(redirect_url)
+
+        if action == "payment_save":
+            object_id = request.POST.get("object_id")
+            editing_fee = get_object_or_404(PaymentFeeRow, pk=object_id) if object_id else None
+            fee_form = PaymentFeeRowForm(request.POST, instance=editing_fee)
+            if fee_form.is_valid():
+                saved = fee_form.save()
+                verb = "updated" if editing_fee else "added"
+                messages.success(request, f"Fee row '{saved.name}' {verb}.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                fee_form=fee_form,
+                editing_fee=editing_fee,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "payment_delete":
+            object_id = request.POST.get("object_id")
+            row = get_object_or_404(PaymentFeeRow, pk=object_id)
+            name = row.name
+            row.delete()
+            messages.success(request, f"Deleted fee row '{name}'.")
+            return redirect("accounts:therapists")
+
+        if action == "faq_save":
+            object_id = request.POST.get("object_id")
+            editing_faq = get_object_or_404(FAQItem, pk=object_id) if object_id else None
+            faq_form = FAQItemForm(request.POST, instance=editing_faq)
+            if faq_form.is_valid():
+                saved = faq_form.save()
+                verb = "updated" if editing_faq else "added"
+                messages.success(request, f"FAQ '{saved.question}' {verb}.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                faq_form=faq_form,
+                editing_faq=editing_faq,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "faq_delete":
+            object_id = request.POST.get("object_id")
+            row = get_object_or_404(FAQItem, pk=object_id)
+            name = row.question
+            row.delete()
+            messages.success(request, f"Deleted FAQ '{name}'.")
+            return redirect("accounts:therapists")
+
+        if action == "about_save":
+            section = AboutSection.objects.order_by("id").first()
+            if not section:
+                section = AboutSection.objects.create()
+            about_form = AboutSectionForm(request.POST, instance=section)
+            if about_form.is_valid():
+                saved = about_form.save()
+                messages.success(request, f"Updated '{saved.about_title}' content.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                about_section_form=about_form,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "philosophy_save":
+            section = OurPhilosophy.objects.order_by("id").first()
+            if not section:
+                section = OurPhilosophy.objects.create()
+            philosophy_form = OurPhilosophyForm(request.POST, instance=section)
+            if philosophy_form.is_valid():
+                saved = philosophy_form.save()
+                messages.success(request, f"Updated '{saved.title}' content.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                philosophy_form=philosophy_form,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "inspirational_save":
+            section = InspirationalQuote.objects.order_by("id").first()
+            if not section:
+                section = InspirationalQuote.objects.create()
+            inspirational_form = InspirationalQuoteForm(request.POST, instance=section)
+            if inspirational_form.is_valid():
+                saved = inspirational_form.save()
+                messages.success(request, "Updated inspirational quote content.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                inspirational_form=inspirational_form,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "company_save":
+            section = CompanyQuote.objects.order_by("id").first()
+            if not section:
+                section = CompanyQuote.objects.create()
+            company_form = CompanyQuoteForm(request.POST, instance=section)
+            if company_form.is_valid():
+                saved = company_form.save()
+                messages.success(request, "Updated company quote content.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                company_form=company_form,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "whatwedo_section_save":
+            section = WhatWeDoSection.objects.order_by("id").first()
+            if not section:
+                section = WhatWeDoSection.objects.create()
+            section_form = WhatWeDoSectionForm(request.POST, instance=section)
+            if section_form.is_valid():
+                saved = section_form.save()
+                messages.success(request, f"Updated '{saved.title}' copy.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                whatwedo_section_form=section_form,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "whatwedo_item_save":
+            object_id = request.POST.get("object_id")
+            editing_item = get_object_or_404(WhatWeDoItem, pk=object_id) if object_id else None
+            item_form = WhatWeDoItemForm(request.POST, instance=editing_item)
+            if item_form.is_valid():
+                saved = item_form.save()
+                verb = "updated" if editing_item else "added"
+                messages.success(request, f"What We Do item '{saved.text}' {verb}.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                whatwedo_item_form=item_form,
+                editing_whatwedo_item=editing_item,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "whatwedo_item_delete":
+            object_id = request.POST.get("object_id")
+            row = get_object_or_404(WhatWeDoItem, pk=object_id)
+            name = row.text
+            row.delete()
+            messages.success(request, f"Deleted What We Do item '{name}'.")
+            return redirect("accounts:therapists")
 
         if action in {"set_publish", "set_accepts"}:
             profile_id = request.POST.get("profile_id")

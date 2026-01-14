@@ -1,3 +1,4 @@
+{% with company_quote as quote %}
         <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-73d5eba e-con-full e-flex e-con e-parent" data-id="73d5eba" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
             <div class="elementor-element elementor-element-00b50b9 e-flex e-con-boxed e-con e-child" data-id="00b50b9" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
                 <div class="e-con-inner">
@@ -5,10 +6,10 @@
                         <div class="elementor-widget-container">
                             <blockquote class="elementor-blockquote">
                                 <p class="elementor-blockquote__content">
-                                "Your mental health is a journey, not a destination. We're here to walk with you every step of the way."
+                                {{ quote.quote|default:"Your mental health is a journey, not a destination. We're here to walk with you every step of the way." }}
                                 </p>
                                 <div class="e-q-footer">
-                                    <cite class="elementor-blockquote__author">-L+C Psychological Services</cite>
+                                    <cite class="elementor-blockquote__author">-{{ quote.author|default:"L+C Psychological Services" }}</cite>
                                 </div>
                             </blockquote>
                         </div>
@@ -16,3 +17,4 @@
                 </div>
             </div>
         </div>
+{% endwith %}

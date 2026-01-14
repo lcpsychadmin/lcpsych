@@ -3,7 +3,17 @@ from django.contrib.auth.forms import SetPasswordForm as DjangoSetPasswordForm
 
 from ckeditor.widgets import CKEditorWidget
 
-from core.models import Service
+from core.models import (
+    Service,
+    PaymentFeeRow,
+    FAQItem,
+    WhatWeDoItem,
+    WhatWeDoSection,
+    AboutSection,
+    OurPhilosophy,
+    InspirationalQuote,
+    CompanyQuote,
+)
 
 
 class InviteUserForm(forms.Form):
@@ -69,3 +79,166 @@ class ServiceForm(forms.ModelForm):
     def clean_slug(self):
         slug = self.cleaned_data.get("slug")
         return slug or ""
+
+
+class PaymentFeeRowForm(forms.ModelForm):
+    class Meta:
+        model = PaymentFeeRow
+        fields = [
+            "name",
+            "category",
+            "order",
+            "doctoral_fee",
+            "masters_fee",
+            "supervised_fee",
+            "notes",
+        ]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Light styling to match the settings forms
+        for name, field in self.fields.items():
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["order"].help_text = "Controls display ordering within its category."
+
+
+class FAQItemForm(forms.ModelForm):
+    class Meta:
+        model = FAQItem
+        fields = [
+            "question",
+            "answer",
+            "order",
+            "is_active",
+        ]
+        widgets = {
+            "answer": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != "is_active":
+                base = field.widget.attrs.get("class", "").strip()
+                field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["order"].help_text = "Controls display order on the public FAQ."
+        self.fields["answer"].help_text = "Supports basic HTML (paragraphs, lists)."
+        self.fields["is_active"].label = "Show on site"
+
+
+class WhatWeDoSectionForm(forms.ModelForm):
+    class Meta:
+        model = WhatWeDoSection
+        fields = ["title", "description", "is_active"]
+        widgets = {
+            "description": CKEditorWidget(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == "description":
+                continue
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["title"].help_text = "Heading shown above the section copy."
+        self.fields["is_active"].label = "Show this section"
+
+
+class WhatWeDoItemForm(forms.ModelForm):
+    class Meta:
+        model = WhatWeDoItem
+        fields = ["text", "order", "is_active"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != "is_active":
+                base = field.widget.attrs.get("class", "").strip()
+                field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["order"].help_text = "Controls display order within the list."
+        self.fields["is_active"].label = "Show on site"
+
+
+class AboutSectionForm(forms.ModelForm):
+    class Meta:
+        model = AboutSection
+        fields = [
+            "about_title",
+            "about_body",
+            "mission_title",
+            "mission_body",
+            "cta_label",
+            "cta_url",
+            "is_active",
+        ]
+        widgets = {
+            "about_body": CKEditorWidget(),
+            "mission_body": CKEditorWidget(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name in {"about_body", "mission_body"}:
+                continue
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["cta_url"].help_text = "Optional; hide the button by leaving this blank."
+        self.fields["is_active"].label = "Show this section"
+
+
+class OurPhilosophyForm(forms.ModelForm):
+    class Meta:
+        model = OurPhilosophy
+        fields = ["title", "body", "is_active"]
+        widgets = {
+            "body": CKEditorWidget(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == "body":
+                continue
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["is_active"].label = "Show this section"
+
+
+class InspirationalQuoteForm(forms.ModelForm):
+    class Meta:
+        model = InspirationalQuote
+        fields = ["quote", "author", "is_active"]
+        widgets = {
+            "quote": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != "is_active":
+                base = field.widget.attrs.get("class", "").strip()
+                field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["is_active"].label = "Show this section"
+
+
+class CompanyQuoteForm(forms.ModelForm):
+    class Meta:
+        model = CompanyQuote
+        fields = ["quote", "author", "is_active"]
+        widgets = {
+            "quote": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != "is_active":
+                base = field.widget.attrs.get("class", "").strip()
+                field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["is_active"].label = "Show this section"

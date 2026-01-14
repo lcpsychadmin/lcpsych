@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
 from django.conf import settings
-from .models import Page, Post, Category, Tag, Service
+from .models import Page, Post, Category, Tag, Service, PaymentFeeRow, FAQItem
 from ckeditor.widgets import CKEditorWidget
 class PageAdminForm(forms.ModelForm):
     class Meta:
@@ -274,5 +274,23 @@ class CategoryAdmin(admin.ModelAdmin):
 class TagAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "wp_id")
     search_fields = ("name",)
+
+
+@admin.register(PaymentFeeRow)
+class PaymentFeeRowAdmin(admin.ModelAdmin):
+    list_display = ("name", "category", "order", "doctoral_fee", "masters_fee", "supervised_fee")
+    list_editable = ("order",)
+    list_filter = ("category",)
+    search_fields = ("name", "doctoral_fee", "masters_fee", "supervised_fee")
+    ordering = ("category", "order", "name")
+
+
+@admin.register(FAQItem)
+class FAQItemAdmin(admin.ModelAdmin):
+	list_display = ("question", "order", "is_active")
+	list_editable = ("order", "is_active")
+	list_filter = ("is_active",)
+	search_fields = ("question", "answer")
+	ordering = ("order", "id")
 
 # NavItem admin removed; header uses static template markup

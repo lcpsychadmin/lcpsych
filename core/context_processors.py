@@ -1,5 +1,16 @@
 from urllib.parse import urlparse
 from django.conf import settings
+from .models import (
+    PaymentFeeRow,
+    FeeCategory,
+    FAQItem,
+    WhatWeDoItem,
+    WhatWeDoSection,
+    AboutSection,
+    OurPhilosophy,
+    InspirationalQuote,
+    CompanyQuote,
+)
 
 
 def nav(request):
@@ -54,5 +65,79 @@ def seo(request):
         'site_base': site_base,
         'og_image_url': og_image_url,
         'sitemap_url': sitemap_url,
-    'GOOGLE_SITE_VERIFICATION': getattr(settings, 'GOOGLE_SITE_VERIFICATION', ''),
+        'GOOGLE_SITE_VERIFICATION': getattr(settings, 'GOOGLE_SITE_VERIFICATION', ''),
+    }
+
+
+def payment_fees(request):
+    """Expose payment fee rows for the payment options table."""
+
+    rows = PaymentFeeRow.objects.order_by('category', 'order', 'id')
+    return {
+        'payment_fee_rows': rows,
+        'payment_fee_professional': rows.filter(category=FeeCategory.PROFESSIONAL),
+        'payment_fee_misc': rows.filter(category=FeeCategory.MISC),
+    }
+
+
+def faqs(request):
+    """Expose active FAQ items ordered for public pages."""
+
+    return {
+        'faq_items': FAQItem.objects.filter(is_active=True).order_by('order', 'id'),
+    }
+
+
+def what_we_do(request):
+    """Expose configurable copy and bullets for the What We Do section."""
+
+    section = (
+        WhatWeDoSection.objects.filter(is_active=True).order_by('id').first()
+        or WhatWeDoSection.objects.order_by('id').first()
+    )
+    items = WhatWeDoItem.objects.filter(is_active=True).order_by('order', 'id')
+    return {
+        'whatwedo_section': section,
+        'whatwedo_items': items,
+    }
+
+
+def about(request):
+    """Expose About + Mission copy for the homepage block."""
+
+    section = (
+        AboutSection.objects.filter(is_active=True).order_by('id').first()
+        or AboutSection.objects.order_by('id').first()
+    )
+    return {
+        'about_section': section,
+    }
+
+
+def philosophy(request):
+    """Expose content for the Our Philosophy section."""
+
+    section = (
+        OurPhilosophy.objects.filter(is_active=True).order_by('id').first()
+        or OurPhilosophy.objects.order_by('id').first()
+    )
+    return {
+        'philosophy_section': section,
+    }
+
+
+def quotes(request):
+    """Expose inspirational and company quote blocks."""
+
+    inspirational = (
+        InspirationalQuote.objects.filter(is_active=True).order_by('id').first()
+        or InspirationalQuote.objects.order_by('id').first()
+    )
+    company = (
+        CompanyQuote.objects.filter(is_active=True).order_by('id').first()
+        or CompanyQuote.objects.order_by('id').first()
+    )
+    return {
+        'inspirational_quote': inspirational,
+        'company_quote': company,
     }

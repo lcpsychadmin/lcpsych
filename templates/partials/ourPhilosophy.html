@@ -1,15 +1,23 @@
+{% with philosophy_section as section %}
+{% if section %}
         <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-68abc79 e-con-full e-flex e-con e-parent" data-id="68abc79" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
             <div class="elementor-element elementor-element-599412f e-con-full e-flex e-con e-child" data-id="599412f" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
                 <div class="elementor-element elementor-element-2ac5f44 elementor-widget elementor-widget-heading" data-id="2ac5f44" data-element_type="widget" data-widget_type="heading.default">
-                    <div class="elementor-widget-container">
-                        <h3 class="elementor-heading-title elementor-size-default">Our philosophy of treatment is that people have a need to be connected.</h3>
+                    <div class="elementor-widget-container" style="color:#fff;">
+                        <h3 class="elementor-heading-title elementor-size-default" style="color:#fff;">{{ section.title|default:"Our philosophy of treatment is that people have a need to be connected." }}</h3>
                     </div>
                 </div>
                 <div class="elementor-element elementor-element-e4003be elementor-widget elementor-widget-text-editor" data-id="e4003be" data-element_type="widget" data-widget_type="text-editor.default">
-                    <div class="elementor-widget-container">
-                        <p>These connections change throughout our lives. At times we focus on connecting to family and friends, while during other life phases we focus on connecting to school and work. We view our therapy in Northern Kentucky as a way of helping people to learn new skills and strengthen their connections.</p>
-                        <p>L+C Psychological Services offers a full line of mental health services for all ages. We provide both short-term assessment to identify treatment needs, as well as ongoing treatment in multiple modalities. We also engage collaboratively with other providers as needed to create a strong continuum of care.</p>
+                    <div class="elementor-widget-container" style="color:#fff;">
+                        {% if section.body %}
+                        <div class="prose max-w-none" style="color:#fff;">{{ section.body|safe }}</div>
+                        {% else %}
+                        <p style="color:#fff;">These connections change throughout our lives. At times we focus on connecting to family and friends, while during other life phases we focus on connecting to school and work. We view our therapy in Northern Kentucky as a way of helping people to learn new skills and strengthen their connections.</p>
+                        <p style="color:#fff;">L+C Psychological Services offers a full line of mental health services for all ages. We provide both short-term assessment to identify treatment needs, as well as ongoing treatment in multiple modalities. We also engage collaboratively with other providers as needed to create a strong continuum of care.</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+{% endif %}
+{% endwith %}

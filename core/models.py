@@ -190,3 +190,144 @@ class Service(Timestamped):
 
 	def get_absolute_url(self) -> str:
 		return reverse("service_detail", args=[self.slug])
+
+
+class FeeCategory(models.TextChoices):
+	PROFESSIONAL = 'professional', 'Professional Service'
+	MISC = 'misc', 'Miscellaneous'
+
+
+class PaymentFeeRow(Timestamped):
+	"""Fee table rows for payment options, grouped by category and ordered."""
+
+	name = models.CharField(max_length=255)
+	category = models.CharField(max_length=20, choices=FeeCategory.choices, default=FeeCategory.PROFESSIONAL)
+	order = models.PositiveIntegerField(default=0, help_text="Display ordering within the category.")
+	doctoral_fee = models.CharField(max_length=100, blank=True, help_text="Shown under Doctoral level column.")
+	masters_fee = models.CharField(max_length=100, blank=True, help_text="Shown under Master's level column.")
+	supervised_fee = models.CharField(max_length=100, blank=True, help_text="Shown under Clinicians under supervision column.")
+	notes = models.TextField(blank=True, help_text="Optional notes shown beneath the table when applicable.")
+
+	class Meta:
+		ordering = ['category', 'order', 'id']
+		verbose_name = "Payment fee row"
+		verbose_name_plural = "Payment fee rows"
+
+	def __str__(self) -> str:
+		return self.name
+
+
+class AboutSection(Timestamped):
+	"""Configurable copy for the homepage About and Mission section."""
+
+	about_title = models.CharField(max_length=200, default="About Us")
+	about_body = RichTextField(blank=True, help_text="Main About Us copy.")
+	mission_title = models.CharField(max_length=200, default="Our Mission")
+	mission_body = RichTextField(blank=True, help_text="Mission statement copy.")
+	cta_label = models.CharField(max_length=200, blank=True, default="Schedule Your First Appointment Today")
+	cta_url = models.URLField(
+		blank=True,
+		default="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/",
+		help_text="Optional CTA button link; leave blank to hide the button.",
+	)
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		verbose_name = "About section"
+		verbose_name_plural = "About sections"
+
+	def __str__(self) -> str:
+		return self.about_title
+
+
+class WhatWeDoSection(Timestamped):
+	"""Configurable copy for the homepage "What We Do" section."""
+
+	title = models.CharField(max_length=200, default="What We Do")
+	description = RichTextField(blank=True, help_text="Intro text shown above the bullet list.")
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		verbose_name = "What we do section"
+		verbose_name_plural = "What we do sections"
+
+	def __str__(self) -> str:
+		return self.title
+
+
+class OurPhilosophy(Timestamped):
+	"""Homepage philosophy block content."""
+
+	title = models.CharField(max_length=255, default="Our philosophy of treatment is that people have a need to be connected.")
+	body = RichTextField(blank=True, help_text="Displayed under the philosophy heading.")
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		verbose_name = "Our philosophy"
+		verbose_name_plural = "Our philosophy"
+
+	def __str__(self) -> str:
+		return self.title
+
+
+class InspirationalQuote(Timestamped):
+	"""Homepage inspirational quote block."""
+
+	quote = models.TextField(help_text="Quote content shown inside the blockquote.")
+	author = models.CharField(max_length=255, blank=True, help_text="Optional author/attribution displayed below the quote.")
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		verbose_name = "Inspirational quote"
+		verbose_name_plural = "Inspirational quotes"
+
+	def __str__(self) -> str:
+		return self.author or (self.quote[:50] + "...")
+
+
+class CompanyQuote(Timestamped):
+	"""Homepage company quote block."""
+
+	quote = models.TextField(help_text="Quote content shown inside the blockquote.")
+	author = models.CharField(max_length=255, blank=True, default="L+C Psychological Services", help_text="Optional author/attribution displayed below the quote.")
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		verbose_name = "Company quote"
+		verbose_name_plural = "Company quotes"
+
+	def __str__(self) -> str:
+		return self.author or (self.quote[:50] + "...")
+
+
+class WhatWeDoItem(Timestamped):
+	"""Bullet points displayed within the "What We Do" list."""
+
+	text = models.CharField(max_length=200)
+	order = models.PositiveIntegerField(default=0, help_text="Display ordering for the list.")
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		ordering = ["order", "id"]
+		verbose_name = "What we do item"
+		verbose_name_plural = "What we do items"
+
+	def __str__(self) -> str:
+		return self.text
+
+
+class FAQItem(Timestamped):
+	"""Frequently asked questions shown on the public site."""
+
+	question = models.CharField(max_length=500)
+	answer = models.TextField()
+	order = models.PositiveIntegerField(default=0, help_text="Controls display order.")
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		ordering = ["order", "id"]
+		verbose_name = "FAQ item"
+		verbose_name_plural = "FAQ items"
+
+	def __str__(self) -> str:
+		return self.question

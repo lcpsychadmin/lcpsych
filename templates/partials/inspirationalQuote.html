@@ -1,3 +1,4 @@
+{% with inspirational_quote as quote %}
         <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-48aaeb4 e-con-full e-flex e-con e-parent" data-id="48aaeb4" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
             <div class="elementor-element elementor-element-aec66b2 e-flex e-con-boxed e-con e-child" data-id="aec66b2" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
                 <div class="e-con-inner">
@@ -5,9 +6,9 @@
                         <div class="elementor-widget-container">
                             <blockquote class="elementor-blockquote">
                                 <p class="elementor-blockquote__content">
-                                Say yes. Whatever it is, say yes with your whole heart & simple as it sounds, that’s all the excuse life needs to grab you by the hands & start to dance.			</p>
+                                {{ quote.quote|default:"Say yes. Whatever it is, say yes with your whole heart & simple as it sounds, that's all the excuse life needs to grab you by the hands & start to dance." }}			</p>
                                 <div class="e-q-footer">
-                                    <cite class="elementor-blockquote__author">-Brian Andreas-</cite>
+                                    <cite class="elementor-blockquote__author">-{{ quote.author|default:"Brian Andreas" }}-</cite>
                                 </div>
                             </blockquote>
                         </div>
@@ -15,3 +16,4 @@
                 </div>
             </div>
         </div>
+{% endwith %}
