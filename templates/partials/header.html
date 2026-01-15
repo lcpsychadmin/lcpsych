@@ -129,7 +129,7 @@
                                             <a href="javascript:void(0)" class="elementor-item" aria-haspopup="true" aria-expanded="false">Account ▾</a>
                                             <div class="lc-account-dropdown absolute right-0 top-full mt-0 pt-2 z-[9999] w-48 bg-white shadow-lg rounded-md ring-1 ring-[#BEE3DB] text-sm hidden group-hover:block">
                                                 {% if request.user|has_group:'admin' or request.user.is_superuser %}
-                                                    <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:therapists' %}">Manage Therapists</a>
+                                                    <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:therapists' %}">Site Settings</a>
                                                 {% endif %}
                                                 {% if request.user|has_group:'therapist' %}
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'profiles:profile_edit' %}">My Profile</a>
@@ -244,7 +244,7 @@
                                                                                                                                                             <a href="javascript:void(0)" class="elementor-item" aria-haspopup="true" aria-expanded="false">Account ▾</a>
                                                                                                                                                             <div class="lc-account-dropdown hidden group-hover:block group-focus-within:block w-48 bg-white shadow-lg rounded-md ring-1 ring-[#BEE3DB] text-sm">
                                                                                         {% if request.user|has_group:'admin' or request.user.is_superuser %}
-                                                                                            <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:therapists' %}">Manage Therapists</a>
+                                                                                            <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:therapists' %}">Site Settings</a>
                                                                                         {% endif %}
                                                                                         {% if request.user|has_group:'therapist' %}
                                                                                             <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'profiles:profile_edit' %}">My Profile</a>
@@ -297,7 +297,7 @@
                                     {% if request.user.is_authenticated %}
                                     {% if request.user|has_group:'admin' or request.user.is_superuser %}
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom">
-                                        <a class="elementor-item" href="{% url 'accounts:therapists' %}" tabindex="-1">Manage Therapists</a>
+                                        <a class="elementor-item" href="{% url 'accounts:therapists' %}" tabindex="-1">Site Settings</a>
                                     </li>
                                     {% endif %}
                                     {% if request.user|has_group:'therapist' %}

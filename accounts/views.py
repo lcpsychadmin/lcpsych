@@ -27,6 +27,7 @@ from .forms import (
     OurPhilosophyForm,
     InspirationalQuoteForm,
     CompanyQuoteForm,
+    ContactInfoForm,
 )
 from .models import EmailConfirmation
 from core.models import (
@@ -39,6 +40,7 @@ from core.models import (
     OurPhilosophy,
     InspirationalQuote,
     CompanyQuote,
+    ContactInfo,
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
@@ -153,6 +155,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         philosophy_form: OurPhilosophyForm | None = None,
         inspirational_form: InspirationalQuoteForm | None = None,
         company_form: CompanyQuoteForm | None = None,
+        contact_form: ContactInfoForm | None = None,
     ) -> dict:
         invite_form = form or InviteUserForm(initial={"is_therapist": True})
         therapists = (
@@ -196,6 +199,9 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 ),
                 author="L+C Psychological Services",
             )
+        contact_section = ContactInfo.objects.order_by("id").first()
+        if not contact_section:
+            contact_section = ContactInfo.objects.create()
         return {
             "invite_form": invite_form,
             "therapists": therapists,
@@ -221,6 +227,8 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "inspirational_form": inspirational_form or InspirationalQuoteForm(instance=inspirational_quote),
             "company_quote": company_quote,
             "company_form": company_form or CompanyQuoteForm(instance=company_quote),
+            "contact_info": contact_section,
+            "contact_form": contact_form or ContactInfoForm(instance=contact_section),
         }
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -403,6 +411,22 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             ctx = self._build_context(
                 request,
                 company_form=company_form,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "contact_save":
+            section = ContactInfo.objects.order_by("id").first()
+            if not section:
+                section = ContactInfo.objects.create()
+            contact_form = ContactInfoForm(request.POST, instance=section)
+            if contact_form.is_valid():
+                saved = contact_form.save()
+                messages.success(request, "Updated contact section content.")
+                return redirect("accounts:therapists")
+
+            ctx = self._build_context(
+                request,
+                contact_form=contact_form,
             )
             return render(request, self.template_name, ctx)
 

@@ -270,6 +270,55 @@ class OurPhilosophy(Timestamped):
 		return self.title
 
 
+class ContactInfo(Timestamped):
+	"""Homepage contact section content."""
+
+	heading = models.CharField(max_length=255, default="Proud to Serve Cincinnati/Northern Kentucky")
+	map_embed_url = models.URLField(
+		max_length=1000,
+		blank=True,
+		help_text="Full Google Maps embed URL for the iframe src.",
+		default="https://maps.google.com/maps?q=6900%20houston%20rd.%20Florence%2C%20KY%2041091&t=m&z=15&output=embed&iwloc=near",
+	)
+	directions_url = models.URLField(
+		max_length=1000,
+		blank=True,
+		help_text="Link for the 'Get Directions' button.",
+		default="https://maps.google.com/maps/dir//6900+Houston+Rd+Florence,+KY+41042/@39.0086253,-84.647614,15z/data=!4m5!4m4!1m0!1m2!1m1!1s0x8841c7da6f65d4c7:0xa64ac61629ef897f",
+	)
+	office_title = models.CharField(max_length=200, default="Our Office")
+	office_address = models.TextField(
+		default="6900 Houston Rd.\nBuilding 500 Suite 11\nFlorence, KY 41042",
+		help_text="Supports line breaks to split the address.",
+	)
+	office_hours_title = models.CharField(max_length=200, default="Office Hours")
+	office_hours = models.TextField(
+		default="Mon - Thurs: 8AM - 9PM\nFriday: 8AM - 5PM\nSaturday: 8AM - 2PM",
+		help_text="One entry per line. Bold labels can be added in the template.",
+	)
+	contact_title = models.CharField(max_length=200, default="Contact Us")
+	phone_label = models.CharField(max_length=100, default="Office")
+	phone_number = models.CharField(max_length=50, default="859-525-4911")
+	fax_label = models.CharField(max_length=100, default="Fax")
+	fax_number = models.CharField(max_length=50, default="859-525-6446")
+	email_label = models.CharField(max_length=100, default="Front Office")
+	email_address = models.EmailField(blank=True, default="")
+	cta_label = models.CharField(max_length=120, default="Schedule Online")
+	cta_url = models.URLField(
+		max_length=500,
+		blank=True,
+		default="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/",
+	)
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		verbose_name = "Contact info"
+		verbose_name_plural = "Contact info"
+
+	def __str__(self) -> str:
+		return self.heading
+
+
 class InspirationalQuote(Timestamped):
 	"""Homepage inspirational quote block."""
 

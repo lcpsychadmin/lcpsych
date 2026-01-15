@@ -10,6 +10,7 @@ from .models import (
     OurPhilosophy,
     InspirationalQuote,
     CompanyQuote,
+    ContactInfo,
 )
 
 
@@ -140,4 +141,16 @@ def quotes(request):
     return {
         'inspirational_quote': inspirational,
         'company_quote': company,
+    }
+
+
+def contact(request):
+    """Expose contact section content."""
+
+    contact_info = (
+        ContactInfo.objects.filter(is_active=True).order_by('id').first()
+        or ContactInfo.objects.order_by('id').first()
+    )
+    return {
+        'contact_info': contact_info,
     }

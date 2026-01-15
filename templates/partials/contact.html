@@ -1,15 +1,16 @@
+{% with contact_info as contact %}
         <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-2a58faf e-con-full e-flex e-con e-parent" data-id="2a58faf" data-element_type="container" id="contactus" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
             <div class="elementor-element elementor-element-a39d1d2 e-con-full e-flex e-con e-child" data-id="a39d1d2" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
                 <div class="elementor-element elementor-element-f6c4afc elementor-widget elementor-widget-heading" data-id="f6c4afc" data-element_type="widget" data-widget_type="heading.default">
                     <div class="elementor-widget-container">
-                        <h3 class="elementor-heading-title elementor-size-default">Proud to Serve Cincinnati/Northern Kentucky</h3>
+                        <h3 class="elementor-heading-title elementor-size-default">{{ contact.heading|default:"Proud to Serve Cincinnati/Northern Kentucky" }}</h3>
                     </div>
                 </div>
                 <div data-dce-background-color="#92DCE5" class="elementor-element elementor-element-4489b83 e-con-full e-flex e-con e-child" data-id="4489b83" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
                     <div class="elementor-element elementor-element-32dd9a6 elementor-widget elementor-widget-google_maps" data-id="32dd9a6" data-element_type="widget" data-widget_type="google_maps.default">
                         <div class="elementor-widget-container">
                             <div class="elementor-custom-embed">
-                                <iframe loading="lazy" src="https://maps.google.com/maps?q=6900%20houston%20rd.%20Florence%2C%20KY%2041091&#038;t=m&#038;z=15&#038;output=embed&#038;iwloc=near" title="6900 houston rd. Florence, KY 41091" aria-label="6900 houston rd. Florence, KY 41091"></iframe>
+                                <iframe loading="lazy" src="{{ contact.map_embed_url|default:'https://maps.google.com/maps?q=6900%20houston%20rd.%20Florence%2C%20KY%2041091&t=m&z=15&output=embed&iwloc=near' }}" title="{{ contact.office_address|default:'6900 houston rd. Florence, KY 41091' }}" aria-label="{{ contact.office_address|default:'6900 houston rd. Florence, KY 41091' }}"></iframe>
                             </div>
                         </div>
                     </div>
@@ -29,14 +30,10 @@
                                 </div>
                                 <div class="elementor-icon-box-content">
                                     <h3 class="elementor-icon-box-title">
-                                        <span> Our Office </span>
+                                        <span> {{ contact.office_title|default:"Our Office" }} </span>
                                     </h3>
                                     <p class="elementor-icon-box-description">
-                                         6900 Houston Rd. 
-                                        <br>
-                                         Building 500 Suite 11 
-                                        <br>
-                                         Florence, KY 41042 
+                                         {{ contact.office_address|default:"6900 Houston Rd.\nBuilding 500 Suite 11\nFlorence, KY 41042"|linebreaksbr }}
                                     </p>
                                 </div>
                             </div>
@@ -45,7 +42,7 @@
                     <div class="elementor-element elementor-element-27335e4 elementor-align-left elementor-widget elementor-widget-button" data-id="27335e4" data-element_type="widget" data-widget_type="button.default">
                         <div class="elementor-widget-container">
                             <div class="elementor-button-wrapper">
-                                <a class="elementor-button elementor-button-link elementor-size-sm" href="https://maps.google.com/maps/dir//6900+Houston+Rd+Florence,+KY+41042/@39.0086253,-84.647614,15z/data=!4m5!4m4!1m0!1m2!1m1!1s0x8841c7da6f65d4c7:0xa64ac61629ef897f" target="_blank" rel="noopener">
+                                <a class="elementor-button elementor-button-link elementor-size-sm" href="{{ contact.directions_url|default:'https://maps.google.com/maps/dir//6900+Houston+Rd+Florence,+KY+41042/@39.0086253,-84.647614,15z/data=!4m5!4m4!1m0!1m2!1m1!1s0x8841c7da6f65d4c7:0xa64ac61629ef897f' }}" target="_blank" rel="noopener">
                                     <span class="elementor-button-content-wrapper">
                                         <span class="elementor-button-text">Get Directions</span>
                                     </span>
@@ -67,17 +64,10 @@
                                 </div>
                                 <div class="elementor-icon-box-content">
                                     <h3 class="elementor-icon-box-title">
-                                        <span> Office Hours </span>
+                                        <span> {{ contact.office_hours_title|default:"Office Hours" }} </span>
                                     </h3>
                                     <p class="elementor-icon-box-description">
-                                        <b>Mon - Thurs:</b>
-                                         8AM - 9PM
-                                        <br>
-                                        <b>Friday:</b>
-                                         8AM - 5PM
-                                        <br>
-                                        <b>Saturday:</b>
-                                         8AM - 2PM 
+                                        {{ contact.office_hours|default:"Mon - Thurs: 8AM - 9PM\nFriday: 8AM - 5PM\nSaturday: 8AM - 2PM"|linebreaksbr }}
                                     </p>
                                 </div>
                             </div>
@@ -97,17 +87,22 @@
                                 </div>
                                 <div class="elementor-icon-box-content">
                                     <h3 class="elementor-icon-box-title">
-                                        <span> Contact Us </span>
+                                        <span> {{ contact.contact_title|default:"Contact Us" }} </span>
                                     </h3>
                                     <p class="elementor-icon-box-description">
-                                        <b>Office:</b>
-                                        <a href="tel:8595254911">859-525-4911</a>
+                                        <b>{{ contact.phone_label|default:"Office" }}:</b>
+                                        <a href="tel:{{ contact.phone_number|default:"8595254911" }}">{{ contact.phone_number|default:"859-525-4911" }}</a>
                                         <br>
-                                        <b>Fax:</b>
-                                        <a href="tel:8595256446">859-525-6446</a>
+                                        <b>{{ contact.fax_label|default:"Fax" }}:</b>
+                                        <a href="tel:{{ contact.fax_number|default:"8595256446" }}">{{ contact.fax_number|default:"859-525-6446" }}</a>
                                         <br>
-                                        <b>Email:</b>
-                                        <a href="/cdn-cgi/l/email-protection#3375415c5d477c55555a5056737f70634a40505b1d505c5e">Front Office</a>
+                                        {% if contact.email_address %}
+                                        <b>{{ contact.email_label|default:"Email" }}:</b>
+                                        <a href="mailto:{{ contact.email_address }}">{{ contact.email_label|default:contact.email_address }}</a>
+                                        {% else %}
+                                        <b>{{ contact.email_label|default:"Email" }}:</b>
+                                        <a href="/cdn-cgi/l/email-protection#">{{ contact.email_label|default:"Front Office" }}</a>
+                                        {% endif %}
                                     </p>
                                 </div>
                             </div>
@@ -116,14 +111,17 @@
                     <div class="elementor-element elementor-element-03bbaca elementor-align-left elementor-widget elementor-widget-button" data-id="03bbaca" data-element_type="widget" data-widget_type="button.default">
                         <div class="elementor-widget-container">
                             <div class="elementor-button-wrapper">
-                                <a class="elementor-button elementor-button-link elementor-size-sm" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" target="_blank" rel="noopener">
+                                {% if contact.cta_url %}
+                                <a class="elementor-button elementor-button-link elementor-size-sm" href="{{ contact.cta_url }}" target="_blank" rel="noopener">
                                     <span class="elementor-button-content-wrapper">
-                                        <span class="elementor-button-text">Schedule Online</span>
+                                        <span class="elementor-button-text">{{ contact.cta_label|default:"Schedule Online" }}</span>
                                     </span>
                                 </a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+{% endwith %}

@@ -13,6 +13,7 @@ from core.models import (
     OurPhilosophy,
     InspirationalQuote,
     CompanyQuote,
+    ContactInfo,
 )
 
 
@@ -241,4 +242,41 @@ class CompanyQuoteForm(forms.ModelForm):
             if name != "is_active":
                 base = field.widget.attrs.get("class", "").strip()
                 field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["is_active"].label = "Show this section"
+
+
+class ContactInfoForm(forms.ModelForm):
+    class Meta:
+        model = ContactInfo
+        fields = [
+            "heading",
+            "map_embed_url",
+            "directions_url",
+            "office_title",
+            "office_address",
+            "office_hours_title",
+            "office_hours",
+            "contact_title",
+            "phone_label",
+            "phone_number",
+            "fax_label",
+            "fax_number",
+            "email_label",
+            "email_address",
+            "cta_label",
+            "cta_url",
+            "is_active",
+        ]
+        widgets = {
+            "office_address": forms.Textarea(attrs={"rows": 3}),
+            "office_hours": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == "is_active":
+                continue
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
         self.fields["is_active"].label = "Show this section"
