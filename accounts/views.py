@@ -552,11 +552,16 @@ class ManageSEOSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
     def _context(self, form: StaticPageSEOForm | None = None, editing: StaticPageSEO | None = None) -> dict:
         self._ensure_defaults()
         entries = StaticPageSEO.objects.order_by("page_name", "slug")
+        contact_info = ContactInfo.objects.order_by("id").first()
+        if not contact_info:
+            contact_info = ContactInfo.objects.create()
         return {
             "form": form or StaticPageSEOForm(),
             "editing": editing,
             "entries": entries,
             "default_slugs": {slug for slug, _ in self.DEFAULT_STATIC_PAGES},
+            "contact_form": ContactInfoForm(instance=contact_info),
+            "contact_info": contact_info,
         }
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -570,6 +575,24 @@ class ManageSEOSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request: HttpRequest) -> HttpResponse:
         default_map = self._ensure_defaults()
+        form_type = request.POST.get("form_type", "page_seo")
+
+        if form_type == "local_seo":
+            contact_info = ContactInfo.objects.order_by("id").first()
+            if not contact_info:
+                contact_info = ContactInfo.objects.create()
+            contact_form = ContactInfoForm(request.POST, instance=contact_info)
+            if contact_form.is_valid():
+                contact_form.save()
+                messages.success(request, "Local SEO details updated (address, phone, hours, map).")
+                return redirect("accounts:seo_settings")
+            # Return page with contact form errors alongside SEO form
+            return render(
+                request,
+                self.template_name,
+                self._context(form=StaticPageSEOForm(), editing=None) | {"contact_form": contact_form},
+            )
+
         action = request.POST.get("action", "save")
 
         if action == "delete":

@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import select_template
 import re
 from pathlib import Path
-from .models import Page, Post, PublishStatus, Service, StaticPageSEO
+from .models import Page, Post, PublishStatus, Service, StaticPageSEO, ContactInfo
 from profiles.models import TherapistProfile
 
 
@@ -123,6 +123,16 @@ def home(request):
 
 	ctx = {**seo_ctx, 'services': services, 'therapists': therapists}
 	return render(request, 'home.html', ctx)
+
+
+def location_xml(request):
+	"""Return location.xml populated from ContactInfo for local SEO/NAP."""
+	contact = ContactInfo.objects.order_by('id').first()
+	if not contact:
+		contact = ContactInfo.objects.create()
+	site_base = getattr(settings, 'BASE_URL', '').rstrip('/') or request.build_absolute_uri('/').rstrip('/')
+	content = select_template(['location.xml']).render({'contact': contact, 'site_base': site_base}, request=request)
+	return HttpResponse(content, content_type='application/xml')
 
 
 def our_team(request):

@@ -37,6 +37,90 @@
   <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
     <div class="max-w-[1100px] mx-auto px-4 space-y-10">
       <div class="card-surface p-6 md:p-8">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Local SEO (NAP + maps)</h2>
+            <p class="small-note">Keep name, address, phone, hours, and map embed consistent for local search.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a class="action-btn" href="{% url 'django.contrib.sitemaps.views.sitemap' %}" target="_blank" rel="noopener">XML sitemap</a>
+            <a class="action-btn" href="{% url 'location_xml' %}" target="_blank" rel="noopener">Location XML</a>
+            <a class="action-btn" href="/sitemap.xml" target="_blank" rel="noopener">Canonical sitemap</a>
+          </div>
+        </div>
+
+        <form method="post" class="space-y-4">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="local_seo" />
+          {{ contact_form.heading.as_hidden }}
+          {{ contact_form.office_title.as_hidden }}
+          {{ contact_form.office_hours_title.as_hidden }}
+          {{ contact_form.contact_title.as_hidden }}
+          {{ contact_form.phone_label.as_hidden }}
+          {{ contact_form.fax_label.as_hidden }}
+          {{ contact_form.fax_number.as_hidden }}
+          {{ contact_form.email_label.as_hidden }}
+          {{ contact_form.cta_label.as_hidden }}
+          {{ contact_form.is_active.as_hidden }}
+          <div class="grid md:grid-cols-2 gap-5">
+            <div>
+              <label class="field-label" for="{{ contact_form.office_address.id_for_label }}">Office address (NAP)</label>
+              {{ contact_form.office_address }}
+              {% if contact_form.office_address.errors %}<div class="error-text">{{ contact_form.office_address.errors|striptags }}</div>{% endif %}
+              <p class="help-text">Use line breaks for street / suite / city, state ZIP.</p>
+            </div>
+            <div>
+              <label class="field-label" for="{{ contact_form.phone_number.id_for_label }}">Primary phone</label>
+              {{ contact_form.phone_number }}
+              {% if contact_form.phone_number.errors %}<div class="error-text">{{ contact_form.phone_number.errors|striptags }}</div>{% endif %}
+              <p class="help-text">This number is used in schema and sitewide call links.</p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div>
+              <label class="field-label" for="{{ contact_form.email_address.id_for_label }}">Public email</label>
+              {{ contact_form.email_address }}
+              {% if contact_form.email_address.errors %}<div class="error-text">{{ contact_form.email_address.errors|striptags }}</div>{% endif %}
+            </div>
+            <div>
+              <label class="field-label" for="{{ contact_form.office_hours.id_for_label }}">Office hours</label>
+              {{ contact_form.office_hours }}
+              {% if contact_form.office_hours.errors %}<div class="error-text">{{ contact_form.office_hours.errors|striptags }}</div>{% endif %}
+              <p class="help-text">One line per rule, e.g., Mon - Thurs: 8AM - 9PM</p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div>
+              <label class="field-label" for="{{ contact_form.map_embed_url.id_for_label }}">Map embed URL</label>
+              {{ contact_form.map_embed_url }}
+              {% if contact_form.map_embed_url.errors %}<div class="error-text">{{ contact_form.map_embed_url.errors|striptags }}</div>{% endif %}
+              <p class="help-text">Google Maps embed src for the iframe.</p>
+            </div>
+            <div>
+              <label class="field-label" for="{{ contact_form.directions_url.id_for_label }}">Directions URL</label>
+              {{ contact_form.directions_url }}
+              {% if contact_form.directions_url.errors %}<div class="error-text">{{ contact_form.directions_url.errors|striptags }}</div>{% endif %}
+              <p class="help-text">Link for “Get Directions” buttons.</p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-5">
+            <div>
+              <label class="field-label" for="{{ contact_form.cta_url.id_for_label }}">Scheduling URL</label>
+              {{ contact_form.cta_url }}
+              {% if contact_form.cta_url.errors %}<div class="error-text">{{ contact_form.cta_url.errors|striptags }}</div>{% endif %}
+              <p class="help-text">Used for online scheduling calls-to-action.</p>
+            </div>
+            <div class="flex items-end">
+              <button type="submit" class="btn-primary">Save local SEO</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card-surface p-6 md:p-8">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
             <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">{% if editing %}Update SEO entry{% else %}Add or edit SEO{% endif %}</h2>
