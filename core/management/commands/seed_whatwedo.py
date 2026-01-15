@@ -16,16 +16,24 @@ DEFAULT_SECTION = {
 }
 
 DEFAULT_ITEMS = [
-    "Individual therapy for children, teens, and adults",
-    "Couples and marriage counseling",
-    "Family therapy and parenting support",
-    "Anxiety, depression, and mood disorders",
-    "Trauma, PTSD, and grief recovery",
-    "ADHD, executive function, and learning concerns",
-    "Stress management and life transitions",
-    "Identity, faith, and relationship concerns",
-    "Psychological testing and evaluations",
-    "Telehealth across Kentucky",
+    "Anxiety",
+    "Depression",
+    "ADHD",
+    "Phobias",
+    "Trauma & Abuse",
+    "Autism Spectrum",
+    "Grief",
+    "Social Skills",
+    "Life Transitions",
+    "Divorce Issues",
+    "Behavior Problems",
+    "Family Difficulties",
+    "Relationship Issues",
+    "Academic Problems",
+    "Personality Disorders",
+    "Coping Skills",
+    "Testing & Evaluation",
+    "Stress Management",
 ]
 
 
@@ -50,8 +58,11 @@ class Command(BaseCommand):
             else:
                 updated_count += 1
 
+        # Remove any stale items beyond the seeded list length
+        WhatWeDoItem.objects.filter(order__gte=len(DEFAULT_ITEMS)).delete()
+
         self.stdout.write(
             self.style.SUCCESS(
-                f"Seeded What We Do section (id={section.id}); items: {created_count} created, {updated_count} updated."
+                f"Seeded What We Do section (id={section.pk}); items: {created_count} created, {updated_count} updated."
             )
         )
