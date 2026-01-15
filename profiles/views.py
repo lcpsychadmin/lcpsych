@@ -59,8 +59,35 @@ def profile_edit(request: HttpRequest) -> HttpResponse:
 
 def profiles_list(request: HttpRequest) -> HttpResponse:
     profiles = (
-    TherapistProfile.objects.filter(is_published=True)
-    .select_related("license_type")
-    .prefetch_related("client_focuses", "services")
+        TherapistProfile.objects.filter(is_published=True)
+        .select_related("license_type", "user")
+        .prefetch_related("client_focuses", "services", "top_services")
     )
-    return render(request, "profiles/profile_list.html", {"profiles": profiles})
+
+    query = (request.GET.get("q") or "").strip()
+    if query:
+        profiles = profiles.filter(
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(user__first_name__icontains=query)
+            | Q(user__last_name__icontains=query)
+            | Q(license_type__name__icontains=query)
+            | Q(services__title__icontains=query)
+            | Q(client_focuses__name__icontains=query)
+        )
+
+    new_only = request.GET.get("new") == "1"
+    if new_only:
+        profiles = profiles.filter(accepts_new_clients=True)
+
+    profiles = profiles.distinct()
+
+    return render(
+        request,
+        "profiles/profile_list.html",
+        {
+            "profiles": profiles,
+            "query": query,
+            "new_only": new_only,
+        },
+    )

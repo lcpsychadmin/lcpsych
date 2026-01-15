@@ -106,6 +106,26 @@ class Post(Timestamped):
 		return self.title
 
 
+class StaticPageSEO(Timestamped):
+	"""SEO metadata for static/hand-built pages (non-imported)."""
+
+	slug = models.SlugField(max_length=255, unique=True, help_text="Slug matching the URL path without leading slash, e.g., 'about-us'.")
+	page_name = models.CharField(max_length=255, help_text="Friendly name shown in the admin and templates.")
+	seo_title = models.CharField(max_length=255, blank=True, help_text="Overrides the <title> tag if set.")
+	seo_description = models.CharField(max_length=300, blank=True, help_text="Overrides the meta description if set.")
+	seo_keywords = models.CharField(max_length=500, blank=True, help_text="Comma-separated keywords (optional).")
+	seo_image_url = models.URLField(blank=True, help_text="Absolute or /static URL for social sharing (og:image).")
+	seo_image_file = models.ImageField(upload_to="seo/", blank=True, null=True, help_text="Upload a social sharing image (og:image). Overrides the URL if provided.")
+
+	class Meta:
+		verbose_name = "Static page SEO"
+		verbose_name_plural = "Static page SEO entries"
+		ordering = ["page_name", "slug"]
+
+	def __str__(self):
+		return self.page_name or self.slug
+
+
 ## NavItem removed – navigation is managed by static templates now.
 
 # Create your models here.

@@ -1,53 +1,45 @@
 {% with about_section as section %}
 {% if section %}
-        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-c2981f0 e-con-full e-flex e-con e-parent" data-id="c2981f0" data-element_type="container" id="aboutus" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-            <div class="elementor-element elementor-element-e1d4498 e-con-full e-flex e-con e-child" data-id="e1d4498" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
-                <div class="elementor-element elementor-element-dda561d elementor-widget elementor-widget-heading" data-id="dda561d" data-element_type="widget" data-widget_type="heading.default">
-                    <div class="elementor-widget-container" style="color:#fff;">
-                        <h2 class="elementor-heading-title elementor-size-default" style="color:#fff;">{{ section.about_title|default:"About Us" }}</h2>
-                    </div>
-                </div>
-                <div class="elementor-element elementor-element-4a2fbfa elementor-widget elementor-widget-text-editor" data-id="4a2fbfa" data-element_type="widget" data-widget_type="text-editor.default">
-                    <div class="elementor-widget-container" style="color:#fff;">
-                        {% if section.about_body %}
-                        <div class="prose max-w-none" style="color:#fff;">{{ section.about_body|safe }}</div>
-                        {% else %}
-                        <p class="vc_custom_heading vc_do_custom_heading" style="color:#fff;">At L+C Psychological Services, we seek to provide an environment that is supportive and allows you to feel connected emotionally.</p>
-                        <p style="color:#fff;">We know that connections in life are what power our relationships in all aspects of our lives. Our hope is that you will experience these positive connections with our clinicians and gain the skills needed to improve all other connections in your life.</p>
-                        <p style="color:#fff;">L+C Psychological Services is proud to serve our clients providing psychological evaluation and therapy in Northern Kentucky and online therapy in Kentucky to adults, adolescents, and children. L+C Psychological Services was born from the vision of Dr. Kirk Little and Dr. Suzanne Collins following their work together for over a decade at Little Psychological Services.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="elementor-element elementor-element-1c24f9c e-con-full e-flex e-con e-child" data-id="1c24f9c" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
-                <div class="elementor-element elementor-element-0ba8160 elementor-widget elementor-widget-heading" data-id="0ba8160" data-element_type="widget" data-widget_type="heading.default">
-                    <div class="elementor-widget-container" style="color:#fff;">
-                        <h2 class="elementor-heading-title elementor-size-default" style="color:#fff;">{{ section.mission_title|default:"Our Mission" }}</h2>
-                    </div>
-                </div>
-                <div class="elementor-element elementor-element-c9e135b elementor-widget elementor-widget-text-editor" data-id="c9e135b" data-element_type="widget" data-widget_type="text-editor.default">
-                    <div class="elementor-widget-container" style="color:#fff;">
-                        {% if section.mission_body %}
-                        <div class="prose max-w-none" style="color:#fff;">{{ section.mission_body|safe }}</div>
-                        {% else %}
-                        <p style="color:#fff;">Our mission at L+C Psychological Services is to provide a comfortable and safe environment for those who need to reconnect in their lives. We are dedicated psychologists and therapists providing guidance and support to clients seeking to heal and grow. We believe that we are able to connect with our clients to help them to be their best selves.</p>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="elementor-element elementor-element-03ebe08 elementor-align-center elementor-widget elementor-widget-button" data-id="03ebe08" data-element_type="widget" data-widget_type="button.default">
-                    <div class="elementor-widget-container">
-                        {% if section.cta_url %}
-                            <div class="elementor-button-wrapper">
-                                <a class="elementor-button elementor-button-link elementor-size-sm" href="{{ section.cta_url }}" target="_blank" rel="noopener">
-                                    <span class="elementor-button-content-wrapper">
-                                        <span class="elementor-button-text">{{ section.cta_label|default:"Schedule Your First Appointment Today" }}</span>
-                                    </span>
-                                </a>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
+<section id="aboutus" class="relative overflow-hidden bg-brand-deep text-white">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(146,220,229,0.14),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.18),transparent_32%)]"></div>
+
+    <div class="relative max-w-6xl mx-auto px-4 py-16 md:py-20 grid md:grid-cols-2 gap-10 md:gap-14 items-start">
+        <div class="space-y-4">
+            <div class="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-3 py-1 text-sm font-semibold tracking-wide uppercase">About</div>
+            <h2 class="text-3xl md:text-4xl font-semibold leading-tight m-0">{{ section.about_title|default:"About Us" }}</h2>
+            <div class="prose prose-invert max-w-none text-white/90 space-y-4">
+                {% if section.about_body %}
+                    {{ section.about_body|safe }}
+                {% else %}
+                    <p>At L+C Psychological Services, we seek to provide an environment that is supportive and allows you to feel connected emotionally.</p>
+                    <p>We know that connections in life are what power our relationships in all aspects of our lives. Our hope is that you will experience these positive connections with our clinicians and gain the skills needed to improve all other connections in your life.</p>
+                    <p>L+C Psychological Services is proud to serve our clients providing psychological evaluation and therapy in Northern Kentucky and online therapy in Kentucky to adults, adolescents, and children. L+C Psychological Services was born from the vision of Dr. Kirk Little and Dr. Suzanne Collins following their work together for over a decade at Little Psychological Services.</p>
+                {% endif %}
             </div>
         </div>
+
+        <div class="bg-white/8 border border-white/15 rounded-2xl shadow-xl shadow-black/10 p-6 md:p-7 space-y-4 backdrop-blur">
+            <div class="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-semibold tracking-wide uppercase">Mission</div>
+            <h3 class="text-2xl font-semibold m-0">{{ section.mission_title|default:"Our Mission" }}</h3>
+            <div class="prose prose-invert max-w-none text-white/90 space-y-4">
+                {% if section.mission_body %}
+                    {{ section.mission_body|safe }}
+                {% else %}
+                    <p>Our mission at L+C Psychological Services is to provide a comfortable and safe environment for those who need to reconnect in their lives. We are dedicated psychologists and therapists providing guidance and support to clients seeking to heal and grow. We believe that we are able to connect with our clients to help them to be their best selves.</p>
+                {% endif %}
+            </div>
+
+            {% if section.cta_url %}
+                <div class="pt-2">
+                    <a href="{{ section.cta_url }}" class="inline-flex items-center gap-2 rounded-xl bg-[#3C9C64] px-4 py-3 text-white font-semibold shadow-sm transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B]" target="_blank" rel="noopener">
+                        {{ section.cta_label|default:"Schedule Your First Appointment Today" }}
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</section>
 {% endif %}
 {% endwith %}

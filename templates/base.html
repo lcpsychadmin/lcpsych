@@ -155,5 +155,38 @@ gtag('config', 'G-93EEDX0TQR');</script>
 	{% block content %}{% endblock %}
 	{% block before_footer %}{% endblock %}
 	{% include 'partials/footer.html' %}
+	{% include 'partials/joinOurTeam.html' %}
+	<script>
+	// Lightweight off-canvas toggler so Join Our Team works sitewide without restyling it
+	(function() {
+	    const modal = document.getElementById('off-canvas-cf32857');
+	    if (!modal) return;
+	    const overlay = modal.querySelector('.e-off-canvas__overlay');
+	    const openers = Array.from(document.querySelectorAll('a[href="#open-off-canvas"]'));
+
+	    // Ensure hidden by default
+	    modal.style.display = 'none';
+
+	    const open = (evt) => {
+	        evt && evt.preventDefault();
+	        modal.style.display = 'block';
+	        modal.removeAttribute('aria-hidden');
+	        document.body.classList.add('modal-p-on');
+	    };
+
+	    const close = (evt) => {
+	        evt && evt.preventDefault();
+	        modal.style.display = 'none';
+	        modal.setAttribute('aria-hidden', 'true');
+	        document.body.classList.remove('modal-p-on');
+	    };
+
+	    openers.forEach((el) => el.addEventListener('click', open));
+	    overlay && overlay.addEventListener('click', close);
+	    document.addEventListener('keydown', (evt) => {
+	        if (evt.key === 'Escape' && modal.style.display === 'block') close();
+	    });
+	})();
+	</script>
 </body>
 </html>

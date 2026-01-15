@@ -28,6 +28,7 @@ from .forms import (
     InspirationalQuoteForm,
     CompanyQuoteForm,
     ContactInfoForm,
+    StaticPageSEOForm,
 )
 from .models import EmailConfirmation
 from core.models import (
@@ -41,6 +42,7 @@ from core.models import (
     InspirationalQuote,
     CompanyQuote,
     ContactInfo,
+    StaticPageSEO,
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
@@ -522,6 +524,73 @@ class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):
         if edit_id:
             editing = get_object_or_404(Service, pk=edit_id)
             form = ServiceForm(instance=editing)
+        return render(request, self.template_name, self._context(form=form, editing=editing))
+
+
+class ManageSEOSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "accounts/manage_seo.html"
+
+    DEFAULT_STATIC_PAGES = [
+        ("our-team", "Our Team"),
+        ("about-us", "About Us"),
+        ("services", "Services"),
+        ("insurance", "Insurance & Payment"),
+        ("contact-us", "Contact Us"),
+        ("faq", "Frequently Asked Questions"),
+    ]
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def _ensure_defaults(self):
+        default_map = {slug: name for slug, name in self.DEFAULT_STATIC_PAGES}
+        for slug, name in self.DEFAULT_STATIC_PAGES:
+            StaticPageSEO.objects.get_or_create(slug=slug, defaults={"page_name": name})
+        return default_map
+
+    def _context(self, form: StaticPageSEOForm | None = None, editing: StaticPageSEO | None = None) -> dict:
+        self._ensure_defaults()
+        entries = StaticPageSEO.objects.order_by("page_name", "slug")
+        return {
+            "form": form or StaticPageSEOForm(),
+            "editing": editing,
+            "entries": entries,
+            "default_slugs": {slug for slug, _ in self.DEFAULT_STATIC_PAGES},
+        }
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        edit_id = request.GET.get("edit")
+        editing = None
+        form = None
+        if edit_id:
+            editing = get_object_or_404(StaticPageSEO, pk=edit_id)
+            form = StaticPageSEOForm(instance=editing)
+        return render(request, self.template_name, self._context(form=form, editing=editing))
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        default_map = self._ensure_defaults()
+        action = request.POST.get("action", "save")
+
+        if action == "delete":
+            object_id = request.POST.get("object_id")
+            entry = get_object_or_404(StaticPageSEO, pk=object_id)
+            if entry.slug in default_map:
+                messages.error(request, f"'{entry.page_name}' is a required static page and cannot be deleted.")
+                return redirect("accounts:seo_settings")
+            name = entry.page_name
+            entry.delete()
+            messages.success(request, f"Removed SEO entry '{name}'.")
+            return redirect("accounts:seo_settings")
+
+        object_id = request.POST.get("object_id")
+        editing = get_object_or_404(StaticPageSEO, pk=object_id) if object_id else None
+        form = StaticPageSEOForm(request.POST, request.FILES, instance=editing)
+        if form.is_valid():
+            entry = form.save()
+            verb = "updated" if editing else "created"
+            messages.success(request, f"SEO settings for '{entry.page_name}' {verb}.")
+            return redirect("accounts:seo_settings")
+
         return render(request, self.template_name, self._context(form=form, editing=editing))
 
     def post(self, request: HttpRequest) -> HttpResponse:

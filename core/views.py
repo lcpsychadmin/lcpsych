@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404
+from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.http import HttpResponse, Http404
 from django.conf import settings
@@ -6,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import select_template
 import re
 from pathlib import Path
-from .models import Page, Post, PublishStatus, Service
+from .models import Page, Post, PublishStatus, Service, StaticPageSEO
 from profiles.models import TherapistProfile
 
 
@@ -38,6 +39,31 @@ def _build_therapist_cards(profiles):
 		})
 
 	return cards
+
+
+def _static_seo_context(slug: str, fallback_title: str, fallback_description: str, page_name: str) -> dict:
+	entry = StaticPageSEO.objects.filter(slug=slug).first()
+	seo_title = entry.seo_title if entry and entry.seo_title else fallback_title
+	seo_description = entry.seo_description if entry and entry.seo_description else fallback_description
+	seo_keywords = entry.seo_keywords if entry else ''
+	og_image_url = None
+	if entry:
+		if getattr(entry, 'seo_image_file', None):
+			try:
+				og_image_url = entry.seo_image_file.url
+			except ValueError:
+				og_image_url = None
+		if not og_image_url and entry.seo_image_url:
+			og_image_url = entry.seo_image_url
+	page_heading = entry.page_name if entry and entry.page_name else page_name
+	return {
+		'seo_title': seo_title,
+		'seo_description': seo_description,
+		'seo_keywords': seo_keywords,
+		'og_type': 'website',
+		'og_image_url': og_image_url,
+		'page_title': page_heading,
+	}
 
 
 def _published_therapists_queryset():
@@ -84,55 +110,82 @@ def home(request):
 
 
 def our_team(request):
-    therapists = _build_therapist_cards(_published_therapists_queryset())
-    context = {
-        'seo_title': 'Our Team | L+C Psychological Services',
-        'seo_description': 'Meet the licensed psychologists and therapists at L+C Psychological Services serving Northern Kentucky and Kentucky telehealth clients.',
-        'og_type': 'website',
-        'page_title': 'Our Team',
-        'therapists': therapists,
-    }
-    return render(request, 'pages/our_team.html', context)
+	profiles = (
+		TherapistProfile.objects.filter(is_published=True)
+		.select_related('license_type', 'user')
+		.prefetch_related('client_focuses', 'services', 'top_services')
+	)
+
+	query = (request.GET.get('q') or '').strip()
+	if query:
+		profiles = profiles.filter(
+			Q(first_name__icontains=query)
+			| Q(last_name__icontains=query)
+			| Q(user__first_name__icontains=query)
+			| Q(user__last_name__icontains=query)
+			| Q(license_type__name__icontains=query)
+			| Q(services__title__icontains=query)
+			| Q(client_focuses__name__icontains=query)
+		)
+
+	new_only = request.GET.get('new') == '1'
+	if new_only:
+		profiles = profiles.filter(accepts_new_clients=True)
+
+	profiles = profiles.distinct()
+
+	context = {
+		**_static_seo_context(
+			'our-team',
+			'Our Team | L+C Psychological Services',
+			'Meet the licensed psychologists and therapists at L+C Psychological Services serving Northern Kentucky and Kentucky telehealth clients.',
+			'Our Team',
+		),
+		'profiles': profiles,
+		'query': query,
+		'new_only': new_only,
+	}
+	return render(request, 'profiles/profile_list.html', context)
 
 
 def about_us(request):
-    context = {
-        'seo_title': 'About L+C Psychological Services',
-        'seo_description': 'Learn how L+C Psychological Services supports clients with compassionate therapy, psychological testing, and a mission built on genuine connection.',
-        'og_type': 'website',
-        'page_title': 'About Us',
-    }
-    return render(request, 'pages/about_us.html', context)
+	context = _static_seo_context(
+		'about-us',
+		'About L+C Psychological Services',
+		'Learn how L+C Psychological Services supports clients with compassionate therapy, psychological testing, and a mission built on genuine connection.',
+		'About Us',
+	)
+	return render(request, 'pages/about_us.html', context)
 
 
 def insurance(request):
-    context = {
-        'seo_title': 'Insurance & Payment Options | L+C Psych',
-        'seo_description': 'Review accepted insurance plans, Medicare coverage, and payment details for therapy and psychological services at L+C Psychological Services.',
-        'og_type': 'website',
-        'page_title': 'Insurance & Payment',
-    }
-    return render(request, 'pages/insurance.html', context)
+	context = _static_seo_context(
+		'insurance',
+		'Insurance & Payment Options | L+C Psych',
+		'Review accepted insurance plans, Medicare coverage, and payment details for therapy and psychological services at L+C Psychological Services.',
+		'Insurance & Payment',
+	)
+	return render(request, 'pages/insurance.html', context)
 
 
 def contact_us(request):
-    context = {
-        'seo_title': 'Contact L+C Psychological Services',
-        'seo_description': 'Get directions to our Florence, Kentucky office, review hours, and contact L+C Psychological Services by phone, fax, or email.',
-        'og_type': 'website',
-        'page_title': 'Contact Us',
-    }
-    return render(request, 'pages/contact_us.html', context)
+	context = _static_seo_context(
+		'contact-us',
+		'Contact L+C Psychological Services',
+		'Get directions to our Florence, Kentucky office, review hours, and contact L+C Psychological Services by phone, fax, or email.',
+		'Contact Us',
+	)
+	return render(request, 'pages/contact_us.html', context)
 
 
 def faq(request):
-    context = {
-        'seo_title': 'Therapy FAQs | L+C Psych',
-        'seo_description': 'Find answers to common questions about therapy costs, insurance coverage, first appointments, and what to expect at L+C Psychological Services.',
-        'og_type': 'website',
-        'page_title': 'Frequently Asked Questions',
-    }
-    return render(request, 'pages/faq.html', context)
+	context = _static_seo_context(
+		'faq',
+		'Therapy FAQs | L+C Psych',
+		'Find answers to common questions about therapy costs, insurance coverage, first appointments, and what to expect at L+C Psychological Services.',
+		'Frequently Asked Questions',
+	)
+	return render(request, 'pages/faq.html', context)
 
 
 def service_detail(request, slug: str):

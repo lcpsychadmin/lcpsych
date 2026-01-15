@@ -1,127 +1,69 @@
 {% with contact_info as contact %}
-        <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-2a58faf e-con-full e-flex e-con e-parent" data-id="2a58faf" data-element_type="container" id="contactus" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-            <div class="elementor-element elementor-element-a39d1d2 e-con-full e-flex e-con e-child" data-id="a39d1d2" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
-                <div class="elementor-element elementor-element-f6c4afc elementor-widget elementor-widget-heading" data-id="f6c4afc" data-element_type="widget" data-widget_type="heading.default">
-                    <div class="elementor-widget-container">
-                        <h3 class="elementor-heading-title elementor-size-default">{{ contact.heading|default:"Proud to Serve Cincinnati/Northern Kentucky" }}</h3>
-                    </div>
-                </div>
-                <div data-dce-background-color="#92DCE5" class="elementor-element elementor-element-4489b83 e-con-full e-flex e-con e-child" data-id="4489b83" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                    <div class="elementor-element elementor-element-32dd9a6 elementor-widget elementor-widget-google_maps" data-id="32dd9a6" data-element_type="widget" data-widget_type="google_maps.default">
-                        <div class="elementor-widget-container">
-                            <div class="elementor-custom-embed">
-                                <iframe loading="lazy" src="{{ contact.map_embed_url|default:'https://maps.google.com/maps?q=6900%20houston%20rd.%20Florence%2C%20KY%2041091&t=m&z=15&output=embed&iwloc=near' }}" title="{{ contact.office_address|default:'6900 houston rd. Florence, KY 41091' }}" aria-label="{{ contact.office_address|default:'6900 houston rd. Florence, KY 41091' }}"></iframe>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="elementor-element elementor-element-013ad0d e-con-full e-flex e-con e-child" data-id="013ad0d" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
-                <div data-dce-background-color="#FFFFFF" class="elementor-element elementor-element-344c0c0 e-con-full e-flex e-con e-child" data-id="344c0c0" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                    <div class="elementor-element elementor-element-ca75dde elementor-position-left elementor-view-default elementor-mobile-position-top elementor-widget elementor-widget-icon-box" data-id="ca75dde" data-element_type="widget" data-widget_type="icon-box.default">
-                        <div class="elementor-widget-container">
-                            <div class="elementor-icon-box-wrapper">
-                                <div class="elementor-icon-box-icon">
-                                    <span class="elementor-icon">
-                                        <svg aria-hidden="true" class="e-font-icon-svg e-fas-map-marker-alt" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                                <div class="elementor-icon-box-content">
-                                    <h3 class="elementor-icon-box-title">
-                                        <span> {{ contact.office_title|default:"Our Office" }} </span>
-                                    </h3>
-                                    <p class="elementor-icon-box-description">
-                                         {{ contact.office_address|default:"6900 Houston Rd.\nBuilding 500 Suite 11\nFlorence, KY 41042"|linebreaksbr }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="elementor-element elementor-element-27335e4 elementor-align-left elementor-widget elementor-widget-button" data-id="27335e4" data-element_type="widget" data-widget_type="button.default">
-                        <div class="elementor-widget-container">
-                            <div class="elementor-button-wrapper">
-                                <a class="elementor-button elementor-button-link elementor-size-sm" href="{{ contact.directions_url|default:'https://maps.google.com/maps/dir//6900+Houston+Rd+Florence,+KY+41042/@39.0086253,-84.647614,15z/data=!4m5!4m4!1m0!1m2!1m1!1s0x8841c7da6f65d4c7:0xa64ac61629ef897f' }}" target="_blank" rel="noopener">
-                                    <span class="elementor-button-content-wrapper">
-                                        <span class="elementor-button-text">Get Directions</span>
-                                    </span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div data-dce-background-color="#FFFFFF" class="elementor-element elementor-element-6ee5499 e-con-full e-flex e-con e-child" data-id="6ee5499" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                    <div class="elementor-element elementor-element-c8d60f6 elementor-position-left elementor-view-default elementor-mobile-position-top elementor-widget elementor-widget-icon-box" data-id="c8d60f6" data-element_type="widget" data-widget_type="icon-box.default">
-                        <div class="elementor-widget-container">
-                            <div class="elementor-icon-box-wrapper">
-                                <div class="elementor-icon-box-icon">
-                                    <span class="elementor-icon">
-                                        <svg aria-hidden="true" class="e-font-icon-svg e-fas-clock" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M256,8C119,8,8,119,8,256S119,504,256,504,504,393,504,256,393,8,256,8Zm92.49,313h0l-20,25a16,16,0,0,1-22.49,2.5h0l-67-49.72a40,40,0,0,1-15-31.23V112a16,16,0,0,1,16-16h32a16,16,0,0,1,16,16V256l58,42.5A16,16,0,0,1,348.49,321Z"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                                <div class="elementor-icon-box-content">
-                                    <h3 class="elementor-icon-box-title">
-                                        <span> {{ contact.office_hours_title|default:"Office Hours" }} </span>
-                                    </h3>
-                                    <p class="elementor-icon-box-description">
-                                        {{ contact.office_hours|default:"Mon - Thurs: 8AM - 9PM\nFriday: 8AM - 5PM\nSaturday: 8AM - 2PM"|linebreaksbr }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div data-dce-background-color="#FFFFFF" class="elementor-element elementor-element-87c718d e-con-full e-flex e-con e-child" data-id="87c718d" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-                    <div class="elementor-element elementor-element-2489bcf elementor-position-left elementor-view-default elementor-mobile-position-top elementor-widget elementor-widget-icon-box" data-id="2489bcf" data-element_type="widget" data-widget_type="icon-box.default">
-                        <div class="elementor-widget-container">
-                            <div class="elementor-icon-box-wrapper">
-                                <div class="elementor-icon-box-icon">
-                                    <span class="elementor-icon">
-                                        <svg aria-hidden="true" class="e-font-icon-svg e-fas-phone-alt" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M497.39 361.8l-112-48a24 24 0 0 0-28 6.9l-49.6 60.6A370.66 370.66 0 0 1 130.6 204.11l60.6-49.6a23.94 23.94 0 0 0 6.9-28l-48-112A24.16 24.16 0 0 0 122.6.61l-104 24A24 24 0 0 0 0 48c0 256.5 207.9 464 464 464a24 24 0 0 0 23.4-18.6l24-104a24.29 24.29 0 0 0-14.01-27.6z"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                                <div class="elementor-icon-box-content">
-                                    <h3 class="elementor-icon-box-title">
-                                        <span> {{ contact.contact_title|default:"Contact Us" }} </span>
-                                    </h3>
-                                    <p class="elementor-icon-box-description">
-                                        <b>{{ contact.phone_label|default:"Office" }}:</b>
-                                        <a href="tel:{{ contact.phone_number|default:"8595254911" }}">{{ contact.phone_number|default:"859-525-4911" }}</a>
-                                        <br>
-                                        <b>{{ contact.fax_label|default:"Fax" }}:</b>
-                                        <a href="tel:{{ contact.fax_number|default:"8595256446" }}">{{ contact.fax_number|default:"859-525-6446" }}</a>
-                                        <br>
-                                        {% if contact.email_address %}
-                                        <b>{{ contact.email_label|default:"Email" }}:</b>
-                                        <a href="mailto:{{ contact.email_address }}">{{ contact.email_label|default:contact.email_address }}</a>
-                                        {% else %}
-                                        <b>{{ contact.email_label|default:"Email" }}:</b>
-                                        <a href="/cdn-cgi/l/email-protection#">{{ contact.email_label|default:"Front Office" }}</a>
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="elementor-element elementor-element-03bbaca elementor-align-left elementor-widget elementor-widget-button" data-id="03bbaca" data-element_type="widget" data-widget_type="button.default">
-                        <div class="elementor-widget-container">
-                            <div class="elementor-button-wrapper">
-                                {% if contact.cta_url %}
-                                <a class="elementor-button elementor-button-link elementor-size-sm" href="{{ contact.cta_url }}" target="_blank" rel="noopener">
-                                    <span class="elementor-button-content-wrapper">
-                                        <span class="elementor-button-text">{{ contact.cta_label|default:"Schedule Online" }}</span>
-                                    </span>
-                                </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<section id="contactus" class="relative overflow-hidden bg-brand-deep text-white">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(146,220,229,0.18),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.12),transparent_32%)]"></div>
+  <div class="relative max-w-6xl mx-auto px-4 py-14 md:py-18 space-y-10">
+    <div class="space-y-4 max-w-3xl">
+      <div class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">Get in touch</div>
+      <h1 class="text-3xl md:text-4xl font-semibold m-0">{{ contact.heading|default:"Proud to serve Cincinnati/Northern Kentucky" }}</h1>
+      <p class="text-lg text-white/85 m-0">Call, email, or visit us in Florence. We’ll help you schedule or verify benefits and match you with the right clinician.</p>
+      <div class="flex flex-wrap gap-3">
+        {% if contact and contact.phone_number %}
+          <a href="tel:{{ contact.phone_number|cut:"-"|cut:" "|cut:"("|cut:")" }}" class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-4 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white">{{ contact.phone_number }}</a>
+        {% else %}
+          <a href="tel:+18595254911" class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-4 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white">859-525-4911</a>
+        {% endif %}
+        {% if contact and contact.cta_url %}
+          <a href="{{ contact.cta_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46] hover:border-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70">{{ contact.cta_label|default:"Schedule online" }}</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-6 lg:gap-8 items-start">
+      <div class="bg-white text-slate-900 rounded-2xl shadow-xl shadow-black/10 ring-1 ring-slate-200 overflow-hidden">
+        <div class="overflow-hidden bg-slate-100 min-h-[420px] md:min-h-[520px]" style="min-height:520px;">
+          <iframe loading="lazy" src="{{ contact.map_embed_url|default:'https://maps.google.com/maps?q=6900%20houston%20rd.%20Florence%2C%20KY%2041091&t=m&z=15&output=embed&iwloc=near' }}" title="{{ contact.office_address|default:'6900 Houston Rd. Florence, KY 41091' }}" aria-label="{{ contact.office_address|default:'6900 Houston Rd. Florence, KY 41091' }}" class="w-full h-full block" style="min-height:520px;"></iframe>
         </div>
+        <div class="p-6 space-y-3">
+          <h2 class="text-xl font-semibold text-[#0f3f46] m-0">{{ contact.office_title|default:"Our office" }}</h2>
+          <p class="text-slate-700 m-0">{{ contact.office_address|default:"6900 Houston Rd.\nBuilding 500 Suite 11\nFlorence, KY 41042"|linebreaksbr }}</p>
+          <div class="flex flex-wrap gap-2">
+            <a class="inline-flex items-center gap-2 rounded-lg bg-[#3C9C64] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46]" href="{{ contact.directions_url|default:'https://maps.google.com/maps/dir//6900+Houston+Rd+Florence,+KY+41042/@39.0086253,-84.647614,15z/data=!4m5!4m4!1m0!1m2!1m1!1s0x8841c7da6f65d4c7:0xa64ac61629ef897f' }}" target="_blank" rel="noopener">Get directions</a>
+            {% if contact and contact.email_address %}
+              <a class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-[#0f3f46] transition-colors hover:border-[#92DCE5] hover:bg-[#E8F6F8]" href="mailto:{{ contact.email_address }}">Email us</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="bg-white text-slate-900 rounded-2xl shadow-lg shadow-black/10 ring-1 ring-slate-200 p-5 md:p-6 space-y-3">
+          <h3 class="text-lg font-semibold text-[#0f3f46] m-0">Call or fax</h3>
+          <div class="space-y-2 text-sm text-slate-800">
+            <div><span class="font-semibold text-[#0f3f46]">{{ contact.phone_label|default:"Office" }}:</span> <a class="underline-offset-2 hover:underline" href="tel:{{ contact.phone_number|default:"8595254911" }}">{{ contact.phone_number|default:"859-525-4911" }}</a></div>
+            <div><span class="font-semibold text-[#0f3f46]">{{ contact.fax_label|default:"Fax" }}:</span> <a class="underline-offset-2 hover:underline" href="tel:{{ contact.fax_number|default:"8595256446" }}">{{ contact.fax_number|default:"859-525-6446" }}</a></div>
+            {% if contact and contact.email_address %}
+              <div><span class="font-semibold text-[#0f3f46]">{{ contact.email_label|default:"Email" }}:</span> <a class="underline-offset-2 hover:underline" href="mailto:{{ contact.email_address }}">{{ contact.email_address }}</a></div>
+            {% else %}
+              <div><span class="font-semibold text-[#0f3f46]">{{ contact.email_label|default:"Email" }}:</span> <span>{{ contact.email_label|default:"Front Office" }}</span></div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="bg-white text-slate-900 rounded-2xl shadow-lg shadow-black/10 ring-1 ring-slate-200 p-5 md:p-6 space-y-3">
+          <h3 class="text-lg font-semibold text-[#0f3f46] m-0">{{ contact.office_hours_title|default:"Office hours" }}</h3>
+          <p class="text-sm text-slate-800 m-0">{{ contact.office_hours|default:"Mon - Thurs: 8AM - 9PM\nFriday: 8AM - 5PM\nSaturday: 8AM - 2PM"|linebreaksbr }}</p>
+        </div>
+
+        <div class="bg-white text-slate-900 rounded-2xl shadow-lg shadow-black/10 ring-1 ring-slate-200 p-5 md:p-6 space-y-3">
+          <h3 class="text-lg font-semibold text-[#0f3f46] m-0">Need help choosing?</h3>
+          <p class="text-sm text-slate-800 m-0">Tell us what you’re looking for—evaluations, therapy, or a specific concern—and we’ll pair you with the right clinician.</p>
+          <div class="flex flex-wrap gap-2">
+            <a href="/services/" class="inline-flex items-center gap-2 rounded-lg bg-[#3C9C64] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46]">Explore services</a>
+            <a href="/profiles/" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-[#0f3f46] transition-colors hover:border-[#92DCE5] hover:bg-[#E8F6F8]">Meet our team</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 {% endwith %}

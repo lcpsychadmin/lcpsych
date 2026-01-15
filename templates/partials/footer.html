@@ -30,22 +30,22 @@
                                         <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/' %}elementor-item-active{% endif %}">Home</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2023">
-                                        <a href="#ourteam" aria-current="page" class="elementor-item elementor-item-anchor">Our Team</a>
+                                        <a href="/our-team/" {% if request.path == '/our-team/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/our-team/' %}elementor-item-active{% endif %}">Our Team</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2024">
-                                        <a href="#aboutus" aria-current="page" class="elementor-item elementor-item-anchor">About Us</a>
+                                        <a href="/about-us/" {% if request.path == '/about-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/about-us/' %}elementor-item-active{% endif %}">About Us</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2025">
                                         <a href="/services/" aria-current="page" class="elementor-item {% if request.path|slice:":10" == '/services/' %}elementor-item-active{% endif %}" {% if request.path|slice:":10" == '/services/' %}style="color:#3C9C64"{% endif %}>Services</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2026">
-                                        <a href="#insurance" aria-current="page" class="elementor-item elementor-item-anchor">Insurance</a>
+                                        <a href="/insurance/" {% if request.path == '/insurance/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/insurance/' %}elementor-item-active{% endif %}">Insurance</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2027">
-                                        <a href="#contactus" aria-current="page" class="elementor-item elementor-item-anchor">Contact Us</a>
+                                        <a href="/contact-us/" {% if request.path == '/contact-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/contact-us/' %}elementor-item-active{% endif %}">Contact Us</a>
                                     </li>
                                     <li class="open-off-canvas menu-item menu-item-type-custom menu-item-object-custom menu-item-2050">
-                                        <a href="#open-off-canvas" class="elementor-item elementor-item-anchor">Join Our Team</a>
+                                        <a href="/contact-us/?topic=join-our-team" class="elementor-item">Join Our Team</a>
                                     </li>
                                 </ul>
                             </nav>
@@ -63,22 +63,22 @@
                                         <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/' %}elementor-item-active{% endif %}" tabindex="-1">Home</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2023">
-                                        <a href="#ourteam" aria-current="page" class="elementor-item elementor-item-anchor" tabindex="-1">Our Team</a>
+                                        <a href="/our-team/" {% if request.path == '/our-team/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/our-team/' %}elementor-item-active{% endif %}" tabindex="-1">Our Team</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2024">
-                                        <a href="#aboutus" aria-current="page" class="elementor-item elementor-item-anchor" tabindex="-1">About Us</a>
+                                        <a href="/about-us/" {% if request.path == '/about-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/about-us/' %}elementor-item-active{% endif %}" tabindex="-1">About Us</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2025">
                                         <a href="/services/" aria-current="page" class="elementor-item {% if request.path|slice:":10" == '/services/' %}elementor-item-active{% endif %}" {% if request.path|slice:":10" == '/services/' %}style="color:#3C9C64"{% endif %} tabindex="-1">Services</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2026">
-                                        <a href="#insurance" aria-current="page" class="elementor-item elementor-item-anchor" tabindex="-1">Insurance</a>
+                                        <a href="/insurance/" {% if request.path == '/insurance/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/insurance/' %}elementor-item-active{% endif %}" tabindex="-1">Insurance</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2027">
-                                        <a href="#contactus" aria-current="page" class="elementor-item elementor-item-anchor" tabindex="-1">Contact Us</a>
+                                        <a href="/contact-us/" {% if request.path == '/contact-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/contact-us/' %}elementor-item-active{% endif %}" tabindex="-1">Contact Us</a>
                                     </li>
                                     <li class="open-off-canvas menu-item menu-item-type-custom menu-item-object-custom menu-item-2050">
-                                        <a href="#open-off-canvas" class="elementor-item elementor-item-anchor" tabindex="-1">Join Our Team</a>
+                                        <a href="/contact-us/?topic=join-our-team" class="elementor-item" tabindex="-1">Join Our Team</a>
                                     </li>
                                 </ul>
                             </nav>
@@ -95,17 +95,17 @@
                         <div class="elementor-widget-container">
                             <ul class="elementor-icon-list-items elementor-inline-items">
                                 <li class="elementor-icon-list-item elementor-inline-item">
-                                    <a href="#">
+                                    <a href="/data-privacy-statement/">
                                         <span class="elementor-icon-list-text">Data Privacy Statement</span>
                                     </a>
                                 </li>
                                 <li class="elementor-icon-list-item elementor-inline-item">
-                                    <a href="#">
+                                    <a href="/service-terms-agreement/">
                                         <span class="elementor-icon-list-text">Service Terms Agreement</span>
                                     </a>
                                 </li>
                                 <li class="elementor-icon-list-item elementor-inline-item">
-                                    <a href="#">
+                                    <a href="/cookie-policy/">
                                         <span class="elementor-icon-list-text">Cookie Policy</span>
                                     </a>
                                 </li>

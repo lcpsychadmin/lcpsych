@@ -14,6 +14,7 @@ from core.models import (
     InspirationalQuote,
     CompanyQuote,
     ContactInfo,
+    StaticPageSEO,
 )
 
 
@@ -280,3 +281,34 @@ class ContactInfoForm(forms.ModelForm):
             base = field.widget.attrs.get("class", "").strip()
             field.widget.attrs["class"] = f"{base} input-basic".strip()
         self.fields["is_active"].label = "Show this section"
+
+
+class StaticPageSEOForm(forms.ModelForm):
+    class Meta:
+        model = StaticPageSEO
+        fields = [
+            "page_name",
+            "slug",
+            "seo_title",
+            "seo_description",
+            "seo_keywords",
+            "seo_image_url",
+            "seo_image_file",
+        ]
+        widgets = {
+            "seo_description": forms.Textarea(attrs={"rows": 2}),
+            "seo_keywords": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["slug"].help_text = "Path without leading slash, e.g., about-us"
+        self.fields["page_name"].label = "Page name"
+        self.fields["seo_title"].label = "SEO title"
+        self.fields["seo_description"].label = "Meta description"
+        self.fields["seo_keywords"].label = "Keywords (optional)"
+        self.fields["seo_image_url"].label = "Social image URL"
+        self.fields["seo_image_file"].label = "Upload social image"

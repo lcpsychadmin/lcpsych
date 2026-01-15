@@ -1,7 +1,7 @@
         <div data-dce-background-color="#005F6B" class="elementor-element elementor-element-e9c0337 e-con-full e-flex e-con e-parent" data-id="e9c0337" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
             <div class="elementor-element elementor-element-cf32857 elementor-widget elementor-widget-off-canvas" data-id="cf32857" data-element_type="widget" data-widget_type="off-canvas.default">
                 <div class="elementor-widget-container">
-                    <footer id="off-canvas-cf32857" class="e-off-canvas" role="dialog" aria-hidden="true" aria-label="my-off-canvas" aria-modal="true" inert="" data-delay-child-handlers="true">
+                    <footer id="off-canvas-cf32857" class="e-off-canvas" role="dialog" aria-hidden="true" aria-label="Join Our Team" aria-modal="true" inert="" data-delay-child-handlers="true">
                         <div class="e-off-canvas__overlay"></div>
                         <div class="e-off-canvas__main">
                             <div class="e-off-canvas__content">
@@ -225,3 +225,84 @@
                 </div>
             </div>
         </div>
+        <style>
+        /* Scoped modal styling to match original centered, branded layout */
+        #off-canvas-cf32857 {
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            display: none;
+        }
+        #off-canvas-cf32857 .e-off-canvas__overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 95, 107, 0.78);
+            backdrop-filter: blur(2px);
+        }
+        #off-canvas-cf32857 .e-off-canvas__main {
+            position: relative;
+            width: 78vw;
+            max-width: 740px;
+            max-height: 92vh;
+            margin: 4vh auto;
+            background: #005F6B;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
+            padding: 10px 10px 14px 10px;
+            display: flex;
+            justify-content: center;
+        }
+        #off-canvas-cf32857 .e-off-canvas__content {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background: #005F6B;
+            border-radius: 12px;
+            overflow: auto;
+            max-height: 100%;
+            padding: 8px;
+        }
+        #off-canvas-cf32857 .e-off-canvas__content > * {
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            background: transparent;
+            border-radius: 0;
+            overflow: visible;
+            min-height: 100%;
+            padding: 0;
+        }
+        /* Collapse the outer container and make the inner card the primary wrapper */
+        #off-canvas-cf32857 .elementor-element-566f4d5 {
+            width: 100%;
+            max-width: 660px;
+            margin-left: auto;
+            margin-right: auto;
+            background: #ffffff !important;
+            border-radius: 12px;
+            overflow: auto;
+            padding: 18px 18px 22px 18px;
+        }
+        #off-canvas-cf32857 .gform_wrapper,
+        #off-canvas-cf32857 .gform_body,
+        #off-canvas-cf32857 .gform_fields,
+        #off-canvas-cf32857 .gform_heading {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        #off-canvas-cf32857 .gform_wrapper form,
+        #off-canvas-cf32857 .gform_body,
+        #off-canvas-cf32857 .gform_fields,
+        #off-canvas-cf32857 .gform_heading,
+        #off-canvas-cf32857 .gform_footer {
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        body.modal-p-on { overflow: hidden; }
+        @media (max-width: 960px) {
+            #off-canvas-cf32857 .e-off-canvas__main { margin: 4vh 14px; }
+        }
+        </style>
