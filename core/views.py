@@ -41,12 +41,19 @@ def _build_therapist_cards(profiles):
 	return cards
 
 
-def _static_seo_context(slug: str, fallback_title: str, fallback_description: str, page_name: str) -> dict:
+def _static_seo_context(
+	slug: str,
+	fallback_title: str,
+	fallback_description: str,
+	page_name: str,
+	fallback_keywords: str = "",
+	fallback_og_image_url: str | None = None,
+) -> dict:
 	entry = StaticPageSEO.objects.filter(slug=slug).first()
 	seo_title = entry.seo_title if entry and entry.seo_title else fallback_title
 	seo_description = entry.seo_description if entry and entry.seo_description else fallback_description
-	seo_keywords = entry.seo_keywords if entry else ''
-	og_image_url = None
+	seo_keywords = entry.seo_keywords if entry else fallback_keywords
+	og_image_url = fallback_og_image_url
 	if entry:
 		if getattr(entry, 'seo_image_file', None):
 			try:
@@ -76,37 +83,46 @@ def _published_therapists_queryset():
 
 
 def home(request):
-    # Render the home page and, if available, apply SEO overrides from the Page with path='home'
-    seo_ctx = {}
-    try:
-        page = Page.objects.get(path='home')
-        from django.utils.html import strip_tags
+	# Render the home page and, if available, apply SEO overrides from the Page with path='home'
+	seo_ctx = {}
+	fallback_title = 'L+C Psychological Services'
+	fallback_description = 'Therapy and psychological services in Northern Kentucky to help you reconnect with life and relationships.'
+	fallback_keywords = ''
+	fallback_og_image_url = None
+	try:
+		page = Page.objects.get(path='home')
+		from django.utils.html import strip_tags
 
-        def _truncate(s, n=155):
-            s = (s or '').strip()
-            return (s[: n - 1] + '…') if len(s) > n else s
+		def _truncate(s, n=155):
+			s = (s or '').strip()
+			return (s[: n - 1] + '…') if len(s) > n else s
 
-        seo_ctx = {
-            'seo_title': page.seo_title or page.title,
-            'seo_description': page.seo_description or _truncate(strip_tags(page.excerpt_html or '')),
-            'seo_keywords': page.seo_keywords,
-            'og_image_url': page.seo_image_url or None,
-            # Expose a title the homepage template/partials can use for H1
-            'page_title': page.title,
-        }
-    except Page.DoesNotExist:
-        pass
-    # Services cards for homepage: only published, ordered
-    services = list(
-        Service.objects.filter(status=PublishStatus.PUBLISH)
-        .select_related('page')
-        .order_by('order', 'title')
-    )
+		fallback_title = page.seo_title or page.title
+		fallback_description = page.seo_description or _truncate(strip_tags(page.excerpt_html or ''))
+		fallback_keywords = page.seo_keywords
+		fallback_og_image_url = page.seo_image_url or None
+	except Page.DoesNotExist:
+		pass
 
-    therapists = _build_therapist_cards(_published_therapists_queryset())
+	seo_ctx = _static_seo_context(
+		'home',
+		fallback_title,
+		fallback_description,
+		'Home',
+		fallback_keywords=fallback_keywords,
+		fallback_og_image_url=fallback_og_image_url,
+	)
+	# Services cards for homepage: only published, ordered
+	services = list(
+		Service.objects.filter(status=PublishStatus.PUBLISH)
+		.select_related('page')
+		.order_by('order', 'title')
+	)
 
-    ctx = {**seo_ctx, 'services': services, 'therapists': therapists}
-    return render(request, 'home.html', ctx)
+	therapists = _build_therapist_cards(_published_therapists_queryset())
+
+	ctx = {**seo_ctx, 'services': services, 'therapists': therapists}
+	return render(request, 'home.html', ctx)
 
 
 def our_team(request):
