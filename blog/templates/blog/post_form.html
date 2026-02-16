@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if editing %}Edit Blog Post{% else %}Create Blog Post{% endif %} | {{ SITE_NAME|default:"Blog" }}{% endblock %}
+
+{% block content %}
+<main id="content" class="bg-slate-50">
+  <style>
+    .post-form-grid { display: block; }
+    @media (min-width: 768px) {
+      .post-form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+        gap: 24px;
+        align-items: stretch;
+      }
+    }
+    .post-main-card { background: #0f3f46; color: #fff; }
+    .post-body-card { background: #fff; color: #1f2937; }
+    .tab-strip { display: flex; gap: 6px; border-bottom: 1px solid #cde8ec; padding-bottom: 2px; }
+    .tab-button {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom-color: transparent;
+      border-radius: 10px 10px 0 0;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: #0f3f46;
+      transition: all 0.15s ease;
+    }
+    .tab-button:hover { background: #dff3f6; border-color: #cde8ec; color: #0f3f46; }
+    .tab-button.tab-active {
+      background: #f7fcfd;
+      border: 1px solid #cde8ec;
+      border-bottom-color: #f7fcfd;
+      box-shadow: 0 1px 0 #f7fcfd inset;
+      color: #0f3f46;
+    }
+    .tab-pill {
+      background: transparent;
+      border: 1px solid #dfecee;
+      border-radius: 9999px;
+      padding: 8px 12px;
+      font-weight: 600;
+      color: #0f3f46;
+      transition: all 0.15s ease;
+    }
+    .tab-pill:hover { background: #dff3f6; border-color: #cde8ec; color: #0f3f46; }
+    .tab-pill.tab-active {
+      background: #0f3f46;
+      color: #fff;
+      border-color: #0f3f46;
+    }
+    #ai-generate { border: none; box-shadow: none; }
+    #ai-generate:hover { background: #0c3339; border-color: transparent; box-shadow: none; }
+    .ai-quick {
+      color: #0f3f46;
+      background: #fff;
+      border-color: #dfecee;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .ai-quick:hover {
+      background: #dff3f6;
+      border-color: #cde8ec;
+      color: #0f3f46;
+    }
+    .tiptap-wrapper { border: 1px solid #e5e7eb; border-radius: 14px; background: #ffffff; box-shadow: 0 6px 22px rgba(15, 63, 70, 0.08); }
+    .tiptap-toolbar { display: flex; flex-wrap: wrap; gap: 8px 10px; padding: 12px 14px 10px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; border-radius: 14px 14px 0 0; align-items: center; }
+    .tiptap-btn {
+      border: 1px solid #e3e8ef;
+      background: #fff;
+      border-radius: 12px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f3f46;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 34px;
+      min-height: 34px;
+    }
+    .tiptap-btn:hover { background: #edf5f7; border-color: #d3e6ea; }
+    .tiptap-btn.is-active { background: #0f3f46; color: #fff; border-color: #0f3f46; box-shadow: 0 4px 14px rgba(15, 63, 70, 0.18); }
+    .tiptap-btn svg { width: 16px; height: 16px; display: block; }
+    .tiptap-editor { min-height: 320px; padding: 18px; border-radius: 0 0 14px 14px; outline: none; }
+    .tiptap-editor p { margin: 0 0 12px; }
+    .tiptap-editor h2 { font-size: 1.25rem; font-weight: 700; margin: 16px 0 10px; }
+    .tiptap-editor h3 { font-size: 1.1rem; font-weight: 700; margin: 14px 0 8px; }
+    .tiptap-editor blockquote { border-left: 3px solid #0f3f46; padding-left: 12px; color: #334155; margin: 12px 0; }
+    .tiptap-editor ul { list-style: disc; padding-left: 20px; margin: 12px 0; }
+    .tiptap-editor ol { list-style: decimal; padding-left: 20px; margin: 12px 0; }
+    .tiptap-editor a { color: #0f3f46; text-decoration: underline; }
+    .tiptap-editor code { background: #f1f5f9; color: #0f172a; padding: 2px 4px; border-radius: 6px; font-size: 0.9em; }
+    .tiptap-editor pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 12px; overflow: auto; }
+    .tiptap-editor hr { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+    .tiptap-swatches { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 12px 12px; width: 100%; background: #f9fafb; border-top: 1px solid #e5e7eb; }
+    .tiptap-swatches.is-hidden { display: none; }
+    .tiptap-swatch { width: 26px; height: 26px; border-radius: 9999px; border: 2px solid transparent; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 0 0 1px #dfecee; }
+    .tiptap-swatch:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 63, 70, 0.12); }
+    .tiptap-swatch.is-active { border-color: #0f3f46; box-shadow: 0 0 0 2px #bfe3e9; }
+    .featured-image-wrap { width: 100%; max-width: 100%; }
+    .featured-image-wrap input[type="url"],
+    .featured-image-wrap input[type="file"] { max-width: 100%; box-sizing: border-box; }
+    .featured-image-wrap .url-row { width: 100%; }
+    #image-preview { width: 100%; }
+    .image-preview-box {
+      width: 100%;
+      max-width: 240px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .image-preview-box > img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+  </style>
+
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white py-12">
+    <div class="relative z-10 max-w-5xl mx-auto px-4 text-center">
+      <h1 class="text-3xl font-semibold m-0">{% if editing %}Edit blog post{% else %}Create a new blog post{% endif %}</h1>
+      <p class="mt-3 text-white/90">Quickly add content, set visibility, SEO, and featured image.</p>
+    </div>
+  </section>
+
+   <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="elementor-1393">
+           <div class="elementor-element elementor-element-a80adf4" >
+                <div class="e-con-inner">
+                    <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+                            <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+                            <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+                            <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+                            <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+                            <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+                            <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+                            <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+                            <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+                            <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+                        </svg>
+                    </div>
+                    <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+                            <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+                            <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+                            <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+                            <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+                            <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+                            <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+                            <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+                            <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+                            <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="p-0">
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+          {% csrf_token %}
+
+          <div class="post-form-grid gap-6">
+            <div class="space-y-4 rounded-2xl post-main-card p-6 shadow-sm h-full flex flex-col">
+              <div class="space-y-2">
+                <label class="block text-sm font-semibold">Title</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+              </div>
+
+              <div class="rounded-xl post-body-card p-4 space-y-2">
+                <label class="block text-sm font-semibold mb-1">Body</label>
+                {{ form.body }}
+                <p class="text-xs text-slate-200/80">Rich text powered by Tiptap; your content will be saved into the body field.</p>
+                {{ form.body.errors }}
+                <input type="hidden" name="ai_image_url" id="ai_image_url" value="" />
+              </div>
+            </div>
+
+            <aside class="space-y-4 rounded-2xl p-4 h-full" style="background: #e8f7f9; border: 1px solid #cde8ec;">
+              <div class="tab-strip text-sm" role="tablist" aria-label="Sidebar tabs">
+                <button type="button" class="side-tab tab-button tab-active" data-tab="fields">Fields</button>
+                <button type="button" class="side-tab tab-button" data-tab="ai">AI Assistant</button>
+              </div>
+
+              <div class="side-panel" data-panel="fields">
+                <div class="rounded-xl border border-[#d8eef1] bg-[#f7fcfd] p-4 space-y-3">
+                  <div class="flex items-start gap-3 featured-image-wrap">
+                    <div class="flex-1 min-w-0">
+                      <label class="block text-sm font-semibold mb-1">Featured image</label>
+                      {{ form.feature_image }}
+                      <p class="text-xs text-slate-500 mt-1">Used for thumbnails and post hero.</p>
+                      {{ form.feature_image.errors }}
+                      <div class="mt-3 space-y-1 url-row">
+                        <label for="image-url-input" class="block text-xs font-semibold text-slate-700">Or import from URL</label>
+                        <input id="image-url-input" type="url" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-deep/60" placeholder="https://example.com/your-image.jpg" />
+                        <p class="text-[11px] text-slate-500">We will download this image when you save (max 5MB, images only). Leave empty to use AI or your upload.</p>
+                      </div>
+                      <div id="image-preview" class="mt-3 hidden">
+                        <p class="text-xs text-slate-600 mb-1">Preview</p>
+                        <div class="image-preview-box ring-1 ring-slate-200 bg-slate-50">
+                          <img id="image-preview-img" src="" alt="Featured preview" loading="lazy" />
+                        </div>
+                      </div>
+                    </div>
+                    {% if editing and post_obj and post_obj.feature_image %}
+                      <div class="w-20 aspect-[4/3] rounded-lg overflow-hidden ring-1 ring-slate-200 bg-slate-50">
+                        <img src="{{ post_obj.feature_image.url }}" alt="Current featured image" class="w-full h-full object-cover" loading="lazy" />
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-[#d8eef1] bg-[#f7fcfd] p-4 space-y-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Categories</label>
+                    {{ form.categories }}
+                    <p class="text-xs text-slate-500 mt-1">Choose one or more categories.</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Add new categories</label>
+                    {{ form.new_categories }}
+                    <p class="text-xs text-slate-500 mt-1">Comma-separated; new categories will be created and attached.</p>
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-[#d8eef1] bg-[#f7fcfd] p-4 space-y-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Slug</label>
+                    {{ form.slug }}
+                    <p class="text-xs text-slate-500 mt-1">Used in the URL (blog/your-slug). Must be unique.</p>
+                    {{ form.slug.errors }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Status</label>
+                    {{ form.status }}
+                    {{ form.status.errors }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Publish at</label>
+                    {{ form.publish_at }}
+                    <p class="text-xs text-slate-500 mt-1">Controls when a published post becomes visible.</p>
+                    {{ form.publish_at.errors }}
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-[#d8eef1] bg-[#f7fcfd] p-4 space-y-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">SEO title (optional)</label>
+                    {{ form.seo_title }}
+                    {{ form.seo_title.errors }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">SEO description (optional)</label>
+                    {{ form.seo_description }}
+                    <p class="text-xs text-slate-500 mt-1">Up to 160 characters. Defaults to an excerpt from the body.</p>
+                    {{ form.seo_description.errors }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="side-panel hidden" data-panel="ai">
+                <div class="rounded-xl border border-[#d8eef1] bg-[#f7fcfd] p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-sm font-semibold mb-1">AI draft assistant</label>
+                    <span id="ai-status" class="text-[11px] text-slate-500"></span>
+                  </div>
+
+                  <div class="flex gap-2 text-xs" role="tablist" aria-label="AI assistant tabs">
+                    <button type="button" class="ai-tab tab-pill tab-active" data-tab="prompt">Prompt</button>
+                    <button type="button" class="ai-tab tab-pill" data-tab="ideas">Ideas</button>
+                  </div>
+
+                  <div class="space-y-3">
+                    <div class="ai-panel" data-panel="prompt">
+                      <textarea id="ai-prompt" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-deep/60" rows="6" placeholder="Describe the post you want—topic, audience, tone, key points."></textarea>
+                      <div class="flex items-center justify-between text-xs text-slate-500 mt-2">
+                        <span>Uses OpenAI; keep prompts under 600 characters.</span>
+                        <button type="button" id="ai-generate" class="bg-brand-deep text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#0c3339] disabled:opacity-60 border-0" style="border: none; box-shadow: none;">Generate draft</button>
+                      </div>
+                    </div>
+
+                    <div class="ai-panel hidden" data-panel="ideas">
+                      <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs text-slate-600">Trend-based ideas (no duplicates)</p>
+                        <button type="button" id="refresh-ideas" class="text-[11px] font-semibold text-white bg-[#0f3f46] hover:bg-[#0c3339] rounded-lg px-3 py-1.5">Refresh</button>
+                      </div>
+                      <div id="ai-ideas-list" class="space-y-2"></div>
+                      <p id="ai-ideas-status" class="text-[11px] text-slate-500"></p>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-slate-600">Generated content fills Title, Body (rich text), and SEO description automatically. Switch back to Fields to review and save.</p>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="pt-2">
+            <button
+              type="submit"
+              class="bg-[#3C9C64] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#2f7a4f] border-0 ring-0 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0"
+              style="border: none; box-shadow: none;"
+            >
+              Save post
+            </button>
+          </div>
+        </form>
+        {% if editing and post_obj %}
+          <form action="{% url 'blog:delete' post_obj.id %}" method="post" class="inline-block mt-2" onsubmit="return confirm('Delete this post? This cannot be undone.');">
+            {% csrf_token %}
+            <button type="submit" class="bg-red-100 text-red-700 px-3 py-2 rounded-lg font-semibold hover:bg-red-200 border-0">Delete post</button>
+          </form>
+        {% endif %}
+        {{ form.media }}
+      </div>
+    </div>
+  </section>
+</main>
+<script src="{% static 'js/editor.bundle.js' %}"></script>
+<script>
+  (function() {
+    const btn = document.getElementById('ai-generate');
+    const promptEl = document.getElementById('ai-prompt');
+    const statusEl = document.getElementById('ai-status');
+    const aiTabButtons = Array.from(document.querySelectorAll('.ai-tab'));
+    const aiPanels = Array.from(document.querySelectorAll('.ai-panel'));
+    const fills = Array.from(document.querySelectorAll('.ai-fill'));
+    const sideTabs = Array.from(document.querySelectorAll('.side-tab'));
+    const sidePanels = Array.from(document.querySelectorAll('.side-panel'));
+    const ideasList = document.getElementById('ai-ideas-list');
+    const ideasStatus = document.getElementById('ai-ideas-status');
+    const ideasRefresh = document.getElementById('refresh-ideas');
+    let ideasLoaded = false;
+
+    function getCsrfToken() {
+      const match = document.cookie.match(/csrftoken=([^;]+)/);
+      return match ? match[1] : '';
+    }
+
+    function setContent(bodyHtml) {
+      if (!bodyHtml) return;
+      const tiptap = window.__tiptapEditor;
+      if (tiptap) {
+        tiptap.commands.setContent(bodyHtml || '<p></p>', false);
+        tiptap.commands.focus('end');
+        const bodyInput = document.getElementById('id_body');
+        if (bodyInput) bodyInput.value = tiptap.getHTML();
+        return;
+      }
+      const bodyInput = document.getElementById('id_body');
+      if (bodyInput) bodyInput.value = bodyHtml;
+    }
+
+    function setTitle(title) {
+      if (!title) return;
+      const titleInput = document.getElementById('id_title');
+      if (titleInput) titleInput.value = title;
+    }
+
+    function setSeoDescription(desc) {
+      const seoInput = document.getElementById('id_seo_description');
+      if (seoInput && desc) seoInput.value = desc;
+    }
+
+    function setSeoTitle(val) {
+      const seoTitle = document.getElementById('id_seo_title');
+      if (seoTitle && val) seoTitle.value = val;
+    }
+
+    function setSlug(val) {
+      const slugInput = document.getElementById('id_slug');
+      if (slugInput && val) slugInput.value = val;
+    }
+
+    function setAiImageUrl(url) {
+      const hidden = document.getElementById('ai_image_url');
+      if (hidden) hidden.value = url || '';
+      const urlInput = document.getElementById('image-url-input');
+      if (urlInput && url) urlInput.value = url;
+      setImagePreview(url);
+    }
+
+    function setImagePreview(url) {
+      const wrap = document.getElementById('image-preview');
+      const img = document.getElementById('image-preview-img');
+      if (!wrap || !img) return;
+      if (url) {
+        img.src = url;
+        wrap.classList.remove('hidden');
+      } else {
+        img.src = '';
+        wrap.classList.add('hidden');
+      }
+    }
+
+    const imageUrlInput = document.getElementById('image-url-input');
+    if (imageUrlInput) {
+      imageUrlInput.addEventListener('input', () => {
+        setAiImageUrl(imageUrlInput.value || '');
+      });
+    }
+
+    const fileInput = document.getElementById('id_feature_image');
+    if (fileInput) {
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          setImagePreview('');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const url = e.target?.result;
+          if (typeof url === 'string') setImagePreview(url);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function switchAITab(tab) {
+      aiTabButtons.forEach((btn) => {
+        const active = btn.dataset.tab === tab;
+        btn.classList.toggle('tab-active', active);
+      });
+      aiPanels.forEach((panel) => {
+        const active = panel.dataset.panel === tab;
+        panel.classList.toggle('hidden', !active);
+      });
+      if (tab === 'ideas' && !ideasLoaded) {
+        loadIdeas();
+      }
+    }
+
+    function switchSideTab(tab) {
+      sideTabs.forEach((btn) => {
+        const active = btn.dataset.tab === tab;
+        btn.classList.toggle('tab-active', active);
+      });
+      sidePanels.forEach((panel) => {
+        const active = panel.dataset.panel === tab;
+        panel.classList.toggle('hidden', !active);
+      });
+    }
+
+    async function generateDraft() {
+      const prompt = (promptEl.value || '').trim();
+      if (!prompt) {
+        statusEl.textContent = 'Enter a prompt first.';
+        return;
+      }
+      btn.disabled = true;
+      statusEl.textContent = 'Generating...';
+      try {
+        const resp = await fetch('{% url "blog:generate" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+          },
+          body: JSON.stringify({ prompt }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          statusEl.textContent = data.error || 'AI request failed.';
+          return;
+        }
+        setTitle(data.title);
+        setSlug(data.slug);
+        setSeoTitle(data.seo_title);
+        setContent(data.body_html);
+        setSeoDescription(data.seo_description);
+        setAiImageUrl(data.image_url);
+        statusEl.textContent = 'Draft applied.';
+      } catch (err) {
+        statusEl.textContent = 'Error contacting AI.';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    if (btn) {
+      btn.addEventListener('click', generateDraft);
+    }
+
+    aiTabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => switchAITab(btn.dataset.tab));
+    });
+
+    sideTabs.forEach((btn) => {
+      btn.addEventListener('click', () => switchSideTab(btn.dataset.tab));
+    });
+
+    fills.forEach((fill) => {
+      fill.addEventListener('click', () => {
+        const text = fill.dataset.text || '';
+        promptEl.value = text;
+        switchAITab('prompt');
+        promptEl.focus();
+      });
+    });
+
+    async function loadIdeas() {
+      if (!ideasList || !ideasStatus) return;
+      ideasStatus.textContent = 'Fetching trend ideas...';
+      ideasList.innerHTML = '';
+      try {
+        const resp = await fetch('{% url "blog:ideas" %}');
+        const data = await resp.json();
+        if (!resp.ok) {
+          ideasStatus.textContent = data.error || 'Could not load ideas.';
+          return;
+        }
+        const ideas = Array.isArray(data.ideas) ? data.ideas : [];
+        if (!ideas.length) {
+          ideasStatus.textContent = 'No ideas returned.';
+          return;
+        }
+        ideasList.innerHTML = '';
+        ideas.forEach((idea) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'w-full text-left px-3 py-2 rounded-lg border text-sm ai-fill ai-quick';
+          btn.style.borderColor = '#dfecee';
+          btn.dataset.text = idea;
+          btn.textContent = idea;
+          btn.addEventListener('click', () => {
+            promptEl.value = buildPromptFromIdea(idea);
+            switchAITab('prompt');
+            promptEl.focus();
+          });
+          ideasList.appendChild(btn);
+        });
+        ideasStatus.textContent = 'Tap an idea to seed the prompt.';
+        ideasLoaded = true;
+      } catch (err) {
+        ideasStatus.textContent = 'Error loading ideas.';
+      }
+    }
+
+    function buildPromptFromIdea(idea) {
+      const topic = idea || 'this topic';
+      return [
+        `Write a blog post about "${topic}" aimed at a general audience.`,
+        'Include a clear intro, 3-5 subheadings, and a concise conclusion.',
+        'Use an empathetic, professional tone consistent with a psychology practice.',
+        'Return rich HTML with <p>, <h2>/<h3>, and bullet/numbered lists where useful.',
+        'Keep it around 600-800 words.',
+      ].join(' ');
+    }
+
+    if (ideasRefresh) {
+      ideasRefresh.addEventListener('click', () => {
+        ideasLoaded = false;
+        loadIdeas();
+      });
+    }
+
+    switchAITab('prompt');
+    switchSideTab('fields');
+  })();
+</script>
+{% endblock %}

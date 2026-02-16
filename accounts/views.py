@@ -112,9 +112,10 @@ class InviteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
         _user, _profile, token = _create_user_invitation(email, is_admin_flag, is_therapist_flag)
         activate_url = _activation_url(request, token)
 
-        subject = "You're invited to Lake Country Psychology"
+        site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
+        subject = f"You're invited to {site_name}"
         body = (
-            "Hi,\n\nAn account was created for you on Lake Country Psychology.\n"
+            f"Hi,\n\nAn account was created for you on {site_name}.\n"
             f"Please confirm your email and set your password here:\n{activate_url}\n\n"
             "If you did not expect this invitation, you can ignore this email."
         )
@@ -282,9 +283,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             _user, _profile, token = _create_user_invitation(email, is_admin_flag, is_therapist_flag)
             activate_url = _activation_url(request, token)
 
-            subject = "You're invited to Lake Country Psychology"
+            site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
+            subject = f"You're invited to {site_name}"
             body = (
-                "Hi,\n\nAn account was created for you on Lake Country Psychology.\n"
+                f"Hi,\n\nAn account was created for you on {site_name}.\n"
                 f"Please confirm your email and set your password here:\n{activate_url}\n\n"
                 "If you did not expect this invitation, you can ignore this email."
             )
@@ -487,6 +489,18 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 profile.save(update_fields=["accepts_new_clients", "updated_at"])
                 state = "accepting" if value else "not accepting"
                 messages.success(request, f"{profile.display_name} is now {state} new clients.")
+            return redirect("accounts:therapists")
+
+        if action == "delete_therapist":
+            profile_id = request.POST.get("profile_id")
+            profile = get_object_or_404(TherapistProfile, pk=profile_id)
+            name = profile.display_name or profile.user.email or "therapist"
+            user = profile.user
+            therapist_group = Group.objects.filter(name="therapist").first()
+            profile.delete()
+            if therapist_group:
+                user.groups.remove(therapist_group)
+            messages.success(request, f"Deleted therapist profile for {name}.")
             return redirect("accounts:therapists")
 
         if action == "create_profile":

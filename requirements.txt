@@ -8,6 +8,8 @@ django-environ==0.11.2
 requests==2.32.3
 beautifulsoup4==4.12.3
 defusedxml==0.7.1
+azure-communication-email==1.0.0
+django-tinymce==4.0.0
 django-ckeditor==6.7.1
 Pillow==10.4.0
 django-storages[boto3]==1.14.4

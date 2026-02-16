@@ -38,9 +38,20 @@ CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 # SEO / Site
 # Public site base URL, e.g. https://www.yourdomain.com (no trailing slash)
 BASE_URL = env('BASE_URL', default='')
+# Human-friendly site name used in emails and meta tags
+SITE_NAME = env('SITE_NAME', default='L+C Psychological Services')
 # Whether robots are allowed to index. Defaults to True in production, False in DEBUG.
 ROBOTS_ALLOW = env.bool('ROBOTS_ALLOW', default=not DEBUG)
 GOOGLE_SITE_VERIFICATION = env('GOOGLE_SITE_VERIFICATION', default='')
+
+TINYMCE_DEFAULT_CONFIG = {
+    'height': 500,
+    'menubar': False,
+    'plugins': 'link lists code table paste',
+    'toolbar': 'undo redo | formatselect | bold italic underline | bullist numlist | link table | removeformat | code',
+    'statusbar': True,
+    'branding': False,
+}
 
 
 # Application definition
@@ -56,9 +67,11 @@ INSTALLED_APPS = [
     'storages',
     'ckeditor',
     'ckeditor_uploader',
+    'tinymce',
     'accounts',
     'core',
     'profiles',
+    'blog',
 ]
 
 MIDDLEWARE = [
@@ -252,8 +265,8 @@ EMAIL_BACKEND = env(
     default='django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
 )
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@lcpsych.com')
-EMAIL_HOST = env('EMAIL_HOST', default='localhost')
-EMAIL_PORT = env.int('EMAIL_PORT', default=25)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=False)
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.office365.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')

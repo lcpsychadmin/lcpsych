@@ -47,7 +47,7 @@
                                         <a target="_blank" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" class="elementor-item">Schedule Online</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2022">
-                                        <a href="/faq/" {% if request.path == '/faq/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/faq/' %}elementor-item-active{% endif %}">FAQ</a>
+                                        <a href="/blog/" {% if request.path|slice:":6" == '/blog/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path|slice:":6" == '/blog/' %}elementor-item-active{% endif %}">Blog</a>
                                     </li>
                                                                         
                                                                 </ul>
@@ -69,7 +69,7 @@
                                         <a target="_blank" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" class="elementor-item" tabindex="-1">Schedule Online</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2022">
-                                        <a href="/faq/" {% if request.path == '/faq/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/faq/' %}elementor-item-active{% endif %}" tabindex="-1">FAQ</a>
+                                        <a href="/blog/" {% if request.path|slice:":6" == '/blog/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path|slice:":6" == '/blog/' %}elementor-item-active{% endif %}" tabindex="-1">Blog</a>
                                     </li>
                                     
                                 </ul>
@@ -105,11 +105,11 @@
                                         <li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home current-menu-item page_item page-item-1393 current_page_item menu-item-1401">
                                             <a href="/" {% if request.path == '/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/' %}elementor-item-active{% endif %}">Home</a>
                                         </li>
-                                        <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2023">
+                                        <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2022">
                                             <a href="/our-team/" {% if request.path == '/our-team/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/our-team/' %}elementor-item-active{% endif %}">Our Team</a>
                                         </li>
-                                        <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2024">
-                                            <a href="/about-us/" {% if request.path == '/about-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/about-us/' %}elementor-item-active{% endif %}">About Us</a>
+                                        <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-2022">
+                                            <a href="/about-us/" {% if request.path == '/about-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/about-us/' %}elementor-item-active{% endif %}" tabindex="-1">About Us</a>
                                         </li>
                                         <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2025">
                                             <a href="/services/" aria-current="page" class="elementor-item elementor-item-anchor {% if request.path|slice:":10" == '/services/' %}elementor-item-active{% endif %}" {% if request.path|slice:":10" == '/services/' %}style="color:#3C9C64"{% endif %}>Services</a>
@@ -119,6 +119,9 @@
                                         </li>
                                         <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2027">
                                             <a href="/contact-us/" {% if request.path == '/contact-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/contact-us/' %}elementor-item-active{% endif %}">Contact Us</a>
+                                        </li>
+                                        <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2028">
+                                            <a href="/faq/" {% if request.path|slice:":5" == '/faq/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path|slice:":5" == '/faq/' %}elementor-item-active{% endif %}">FAQ</a>
                                         </li>
                                         <li class="open-off-canvas menu-item menu-item-type-custom menu-item-object-custom menu-item-2050">
                                             <a href="#open-off-canvas" class="elementor-item elementor-item-anchor">Join Our Team</a>
@@ -135,6 +138,7 @@
                                                 {% if request.user|has_group:'therapist' %}
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'profiles:profile_edit' %}">My Profile</a>
                                                 {% endif %}
+                                                <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'blog:manage' %}">Manage Blog</a>
                                                 <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:logout' %}">Sign out</a>
                                             </div>
                                         </li>
@@ -172,6 +176,9 @@
                                         </li>
                                         <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2027">
                                             <a href="/contact-us/" {% if request.path == '/contact-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/contact-us/' %}elementor-item-active{% endif %}" tabindex="-1">Contact Us</a>
+                                        </li>
+                                        <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2028">
+                                            <a href="/faq/" {% if request.path|slice:":5" == '/faq/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path|slice:":5" == '/faq/' %}elementor-item-active{% endif %}" tabindex="-1">FAQ</a>
                                         </li>
                                         <li class="open-off-canvas menu-item menu-item-type-custom menu-item-object-custom menu-item-2050">
                                             <a href="#open-off-canvas" class="elementor-item elementor-item-anchor" tabindex="-1">Join Our Team</a>
@@ -310,6 +317,9 @@
                                         <a class="elementor-item" href="{% url 'profiles:profile_edit' %}" tabindex="-1">My Profile</a>
                                     </li>
                                     {% endif %}
+                                    <li class="menu-item menu-item-type-custom menu-item-object-custom">
+                                        <a class="elementor-item" href="{% url 'blog:manage' %}" tabindex="-1">Manage Blog</a>
+                                    </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-auth">
                                         <a class="elementor-item" href="{% url 'accounts:logout' %}" tabindex="-1">Sign out</a>
                                     </li>

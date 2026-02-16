@@ -115,8 +115,11 @@
           {% if p.photo %}
             <img src="{{ p.photo.url }}" alt="{{ p.display_name }}" class="h-52 w-full object-cover" loading="lazy" />
           {% else %}
-            <div class="h-52 w-full bg-gradient-to-br from-[#005F6B] to-[#92DCE5] flex items-center justify-center text-white text-xl font-semibold text-center px-6">
-              {{ p.display_name }}
+            <div class="h-52 w-full bg-gradient-to-br from-[#005F6B] to-[#92DCE5] flex items-center justify-center text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="Therapist silhouette" class="w-16 h-16 drop-shadow-md">
+                <circle cx="32" cy="22" r="12" fill="rgba(255,255,255,0.9)" />
+                <path d="M16 54c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="rgba(255,255,255,0.9)" />
+              </svg>
             </div>
           {% endif %}
           <div class="p-5 flex flex-col grow gap-2">

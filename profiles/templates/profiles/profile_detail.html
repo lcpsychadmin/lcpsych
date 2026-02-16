@@ -128,7 +128,12 @@
                 {% if profile.photo %}
                   <img src="{{ profile.photo.url }}" alt="{{ profile.display_name }}" class="attachment-medium_large size-medium_large">
                 {% else %}
-                  <img src="{% static 'img/lcpsych/wp-content/uploads/2017/10/Suzi-OurTeam2-768x669.jpg' %}" alt="Therapist portrait placeholder" width="768" height="669">
+                  <div class="flex items-center justify-center bg-gradient-to-br from-[#005F6B] to-[#92DCE5]" style="width: 100%; padding: 24px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="Therapist silhouette" class="w-24 h-24">
+                      <circle cx="32" cy="22" r="12" fill="rgba(255,255,255,0.9)" />
+                      <path d="M16 54c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="rgba(255,255,255,0.9)" />
+                    </svg>
+                  </div>
                 {% endif %}
               </div>
             </div>

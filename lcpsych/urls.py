@@ -15,9 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.views.generic import TemplateView
 from django.contrib.sitemaps.views import sitemap
+from django.views.static import serve
 from core.sitemaps import StaticViewSitemap, PageSitemap, PostSitemap
 from core import views as core_views
 from django.conf import settings
@@ -26,7 +27,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('ckeditor/', include('ckeditor_uploader.urls')),
+    path('tinymce/', include('tinymce.urls')),
     path('accounts/', include('accounts.urls')),
+    path('blog/', include('blog.urls')),
     path('sitemap.xml', sitemap, {
         'sitemaps': {
             'static': StaticViewSitemap,
@@ -43,5 +46,13 @@ urlpatterns = [
     path('', include('profiles.urls')),
     path('', include('core.urls')),
 ]
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Serve media files locally whenever using the filesystem backend (helps when DEBUG=False locally)
+_default_storage = settings.STORAGES.get('default', {}) if hasattr(settings, 'STORAGES') else {}
+_is_fs_storage = _default_storage.get('BACKEND') == 'django.core.files.storage.FileSystemStorage'
+if settings.DEBUG or _is_fs_storage:
+    media_patterns = [
+        re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    ]
+    # Prepend to avoid being shadowed by catch-all routes in core.urls
+    urlpatterns = media_patterns + urlpatterns
