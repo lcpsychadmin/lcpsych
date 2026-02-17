@@ -692,14 +692,15 @@
       <details class="card-accordion">
         <summary>Published therapists</summary>
         <div class="card-surface p-6 md:p-8">
-          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Published therapists</h2>
-          {% if therapists %}
+          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Users and therapists</h2>
+          {% if user_rows %}
             <div class="overflow-x-auto">
               <table class="table-card min-w-full">
                 <thead>
                   <tr>
-                    <th class="no-wrap">Therapist</th>
+                    <th class="no-wrap">User</th>
                     <th>Email</th>
+                    <th class="no-wrap">Roles</th>
                     <th class="no-wrap">Published</th>
                     <th class="no-wrap">Accepting new clients</th>
                     <th>Last updated</th>
@@ -707,66 +708,122 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {% for therapist in therapists %}
+                  {% for row in user_rows %}
+                    {% with user=row.user profile=row.profile %}
                     <tr>
                       <td>
-                        <div class="font-semibold text-[#0f3f46]">{{ therapist.display_name|default:therapist.user.get_full_name|default:therapist.user.email }}</div>
-                        {% if therapist.license_type %}<div class="text-sm text-slate-600">{{ therapist.license_type }}</div>{% endif %}
+                        <div class="font-semibold text-[#0f3f46]">
+                          {% if profile %}
+                            {{ profile.display_name|default:user.get_full_name|default:user.email }}
+                          {% else %}
+                            {{ user.get_full_name|default:user.email }}
+                          {% endif %}
+                        </div>
+                        {% if profile and profile.license_type %}<div class="text-sm text-slate-600">{{ profile.license_type }}</div>{% endif %}
                       </td>
-                      <td class="text-sm text-slate-700">{{ therapist.user.email }}</td>
+                      <td class="text-sm text-slate-700">{{ user.email }}</td>
+                      <td class="text-sm space-x-1">
+                        {% if row.is_admin %}<span class="chip">Admin</span>{% endif %}
+                        {% if row.is_office_manager %}<span class="chip">Office Manager</span>{% endif %}
+                        {% if row.is_therapist %}<span class="chip">Therapist</span>{% endif %}
+                        {% if not row.is_admin and not row.is_office_manager and not row.is_therapist %}<span class="chip">User</span>{% endif %}
+                      </td>
                       <td>
-                        <span class="chip">
-                          <span class="status-dot {% if therapist.is_published %}is-on{% else %}is-off{% endif %}"></span>
-                          {% if therapist.is_published %}Published{% else %}Hidden{% endif %}
-                        </span>
+                        {% if profile %}
+                          <span class="chip">
+                            <span class="status-dot {% if profile.is_published %}is-on{% else %}is-off{% endif %}"></span>
+                            {% if profile.is_published %}Published{% else %}Hidden{% endif %}
+                          </span>
+                        {% else %}
+                          <span class="text-sm text-slate-500">—</span>
+                        {% endif %}
                       </td>
                       <td>
-                        <span class="chip">
-                          <span class="status-dot {% if therapist.accepts_new_clients %}is-on{% else %}is-off{% endif %}"></span>
-                          {% if therapist.accepts_new_clients %}Accepting{% else %}Not accepting{% endif %}
-                        </span>
+                        {% if profile %}
+                          <span class="chip">
+                            <span class="status-dot {% if profile.accepts_new_clients %}is-on{% else %}is-off{% endif %}"></span>
+                            {% if profile.accepts_new_clients %}Accepting{% else %}Not accepting{% endif %}
+                          </span>
+                        {% else %}
+                          <span class="text-sm text-slate-500">—</span>
+                        {% endif %}
                       </td>
-                      <td class="text-sm text-slate-600">{{ therapist.updated_at|date:"M j, Y" }}</td>
+                      <td class="text-sm text-slate-600">
+                        {% if profile %}
+                          {{ profile.updated_at|date:"M j, Y" }}
+                        {% else %}
+                          {{ user.date_joined|date:"M j, Y" }}
+                        {% endif %}
+                      </td>
                       <td class="space-y-2">
-                        <form method="post" class="inline">
-                          {% csrf_token %}
-                          <input type="hidden" name="action" value="set_publish">
-                          <input type="hidden" name="profile_id" value="{{ therapist.id }}">
-                          <input type="hidden" name="value" value="{% if therapist.is_published %}0{% else %}1{% endif %}">
-                          <button type="submit" class="action-btn">
-                            {% if therapist.is_published %}Hide profile{% else %}Publish profile{% endif %}
-                          </button>
-                        </form>
-                        <form method="post" class="inline">
-                          {% csrf_token %}
-                          <input type="hidden" name="action" value="set_accepts">
-                          <input type="hidden" name="profile_id" value="{{ therapist.id }}">
-                          <input type="hidden" name="value" value="{% if therapist.accepts_new_clients %}0{% else %}1{% endif %}">
-                          <button type="submit" class="action-btn">
-                            {% if therapist.accepts_new_clients %}Pause intake{% else %}Accept clients{% endif %}
-                          </button>
-                        </form>
-                        <form method="post" class="inline">
-                          {% csrf_token %}
-                          <input type="hidden" name="action" value="reset_password">
-                          <input type="hidden" name="profile_id" value="{{ therapist.id }}">
-                          <button type="submit" class="action-btn">Send reset link</button>
-                        </form>
-                        <a class="action-btn inline-flex items-center gap-1" href="{% url 'accounts:therapist_edit' therapist.id %}">Edit profile</a>
-                        <form method="post" class="inline" onsubmit="return confirm('Delete this therapist profile? This will remove their profile and therapist role.');">
-                          {% csrf_token %}
-                          <input type="hidden" name="action" value="delete_therapist">
-                          <input type="hidden" name="profile_id" value="{{ therapist.id }}">
-                          <button type="submit" class="action-btn">Delete therapist</button>
-                        </form>
+                        {% if profile %}
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="set_publish">
+                            <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                            <input type="hidden" name="value" value="{% if profile.is_published %}0{% else %}1{% endif %}">
+                            <button type="submit" class="action-btn">
+                              {% if profile.is_published %}Hide profile{% else %}Publish profile{% endif %}
+                            </button>
+                          </form>
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="set_accepts">
+                            <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                            <input type="hidden" name="value" value="{% if profile.accepts_new_clients %}0{% else %}1{% endif %}">
+                            <button type="submit" class="action-btn">
+                              {% if profile.accepts_new_clients %}Pause intake{% else %}Accept clients{% endif %}
+                            </button>
+                          </form>
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reset_password">
+                            <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                            <button type="submit" class="action-btn">Send reset link</button>
+                          </form>
+                          <a class="action-btn inline-flex items-center gap-1" href="{% url 'accounts:therapist_edit' profile.id %}">Edit profile</a>
+                          <form method="post" class="inline" onsubmit="return confirm('Delete this therapist profile? This will remove their profile and therapist role.');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete_therapist">
+                            <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                            <button type="submit" class="action-btn">Delete therapist</button>
+                          </form>
+                        {% elif row.is_therapist %}
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="create_profile">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="action-btn">Create profile</button>
+                          </form>
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reset_password_user">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="action-btn">Send reset link</button>
+                          </form>
+                        {% else %}
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reset_password_user">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="action-btn">Send reset link</button>
+                          </form>
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="create_profile">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="action-btn">Make therapist</button>
+                          </form>
+                        {% endif %}
                       </td>
                     </tr>
+                    {% endwith %}
                   {% endfor %}
                 </tbody>
               </table>
             </div>
           {% else %}
-            <p class="text-slate-600 m-0">No therapist profiles found yet.</p>
+            <p class="text-slate-600 m-0">No users found.</p>
           {% endif %}
         </div>
       </details>

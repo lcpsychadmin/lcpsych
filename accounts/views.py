@@ -153,6 +153,35 @@ class InviteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
 class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "accounts/manage_therapists.html"
 
+    def _send_password_reset(self, request: HttpRequest, user: User) -> HttpResponse:
+        EmailConfirmation.objects.filter(user=user, used_at__isnull=True).delete()
+        token = EmailConfirmation.generate_token()
+        EmailConfirmation.objects.create(user=user, token=token)
+        activate_url = _activation_url(request, token)
+
+        site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
+        subject = f"Reset your {site_name} password"
+        greeting = user.get_full_name() or user.email or "there"
+        body = (
+            f"Hi {greeting},\n\n"
+            f"An admin requested a password reset for your {site_name} account.\n"
+            f"Set a new password here:\n{activate_url}\n\n"
+            "If you did not expect this reset, contact your admin."
+        )
+
+        try:
+            send_mail(subject, body, getattr(settings, "DEFAULT_FROM_EMAIL", None), [user.email], fail_silently=False)
+            messages.success(request, f"Password reset link sent to {user.email}.")
+        except Exception:
+            if not settings.DEBUG:
+                raise
+            messages.success(request, f"Password reset link ready for {user.email}.")
+
+        redirect_url = reverse("accounts:therapists")
+        if settings.DEBUG:
+            redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(user.email)}"
+        return redirect(redirect_url)
+
     def test_func(self):
         return is_admin(self.request.user)
 
@@ -181,6 +210,24 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .prefetch_related("client_focuses")
             .order_by("last_name", "first_name", "pk")
         )
+        users_qs = (
+            User.objects.select_related("therapist_profile")
+            .prefetch_related("groups")
+            .order_by("last_name", "first_name", "email")
+        )
+        user_rows: list[dict] = []
+        for user in users_qs:
+            groups = set(user.groups.values_list("name", flat=True))
+            profile = getattr(user, "therapist_profile", None)
+            user_rows.append(
+                {
+                    "user": user,
+                    "profile": profile,
+                    "is_admin": is_admin(user),
+                    "is_office_manager": "office_manager" in groups,
+                    "is_therapist": "therapist" in groups or profile is not None,
+                }
+            )
         unassigned_users = (
             User.objects.filter(groups__name="therapist")
             .filter(therapist_profile__isnull=True)
@@ -223,6 +270,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         return {
             "invite_form": invite_form,
             "therapists": therapists,
+            "user_rows": user_rows,
             "unassigned_users": unassigned_users,
             "debug_activation_url": debug_activation_url,
             "debug_activation_email": debug_email,
@@ -516,33 +564,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(TherapistProfile, pk=profile_id)
             user = profile.user
-            EmailConfirmation.objects.filter(user=user, used_at__isnull=True).delete()
-            token = EmailConfirmation.generate_token()
-            EmailConfirmation.objects.create(user=user, token=token)
-            activate_url = _activation_url(request, token)
+            return self._send_password_reset(request, user)
 
-            site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
-            subject = f"Reset your {site_name} password"
-            greeting = user.get_full_name() or user.email or "there"
-            body = (
-                f"Hi {greeting},\n\n"
-                f"An admin requested a password reset for your {site_name} account.\n"
-                f"Set a new password here:\n{activate_url}\n\n"
-                "If you did not expect this reset, contact your admin."
-            )
-
-            try:
-                send_mail(subject, body, getattr(settings, "DEFAULT_FROM_EMAIL", None), [user.email], fail_silently=False)
-                messages.success(request, f"Password reset link sent to {user.email}.")
-            except Exception:
-                if not settings.DEBUG:
-                    raise
-                messages.success(request, f"Password reset link ready for {user.email}.")
-
-            redirect_url = reverse("accounts:therapists")
-            if settings.DEBUG:
-                redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(user.email)}"
-            return redirect(redirect_url)
+        if action == "reset_password_user":
+            user_id = request.POST.get("user_id")
+            user = get_object_or_404(User, pk=user_id)
+            return self._send_password_reset(request, user)
 
         if action == "delete_therapist":
             profile_id = request.POST.get("profile_id")
@@ -560,6 +587,8 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             user_id = request.POST.get("user_id")
             user = get_object_or_404(User, pk=user_id)
             profile, created = TherapistProfile.objects.get_or_create(user=user)
+            therapist_group, _ = Group.objects.get_or_create(name="therapist")
+            user.groups.add(therapist_group)
             if created:
                 messages.success(request, f"Profile created for {user.email}.")
             else:
