@@ -968,7 +968,7 @@ class LogoutView(View):
         next_url = request.GET.get("next")
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
-        return redirect("home")
+        return redirect("core:home")
 
     def post(self, request: HttpRequest) -> HttpResponse:
         return self.get(request)
@@ -990,4 +990,4 @@ class LoginView(DjangoLoginView):
         if is_therapist:
             return reverse("profiles:profile_edit")
 
-        return reverse("home")
+        return reverse("core:home")
