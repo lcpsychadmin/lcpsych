@@ -1,5 +1,10 @@
 from django import forms
 from django.utils.text import slugify
+import base64
+
+from django.core.files.base import ContentFile
+from django.utils import timezone
+
 from ckeditor.widgets import CKEditorWidget
 
 from core.models import PublishStatus, Service
@@ -8,6 +13,7 @@ from .models import ClientFocus, LicenseType, TherapistProfile
 
 
 class TherapistProfileForm(forms.ModelForm):
+    cropped_photo_data = forms.CharField(required=False, widget=forms.HiddenInput())
     slug = forms.SlugField(
         required=False,
         label="Profile slug",
@@ -93,6 +99,38 @@ class TherapistProfileForm(forms.ModelForm):
 
         return top_services
 
+    def _apply_cropped_photo(self, instance):
+        data_url = (self.cleaned_data.get("cropped_photo_data") or "").strip()
+        if not data_url or "," not in data_url:
+            return
+
+        header, encoded = data_url.split(",", 1)
+        if not encoded:
+            return
+
+        ext = "jpg"
+        if "png" in header:
+            ext = "png"
+        elif "webp" in header:
+            ext = "webp"
+
+        try:
+            decoded = base64.b64decode(encoded)
+        except Exception:
+            return
+
+        slug_part = instance.slug or getattr(instance.user, "username", "profile") or "profile"
+        timestamp = int(timezone.now().timestamp())
+        filename = f"{slug_part}-{timestamp}.{ext}"
+        instance.photo.save(filename, ContentFile(decoded), save=False)
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        self._apply_cropped_photo(instance)
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 class AdminTherapistProfileForm(TherapistProfileForm):
     class Meta(TherapistProfileForm.Meta):

@@ -34,7 +34,13 @@
 .profile-editor .django-ckeditor-widget iframe {
   width: 100% !important;
 }
+.cropper-container {
+  max-width: 340px;
+  border-radius: 12px;
+  overflow: hidden;
+}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
 {% endblock %}
 
 {% block content %}
@@ -136,11 +142,13 @@
             <div class="field-wrapper">
               <label for="id_photo">Photo</label>
               {{ form.photo }}
-              {% if profile.photo %}
-                <div class="mt-3">
-                  <img src="{{ profile.photo.url }}" alt="{{ profile.display_name }}" class="photo-preview">
+              {{ form.cropped_photo_data }}
+              <div class="rounded-xl border border-[#BEE3DB] bg-[#F7FCFB] p-3 space-y-2 mt-2">
+                <div class="text-xs text-slate-600">Crop to 4:5. Drag to reposition; scroll or pinch to zoom.</div>
+                <div class="cropper-container bg-white shadow-inner">
+                  <img id="admin-photo-preview" src="{% if profile.photo %}{{ profile.photo.url }}{% endif %}" alt="Photo preview" class="w-full h-full{% if not profile.photo %} hidden{% endif %}">
                 </div>
-              {% endif %}
+              </div>
               {% if form.photo.errors %}<div class="error-text">{{ form.photo.errors|striptags }}</div>{% endif %}
             </div>
           </div>
@@ -180,4 +188,36 @@
 
 {% block before_footer %}
   <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
+{% endblock %}
+
+{% block body_extra %}
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<script>
+(function() {
+  const fileInput = document.getElementById('id_photo');
+  const cropInput = document.getElementById('id_cropped_photo_data');
+  const img = document.getElementById('admin-photo-preview');
+  const form = document.querySelector('form.profile-editor');
+  if (!fileInput || !cropInput || !img || !form) return;
+
+  let cropper = img && !img.classList.contains('hidden') ? new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 }) : null;
+
+  fileInput.addEventListener('change', (event) => {
+    const [file] = event.target.files || [];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    img.classList.remove('hidden');
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 });
+  });
+
+  form.addEventListener('submit', () => {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas({ width: 800, height: 1000, fillColor: '#ffffff' });
+    if (!canvas) return;
+    cropInput.value = canvas.toDataURL('image/jpeg', 0.9);
+  });
+})();
+</script>
 {% endblock %}
