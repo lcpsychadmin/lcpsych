@@ -524,7 +524,7 @@
               {% if therapist.accepts_new_clients %}Accepting New Clients{% else %}Waitlist Only{% endif %}
             </span>
             <a class="service-therapist-card__cta" href="{% url 'profiles:profile_detail' profile.slug %}">View Profile</a>
-            <a class="service-therapist-card__cta service-therapist-card__cta--secondary" href="{% url 'core:appointments' %}">Schedule Now</a>
+            <a class="service-therapist-card__cta service-therapist-card__cta--secondary" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" data-schedule-trigger>Schedule Now</a>
           </div>
         </article>
         {% endwith %}

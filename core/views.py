@@ -218,31 +218,6 @@ def faq(request):
 	return render(request, 'pages/faq.html', context)
 
 
-def appointments(request):
-	portal_base = getattr(settings, "THERAPY_PORTAL_BASE_URL", "https://www.therapyportal.com/p/lcpsych41042").rstrip("/")
-	availability_url = f"{portal_base}/appointments/availability/"
-	request_base = f"{portal_base}/appointments/requests/"
-
-	new_patient_params = {
-		"isExistingPatient": "false",
-	}
-	new_patient_availability_url = f"{availability_url}?{urlencode(new_patient_params)}"
-
-	context = {
-		**_static_seo_context(
-			'appointments',
-			'Schedule an Appointment | L+C Psych',
-			'Choose your clinician and request a time online. Existing clients can head straight to the client portal.',
-			'Appointments',
-		),
-		"portal_base": portal_base,
-		"availability_url": availability_url,
-		"new_patient_availability_url": new_patient_availability_url,
-		"request_base_url": request_base,
-	}
-	return render(request, 'pages/appointments.html', context)
-
-
 def service_detail(request, slug: str):
 	service = get_object_or_404(
 		Service.objects.select_related('page').prefetch_related(

@@ -124,7 +124,7 @@
                                                             --gf-field-pg-steps-number-color: rgba(17, 35, 55, 0.8);
                                                         }
                                                         </style>
-                                                        <form method="post" action="{% url 'join_our_team' %}" enctype="multipart/form-data" class="space-y-4">
+                                                        <form method="post" action="{% url 'core:join_our_team' %}" enctype="multipart/form-data" class="space-y-4">
                                                             {% csrf_token %}
                                                             <input type="hidden" name="next" value="{{ request.path }}">
                                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
