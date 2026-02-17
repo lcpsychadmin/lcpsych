@@ -210,7 +210,7 @@ class Service(Timestamped):
 		return self.image_url or ""
 
 	def get_absolute_url(self) -> str:
-		return reverse("service_detail", args=[self.slug])
+		return reverse("core:service_detail", args=[self.slug])
 
 
 class FeeCategory(models.TextChoices):
