@@ -2,6 +2,8 @@ from django.urls import path, re_path
 from . import views
 from .feeds import LatestPostsFeed
 
+app_name = "core"
+
 urlpatterns = [
     path('', views.home, name='home'),
     path('_preview/', views.import_preview, name='import_preview'),
@@ -14,6 +16,7 @@ urlpatterns = [
     path('insurance/', views.insurance, name='insurance'),
     path('contact-us/', views.contact_us, name='contact_us'),
     path('faq/', views.faq, name='faq'),
+    path('appointments/', views.appointments, name='appointments'),
     path('join-our-team/', views.join_our_team, name='join_our_team'),
     path('services/<slug:slug>/', views.service_detail, name='service_detail'),
     # Local stubs for WordPress endpoints referenced by copied scripts

@@ -44,7 +44,7 @@
                                         <a href="tel:8595254911" class="elementor-item">Call Us</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-1432">
-                                        <a target="_blank" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" class="elementor-item">Schedule Online</a>
+                                        <a href="{% url 'core:appointments' %}" class="elementor-item">Schedule Online</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2022">
                                         <a href="/blog/" {% if request.path|slice:":6" == '/blog/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path|slice:":6" == '/blog/' %}elementor-item-active{% endif %}">Blog</a>
@@ -66,7 +66,7 @@
                                         <a href="tel:8595254911" class="elementor-item" tabindex="-1">Call Us</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-1432">
-                                        <a target="_blank" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" class="elementor-item" tabindex="-1">Schedule Online</a>
+                                        <a href="{% url 'core:appointments' %}" class="elementor-item" tabindex="-1">Schedule Online</a>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2022">
                                         <a href="/blog/" {% if request.path|slice:":6" == '/blog/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path|slice:":6" == '/blog/' %}elementor-item-active{% endif %}" tabindex="-1">Blog</a>
