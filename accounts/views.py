@@ -571,16 +571,32 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             user = get_object_or_404(User, pk=user_id)
             return self._send_password_reset(request, user)
 
+        if action == "delete_user":
+            user_id = request.POST.get("user_id")
+            user = get_object_or_404(User, pk=user_id)
+            if is_admin(user):
+                messages.error(request, "Admins cannot be deleted here.")
+                return redirect("accounts:therapists")
+            email = user.email or "user"
+            user.delete()
+            messages.success(request, f"Deleted {email}.")
+            return redirect("accounts:therapists")
+
         if action == "delete_therapist":
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(TherapistProfile, pk=profile_id)
             name = profile.display_name or profile.user.email or "therapist"
             user = profile.user
+            if is_admin(user):
+                messages.error(request, "Admins cannot be deleted here.")
+                return redirect("accounts:therapists")
             therapist_group = Group.objects.filter(name="therapist").first()
             profile.delete()
             if therapist_group:
                 user.groups.remove(therapist_group)
-            messages.success(request, f"Deleted therapist profile for {name}.")
+            user.is_active = False
+            user.save(update_fields=["is_active", "updated_at"] if hasattr(user, "updated_at") else ["is_active"])
+            messages.success(request, f"Deleted therapist profile for {name} and deactivated their account.")
             return redirect("accounts:therapists")
 
         if action == "create_profile":
