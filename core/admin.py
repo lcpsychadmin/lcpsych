@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
 from django.conf import settings
-from .models import Page, Post, Category, Tag, Service, PaymentFeeRow, FAQItem
+from .models import Page, Post, Category, Tag, Service, PaymentFeeRow, FAQItem, JoinOurTeamSubmission
 from ckeditor.widgets import CKEditorWidget
 class PageAdminForm(forms.ModelForm):
     class Meta:
@@ -201,6 +201,14 @@ class PostAdmin(admin.ModelAdmin):
             obj.published_at = now
         obj.modified_at = now
         super().save_model(request, obj, form, change)
+
+
+@admin.register(JoinOurTeamSubmission)
+class JoinOurTeamSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "email", "created", "is_reviewed")
+    list_filter = ("is_reviewed", "created")
+    search_fields = ("first_name", "last_name", "email", "message")
+    readonly_fields = ("created", "updated", "reviewed_at", "user_agent")
 
 
 @admin.register(Service)

@@ -1,12 +1,14 @@
-from django.shortcuts import render, get_object_or_404
+from django.contrib import messages
 from django.db.models import Q
-from django.utils.safestring import mark_safe
 from django.http import HttpResponse, Http404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.template.loader import select_template
 import re
 from pathlib import Path
+from .forms import JoinOurTeamForm
 from .models import Page, Post, PublishStatus, Service, StaticPageSEO, ContactInfo
 from profiles.models import TherapistProfile
 
@@ -372,6 +374,22 @@ def post_detail(request, slug: str):
 		'lastmod_iso': lastmod_iso,
 	}
 	return HttpResponse(tpl.render(ctx, request))
+
+
+@require_POST
+def join_our_team(request):
+	"""Persist Join Our Team submissions and bounce back with a flash message."""
+	form = JoinOurTeamForm(request.POST, request.FILES)
+	if form.is_valid():
+		submission = form.save(commit=False)
+		submission.user_agent = request.META.get("HTTP_USER_AGENT", "")
+		submission.save()
+		messages.success(request, "Thanks for reaching out—your info was received.")
+	else:
+		messages.error(request, "Please check your details and try again.")
+
+	redirect_target = request.POST.get("next") or request.META.get("HTTP_REFERER") or "/"
+	return redirect(redirect_target)
 
 
 def search(request):

@@ -43,6 +43,7 @@ from core.models import (
     CompanyQuote,
     ContactInfo,
     StaticPageSEO,
+    JoinOurTeamSubmission,
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
@@ -52,10 +53,15 @@ def is_admin(user: User) -> bool:
     return user.is_superuser or user.groups.filter(name="admin").exists()
 
 
+def is_office_manager(user: User) -> bool:
+    return user.groups.filter(name="office_manager").exists()
+
+
 def _create_user_invitation(
     email: str,
     is_admin_flag: bool,
     is_therapist_flag: bool,
+    is_office_manager_flag: bool,
 ) -> tuple[User, TherapistProfile | None, str]:
     normalized_email = email.lower()
     user, _ = User.objects.get_or_create(
@@ -69,10 +75,13 @@ def _create_user_invitation(
 
     admin_group, _ = Group.objects.get_or_create(name="admin")
     therapist_group, _ = Group.objects.get_or_create(name="therapist")
+    office_manager_group, _ = Group.objects.get_or_create(name="office_manager")
     if is_admin_flag:
         user.groups.add(admin_group)
     if is_therapist_flag:
         user.groups.add(therapist_group)
+    if is_office_manager_flag:
+        user.groups.add(office_manager_group)
 
     therapist_profile = None
     if is_therapist_flag:
@@ -108,8 +117,14 @@ class InviteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
         email = form.cleaned_data["email"].lower()
         is_admin_flag = form.cleaned_data["is_admin"]
         is_therapist_flag = form.cleaned_data["is_therapist"]
+        is_office_manager_flag = form.cleaned_data.get("is_office_manager", False)
 
-        _user, _profile, token = _create_user_invitation(email, is_admin_flag, is_therapist_flag)
+        _user, _profile, token = _create_user_invitation(
+            email,
+            is_admin_flag,
+            is_therapist_flag,
+            is_office_manager_flag,
+        )
         activate_url = _activation_url(request, token)
 
         site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
@@ -280,7 +295,13 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             email = form.cleaned_data["email"].lower()
             is_admin_flag = form.cleaned_data["is_admin"]
             is_therapist_flag = form.cleaned_data["is_therapist"]
-            _user, _profile, token = _create_user_invitation(email, is_admin_flag, is_therapist_flag)
+            is_office_manager_flag = form.cleaned_data.get("is_office_manager", False)
+            _user, _profile, token = _create_user_invitation(
+                email,
+                is_admin_flag,
+                is_therapist_flag,
+                is_office_manager_flag,
+            )
             activate_url = _activation_url(request, token)
 
             site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
@@ -491,6 +512,38 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 messages.success(request, f"{profile.display_name} is now {state} new clients.")
             return redirect("accounts:therapists")
 
+        if action == "reset_password":
+            profile_id = request.POST.get("profile_id")
+            profile = get_object_or_404(TherapistProfile, pk=profile_id)
+            user = profile.user
+            EmailConfirmation.objects.filter(user=user, used_at__isnull=True).delete()
+            token = EmailConfirmation.generate_token()
+            EmailConfirmation.objects.create(user=user, token=token)
+            activate_url = _activation_url(request, token)
+
+            site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
+            subject = f"Reset your {site_name} password"
+            greeting = user.get_full_name() or user.email or "there"
+            body = (
+                f"Hi {greeting},\n\n"
+                f"An admin requested a password reset for your {site_name} account.\n"
+                f"Set a new password here:\n{activate_url}\n\n"
+                "If you did not expect this reset, contact your admin."
+            )
+
+            try:
+                send_mail(subject, body, getattr(settings, "DEFAULT_FROM_EMAIL", None), [user.email], fail_silently=False)
+                messages.success(request, f"Password reset link sent to {user.email}.")
+            except Exception:
+                if not settings.DEBUG:
+                    raise
+                messages.success(request, f"Password reset link ready for {user.email}.")
+
+            redirect_url = reverse("accounts:therapists")
+            if settings.DEBUG:
+                redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(user.email)}"
+            return redirect(redirect_url)
+
         if action == "delete_therapist":
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(TherapistProfile, pk=profile_id)
@@ -515,6 +568,129 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         messages.error(request, "Unsupported action.")
         return redirect("accounts:therapists")
+
+
+class ManageJoinSubmissionsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "accounts/manage_join_submissions.html"
+
+    def test_func(self):
+        user = self.request.user
+        return is_admin(user) or is_office_manager(user)
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        submissions = (
+            JoinOurTeamSubmission.objects.filter(is_reviewed=False)
+            .select_related("reviewed_by")
+            .order_by("-created")
+        )
+        forward_users_queryset = (
+            User.objects.filter(is_active=True, groups__name__in=["admin", "office_manager", "therapist"])
+            .select_related("therapist_profile")
+            .order_by("last_name", "first_name", "email")
+            .distinct()
+        )
+
+        forward_users: list[dict] = []
+        for user in forward_users_queryset:
+            if not user.email:
+                continue
+
+            profile = getattr(user, "therapist_profile", None)
+            salutation = (profile.salutation if profile else "") or ""
+            first_name = (profile.first_name if profile else user.first_name) or ""
+            last_name = (profile.last_name if profile else user.last_name) or ""
+
+            parts = [p.strip() for p in (salutation, first_name, last_name) if p and p.strip()]
+            label = " ".join(parts).strip()
+            if not label:
+                label = (user.get_full_name() or "").strip()
+            if not label:
+                label = user.email.strip()
+
+            forward_users.append({
+                "id": user.id,
+                "email": user.email.strip(),
+                "label": label,
+            })
+        return render(
+            request,
+            self.template_name,
+            {
+                "submissions": submissions,
+                "forward_users": forward_users,
+            },
+        )
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        action = request.POST.get("action")
+        submission_id = request.POST.get("submission_id")
+        submission = get_object_or_404(JoinOurTeamSubmission, pk=submission_id)
+
+        if action == "mark_reviewed":
+            submission.is_reviewed = True
+            submission.reviewed_at = timezone.now()
+            submission.reviewed_by = request.user
+            submission.save(update_fields=["is_reviewed", "reviewed_at", "reviewed_by", "updated"])
+            messages.success(request, f"Marked {submission.full_name} as reviewed.")
+        elif action == "forward":
+            target_email = (request.POST.get("target_email") or "").strip().lower()
+            note = (request.POST.get("note") or "").strip()
+            mark_reviewed_flag = request.POST.get("mark_reviewed_after_forward") == "1"
+            target_user_id = request.POST.get("target_user_id")
+
+            if not target_email and target_user_id:
+                user_candidate = User.objects.filter(pk=target_user_id, is_active=True).first()
+                if user_candidate and user_candidate.email:
+                    target_email = user_candidate.email.strip().lower()
+            if not target_email:
+                messages.error(request, "Add an email to forward this submission.")
+                return redirect("accounts:join_submissions")
+
+            resume_url = ""
+            try:
+                if submission.resume:
+                    resume_url = request.build_absolute_uri(submission.resume.url)
+            except Exception:
+                resume_url = ""
+
+            subject = f"Join Our Team submission from {submission.full_name}"
+            lines = [
+                f"Name: {submission.full_name}",
+                f"Email: {submission.email}",
+                "",
+                "Message:",
+                submission.message,
+            ]
+            if resume_url:
+                lines.extend(["", f"Resume: {resume_url}"])
+            if note:
+                lines.extend(["", f"Forwarded note: {note}"])
+            body = "\n".join(lines)
+
+            try:
+                send_mail(
+                    subject,
+                    body,
+                    getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                    [target_email],
+                    fail_silently=False,
+                )
+                messages.success(request, f"Forwarded to {target_email}.")
+            except Exception:
+                if not settings.DEBUG:
+                    raise
+                messages.success(request, f"Forward prepared for {target_email} (email send skipped in DEBUG).")
+
+            if mark_reviewed_flag:
+                submission.is_reviewed = True
+                submission.reviewed_at = timezone.now()
+                submission.reviewed_by = request.user
+                submission.save(update_fields=["is_reviewed", "reviewed_at", "reviewed_by", "updated"])
+                messages.success(request, "Marked as reviewed after forwarding.")
+        else:
+            messages.error(request, "Unsupported action.")
+
+        return redirect("accounts:join_submissions")
 
 
 class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):

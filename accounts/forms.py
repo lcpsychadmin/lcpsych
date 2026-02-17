@@ -22,6 +22,7 @@ class InviteUserForm(forms.Form):
     email = forms.EmailField()
     is_admin = forms.BooleanField(required=False, initial=False, label="Admin role")
     is_therapist = forms.BooleanField(required=False, initial=True, label="Therapist role")
+    is_office_manager = forms.BooleanField(required=False, initial=False, label="Office Manager role")
 
 
 class ActivationSetPasswordForm(DjangoSetPasswordForm):

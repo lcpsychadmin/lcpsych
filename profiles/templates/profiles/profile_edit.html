@@ -46,6 +46,21 @@
       {{ form.media }}
   <form method="post" enctype="multipart/form-data" class="profile-editor bg-white rounded-2xl ring-1 ring-[#BEE3DB] shadow p-6 md:p-8 space-y-6">
         {% csrf_token %}
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <p class="font-semibold text-[#0f3f46] m-0">Need a new password?</p>
+            <p class="text-slate-600 text-sm mt-1 mb-0">We’ll email you a link to set a fresh password.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="submit" name="action" value="reset_password" class="action-btn">Email reset link</button>
+          </div>
+        </div>
+        {% if debug_activation_url %}
+          <div class="rounded-xl border border-[#BEE3DB] bg-[#F7FCFB] p-3 text-sm text-slate-700">
+            <div class="font-semibold text-[#0f3f46]">Debug reset link{% if debug_email %} for {{ debug_email }}{% endif %}</div>
+            <div class="mt-1 break-all">{{ debug_activation_url }}</div>
+          </div>
+        {% endif %}
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <label class="block text-sm font-medium mb-1">Salutation</label>

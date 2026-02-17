@@ -14,6 +14,7 @@ urlpatterns = [
     path('insurance/', views.insurance, name='insurance'),
     path('contact-us/', views.contact_us, name='contact_us'),
     path('faq/', views.faq, name='faq'),
+    path('join-our-team/', views.join_our_team, name='join_our_team'),
     path('services/<slug:slug>/', views.service_detail, name='service_detail'),
     # Local stubs for WordPress endpoints referenced by copied scripts
     path('__stub/wp-admin/admin-ajax.php', views.wp_admin_ajax_stub, name='wp_admin_ajax_stub'),

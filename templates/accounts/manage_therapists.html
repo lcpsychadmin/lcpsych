@@ -746,6 +746,12 @@
                             {% if therapist.accepts_new_clients %}Pause intake{% else %}Accept clients{% endif %}
                           </button>
                         </form>
+                        <form method="post" class="inline">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="reset_password">
+                          <input type="hidden" name="profile_id" value="{{ therapist.id }}">
+                          <button type="submit" class="action-btn">Send reset link</button>
+                        </form>
                         <a class="action-btn inline-flex items-center gap-1" href="{% url 'accounts:therapist_edit' therapist.id %}">Edit profile</a>
                         <form method="post" class="inline" onsubmit="return confirm('Delete this therapist profile? This will remove their profile and therapist role.');">
                           {% csrf_token %}

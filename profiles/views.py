@@ -1,8 +1,15 @@
+from urllib.parse import quote as urlquote
+
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
+from accounts.models import EmailConfirmation
 from .forms import TherapistProfileForm
 from .models import TherapistProfile
 
@@ -34,6 +41,8 @@ def profile_detail(request: HttpRequest, slug: str) -> HttpResponse:
 @login_required
 @user_passes_test(is_therapist_or_admin)
 def profile_edit(request: HttpRequest) -> HttpResponse:
+    debug_activation_url = request.GET.get("activation_url", "") if settings.DEBUG else ""
+    debug_email = request.GET.get("email", "") if settings.DEBUG else ""
     profile, _ = TherapistProfile.objects.get_or_create(
         user=request.user,
         defaults={
@@ -44,6 +53,43 @@ def profile_edit(request: HttpRequest) -> HttpResponse:
     )
 
     if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "reset_password":
+            EmailConfirmation.objects.filter(user=request.user, used_at__isnull=True).delete()
+            token = EmailConfirmation.generate_token()
+            EmailConfirmation.objects.create(user=request.user, token=token)
+            activate_path = reverse("accounts:activate", args=[token])
+            base_url = getattr(settings, "BASE_URL", "").rstrip("/")
+            activate_url = f"{base_url}{activate_path}" if base_url else request.build_absolute_uri(activate_path)
+
+            site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
+            subject = f"Reset your {site_name} password"
+            greeting = request.user.get_full_name() or request.user.email or "there"
+            body = (
+                f"Hi {greeting},\n\n"
+                f"Use this link to set a new password for your {site_name} account:\n{activate_url}\n\n"
+                "If you did not request this reset, you can ignore this email."
+            )
+
+            try:
+                send_mail(
+                    subject,
+                    body,
+                    getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                    [request.user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, f"Password reset link sent to {request.user.email}.")
+            except Exception:
+                if not settings.DEBUG:
+                    raise
+                messages.success(request, f"Password reset link ready for {request.user.email}.")
+
+            redirect_url = reverse("profiles:profile_edit")
+            if settings.DEBUG:
+                redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(request.user.email)}"
+            return redirect(redirect_url)
+
         form = TherapistProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             profile = form.save(commit=False)
@@ -54,7 +100,16 @@ def profile_edit(request: HttpRequest) -> HttpResponse:
     else:
         form = TherapistProfileForm(instance=profile)
 
-    return render(request, "profiles/profile_edit.html", {"form": form, "profile": profile})
+    return render(
+        request,
+        "profiles/profile_edit.html",
+        {
+            "form": form,
+            "profile": profile,
+            "debug_activation_url": debug_activation_url,
+            "debug_email": debug_email,
+        },
+    )
 
 
 def profiles_list(request: HttpRequest) -> HttpResponse:

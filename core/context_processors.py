@@ -11,6 +11,7 @@ from .models import (
     InspirationalQuote,
     CompanyQuote,
     ContactInfo,
+    JoinOurTeamSubmission,
 )
 
 
@@ -154,3 +155,17 @@ def contact(request):
     return {
         'contact_info': contact_info,
     }
+
+
+def join_submissions_counts(request):
+    """Expose new Join Our Team submissions count for authorized users."""
+
+    user = getattr(request, 'user', None)
+    if not user or not user.is_authenticated:
+        return {'join_submissions_new_count': 0}
+
+    if not (user.is_superuser or user.groups.filter(name__in=["admin", "office_manager"]).exists()):
+        return {'join_submissions_new_count': 0}
+
+    count = JoinOurTeamSubmission.objects.filter(is_reviewed=False).count()
+    return {'join_submissions_new_count': count}

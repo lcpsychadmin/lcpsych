@@ -13,5 +13,6 @@ urlpatterns = [
     path("therapists/<int:pk>/edit/", views.ManageTherapistProfileView.as_view(), name="therapist_edit"),
     path("therapists/license-types/", views.ManageLicenseTypesView.as_view(), name="license_types"),
     path("therapists/client-focuses/", views.ManageClientFocusesView.as_view(), name="client_focuses"),
+    path("join-submissions/", views.ManageJoinSubmissionsView.as_view(), name="join_submissions"),
     path("activate/<str:token>/", views.ActivateView.as_view(), name="activate"),
 ]

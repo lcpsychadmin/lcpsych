@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -334,6 +335,30 @@ class ContactInfo(Timestamped):
 	class Meta:
 		verbose_name = "Contact info"
 		verbose_name_plural = "Contact info"
+
+
+class JoinOurTeamSubmission(Timestamped):
+	first_name = models.CharField(max_length=150)
+	last_name = models.CharField(max_length=150)
+	email = models.EmailField()
+	message = models.TextField()
+	resume = models.FileField(upload_to="join_our_team_resumes/")
+	user_agent = models.TextField(blank=True)
+	is_reviewed = models.BooleanField(default=False)
+	reviewed_at = models.DateTimeField(null=True, blank=True)
+	reviewed_by = models.ForeignKey(
+		settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_join_submissions"
+	)
+
+	class Meta:
+		ordering = ("-created",)
+
+	def __str__(self) -> str:
+		return f"{self.full_name} ({self.email})"
+
+	@property
+	def full_name(self) -> str:
+		return f"{self.first_name} {self.last_name}".strip()
 
 	def __str__(self) -> str:
 		return self.heading

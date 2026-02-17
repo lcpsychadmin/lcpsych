@@ -108,6 +108,7 @@ TEMPLATES = [
                 'core.context_processors.philosophy',
                 'core.context_processors.quotes',
                 'core.context_processors.contact',
+                'core.context_processors.join_submissions_counts',
             ],
         },
     },

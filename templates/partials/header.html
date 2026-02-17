@@ -135,6 +135,14 @@
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:therapists' %}">Site Settings</a>
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:seo_settings' %}">SEO Settings</a>
                                                 {% endif %}
+                                                {% if request.user|has_group:'office_manager' or request.user|has_group:'admin' or request.user.is_superuser %}
+                                                    <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:join_submissions' %}">
+                                                        <span>Join Our Team</span>
+                                                        {% if join_submissions_new_count %}
+                                                            <span class="ml-2 inline-flex items-center justify-center rounded-full bg-[#116466] text-white text-[11px] font-semibold px-2 min-w-[1.5rem]">{{ join_submissions_new_count }}</span>
+                                                        {% endif %}
+                                                    </a>
+                                                {% endif %}
                                                 {% if request.user|has_group:'therapist' %}
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'profiles:profile_edit' %}">My Profile</a>
                                                 {% endif %}
@@ -254,6 +262,14 @@
                                                                                         {% if request.user|has_group:'admin' or request.user.is_superuser %}
                                                                                             <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:therapists' %}">Site Settings</a>
                                                                                             <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:seo_settings' %}">SEO Settings</a>
+                                                                                        {% endif %}
+                                                                                        {% if request.user|has_group:'office_manager' or request.user|has_group:'admin' or request.user.is_superuser %}
+                                                                                                                                    <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:join_submissions' %}">
+                                                                                                                                        <span>Join Our Team</span>
+                                                                                                                                        {% if join_submissions_new_count %}
+                                                                                                                                            <span class="ml-2 inline-flex items-center justify-center rounded-full bg-[#116466] text-white text-[11px] font-semibold px-2 min-w-[1.5rem]">{{ join_submissions_new_count }}</span>
+                                                                                                                                        {% endif %}
+                                                                                                                                    </a>
                                                                                         {% endif %}
                                                                                         {% if request.user|has_group:'therapist' %}
                                                                                             <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'profiles:profile_edit' %}">My Profile</a>
