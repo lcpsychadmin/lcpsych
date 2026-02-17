@@ -175,16 +175,30 @@
       if (!fileInput || !cropInput || !img || !form) return;
 
       let cropper = null;
+      let cropperLoader = null;
+
+      const ensureCropper = () => {
+        if (window.Cropper) return Promise.resolve();
+        if (cropperLoader) return cropperLoader;
+        cropperLoader = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Cropper failed to load'));
+          document.head.appendChild(script);
+        });
+        return cropperLoader;
+      };
 
       const setupCropper = () => {
-        if (!window.Cropper) return;
         if (!img.src) return;
-        try {
-          if (cropper) cropper.destroy();
-          cropper = new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 });
-        } catch (e) {
-          console.warn('Cropper init failed', e);
-        }
+        ensureCropper()
+          .then(() => {
+            if (!window.Cropper) return;
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 });
+          })
+          .catch(() => {});
       };
 
       if (img.src && !img.classList.contains('hidden')) {
