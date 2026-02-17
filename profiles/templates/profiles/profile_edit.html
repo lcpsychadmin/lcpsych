@@ -1,3 +1,4 @@
+{% load static %}
 {% extends "base.html" %}
 {% block title %}Edit Profile | Therapist{% endblock %}
 {% block head_extra %}
@@ -19,7 +20,8 @@
       overflow: hidden;
     }
   </style>
-  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+  <link rel="stylesheet" href="{% static 'vendor/cropperjs/cropper.min.css' %}">
+  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" media="print" onload="this.media='all'">
 {% endblock %}
 
@@ -166,6 +168,7 @@
   <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
 {% endblock %}
 {% block body_extra %}
+  <script src="{% static 'vendor/cropperjs/cropper.min.js' %}" defer></script>
   <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
   <script>
@@ -185,7 +188,7 @@
         const link = document.createElement('link');
         link.id = 'cropper-css';
         link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css';
+        link.href = '{% static 'vendor/cropperjs/cropper.min.css' %}';
         link.onload = () => { cssInjected = true; };
         link.onerror = () => { cssInjected = false; };
         document.head.appendChild(link);
@@ -202,7 +205,8 @@
       const ensureCropper = () => {
         if (window.Cropper) return Promise.resolve();
         if (cropperLoader) return cropperLoader;
-        cropperLoader = loadScript('https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js')
+        cropperLoader = loadScript('{% static 'vendor/cropperjs/cropper.min.js' %}')
+          .catch(() => loadScript('https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js'))
           .catch(() => loadScript('https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js'));
         return cropperLoader;
       };

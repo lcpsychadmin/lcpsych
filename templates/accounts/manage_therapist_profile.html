@@ -1,3 +1,4 @@
+{% load static %}
 {% extends "base.html" %}
 {% block title %}Edit Therapist Profile | Admin{% endblock %}
 
@@ -40,7 +41,8 @@
   overflow: hidden;
 }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+<link rel="stylesheet" href="{% static 'vendor/cropperjs/cropper.min.css' %}">
+<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" media="print" onload="this.media='all'">
 {% endblock %}
 
@@ -192,6 +194,7 @@
 {% endblock %}
 
 {% block body_extra %}
+<script src="{% static 'vendor/cropperjs/cropper.min.js' %}" defer></script>
 <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
 <script>
@@ -211,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const link = document.createElement('link');
     link.id = 'cropper-css';
     link.rel = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css';
+    link.href = '{% static 'vendor/cropperjs/cropper.min.css' %}';
     link.onload = () => { cssInjected = true; };
     link.onerror = () => { cssInjected = false; };
     document.head.appendChild(link);
@@ -228,7 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const ensureCropper = () => {
     if (window.Cropper) return Promise.resolve();
     if (cropperLoader) return cropperLoader;
-    cropperLoader = loadScript('https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js')
+    cropperLoader = loadScript('{% static 'vendor/cropperjs/cropper.min.js' %}')
+      .catch(() => loadScript('https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js'))
       .catch(() => loadScript('https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js'));
     return cropperLoader;
   };
