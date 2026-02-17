@@ -610,6 +610,27 @@
     }
     </style>
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+    <script>
+    // Stub minimal wp object for legacy vendor snippets when WP globals aren't present
+    window.wp = window.wp || {};
+    window.wp.i18n = window.wp.i18n || {
+        setLocaleData: function() {},
+        __: function(msg) { return msg; },
+        _x: function(msg) { return msg; },
+        _n: function(single, plural, number) { return number === 1 ? single : plural; },
+        _nx: function(single, plural, number) { return number === 1 ? single : plural; },
+        sprintf: function() { return Array.from(arguments).join(" "); }
+    };
+    window.wp.hooks = window.wp.hooks || {
+        addAction: function() {},
+        addFilter: function() {},
+        doAction: function() {},
+        applyFilters: function(_, value) { return value; }
+    };
+    window.wp.a11y = window.wp.a11y || {
+        speak: function() {}
+    };
+    </script>
     <script data-wpfc-render="false">
     (function() {
         let events = ["mousemove", "wheel", "scroll", "touchstart", "touchmove"];

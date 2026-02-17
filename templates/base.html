@@ -34,6 +34,27 @@
 <meta name="twitter:label2" content="Time to read"/>
 <meta name="twitter:data2" content="4 minutes"/>
 <meta http-equiv="x-dns-prefetch-control" content="off"/>
+<script>
+// Minimal wp stub so legacy vendor scripts don't throw when WP globals aren't present
+window.wp = window.wp || {};
+window.wp.i18n = window.wp.i18n || {
+	setLocaleData: function() {},
+	__: function(msg) { return msg; },
+	_x: function(msg) { return msg; },
+	_n: function(single, plural, number) { return number === 1 ? single : plural; },
+	_nx: function(single, plural, number) { return number === 1 ? single : plural; },
+	sprintf: function() { return Array.from(arguments).join(" "); }
+};
+window.wp.hooks = window.wp.hooks || {
+	addAction: function() {},
+	addFilter: function() {},
+	doAction: function() {},
+	applyFilters: function(_, value) { return value; }
+};
+window.wp.a11y = window.wp.a11y || {
+	speak: function() {}
+};
+</script>
 <script type="application/ld+json">
 {
 	"@context": "https://schema.org",

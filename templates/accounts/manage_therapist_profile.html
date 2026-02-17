@@ -200,16 +200,37 @@
   const form = document.querySelector('form.profile-editor');
   if (!fileInput || !cropInput || !img || !form) return;
 
-  let cropper = img && !img.classList.contains('hidden') ? new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 }) : null;
+  let cropper = null;
+
+  const setupCropper = () => {
+    if (!window.Cropper) return;
+    if (!img.src) return;
+    try {
+      if (cropper) cropper.destroy();
+      cropper = new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 });
+    } catch (e) {
+      console.warn('Cropper init failed', e);
+    }
+  };
+
+  if (img.src && !img.classList.contains('hidden')) {
+    if (img.complete) {
+      setupCropper();
+    } else {
+      img.addEventListener('load', setupCropper, { once: true });
+    }
+  }
 
   fileInput.addEventListener('change', (event) => {
     const [file] = event.target.files || [];
     if (!file) return;
     const url = URL.createObjectURL(file);
+    img.addEventListener('load', () => {
+      URL.revokeObjectURL(url);
+      setupCropper();
+    }, { once: true });
     img.src = url;
     img.classList.remove('hidden');
-    if (cropper) cropper.destroy();
-    cropper = new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 });
   });
 
   form.addEventListener('submit', () => {
