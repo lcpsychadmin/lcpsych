@@ -20,6 +20,7 @@
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" media="print" onload="this.media='all'">
 {% endblock %}
 
 {% block content %}
@@ -165,9 +166,10 @@
   <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
 {% endblock %}
 {% block body_extra %}
-  <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+  <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
   <script>
-    (function() {
+    document.addEventListener('DOMContentLoaded', function() {
       const fileInput = document.getElementById('id_photo');
       const cropInput = document.getElementById('id_cropped_photo_data');
       const img = document.getElementById('profile-photo-preview');
@@ -176,22 +178,38 @@
 
       let cropper = null;
       let cropperLoader = null;
+      let cssInjected = false;
+
+      const ensureCropperCss = () => {
+        if (document.getElementById('cropper-css')) return;
+        const link = document.createElement('link');
+        link.id = 'cropper-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css';
+        link.onload = () => { cssInjected = true; };
+        link.onerror = () => { cssInjected = false; };
+        document.head.appendChild(link);
+      };
+
+      const loadScript = (src) => new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
 
       const ensureCropper = () => {
         if (window.Cropper) return Promise.resolve();
         if (cropperLoader) return cropperLoader;
-        cropperLoader = new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js';
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Cropper failed to load'));
-          document.head.appendChild(script);
-        });
+        cropperLoader = loadScript('https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js')
+          .catch(() => loadScript('https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js'));
         return cropperLoader;
       };
 
       const setupCropper = () => {
         if (!img.src) return;
+        ensureCropperCss();
         ensureCropper()
           .then(() => {
             if (!window.Cropper) return;
@@ -227,6 +245,6 @@
         if (!canvas) return;
         cropInput.value = canvas.toDataURL('image/jpeg', 0.9);
       });
-    })();
+    });
   </script>
 {% endblock %}
