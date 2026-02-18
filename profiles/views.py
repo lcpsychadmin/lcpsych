@@ -9,7 +9,6 @@ from django.db.models import Q
 from django.http import (
     HttpRequest,
     HttpResponse,
-    HttpResponseBadGateway,
     HttpResponseBadRequest,
     HttpResponseForbidden,
     StreamingHttpResponse,
@@ -178,10 +177,10 @@ def photo_proxy(request: HttpRequest) -> HttpResponse:
     try:
         upstream = requests.get(image_url, stream=True, timeout=10)
     except requests.RequestException:
-        return HttpResponseBadGateway("fetch failed")
+        return HttpResponse("fetch failed", status=502)
 
     if upstream.status_code != 200:
-        return HttpResponseBadGateway("fetch failed")
+        return HttpResponse("fetch failed", status=502)
 
     content_type = upstream.headers.get("Content-Type", "image/jpeg")
     resp = StreamingHttpResponse(upstream.iter_content(65536), content_type=content_type, status=200)
