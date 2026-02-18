@@ -36,12 +36,25 @@
   width: 100% !important;
 }
 .cropper-container {
-  max-width: 340px;
+  width: 100%;
+  max-width: 360px;
+  min-height: 320px;
   border-radius: 12px;
   overflow: hidden;
+  background: #f8fbfa;
+  border: 1px solid rgba(146, 220, 229, 0.6);
+}
+#admin-photo-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 320px;
+  max-width: 360px;
+  object-fit: contain;
+  background: #f8fbfa;
 }
 </style>
-<link rel="stylesheet" href="{% static 'vendor/cropperjs/cropper.min.css' %}">
+<link id="cropper-css" rel="stylesheet" href="{% static 'vendor/cropperjs/cropper.min.css' %}" onerror="this.href='https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css'">
 <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" media="print" onload="this.media='all'">
 {% endblock %}
@@ -205,31 +218,25 @@ document.addEventListener('DOMContentLoaded', function() {
   const form = document.querySelector('form.profile-editor');
   if (!fileInput || !cropInput || !img || !form) return;
 
+  const log = (...args) => { if (window.console) console.info('[cropper-admin]', ...args); };
   let cropper = null;
   let cropperLoader = null;
-  let cssInjected = false;
-
-  const ensureCropperCss = () => {
-    if (document.getElementById('cropper-css')) return;
-    const link = document.createElement('link');
-    link.id = 'cropper-css';
-    link.rel = 'stylesheet';
-    link.href = '{% static 'vendor/cropperjs/cropper.min.css' %}';
-    link.onload = () => { cssInjected = true; };
-    link.onerror = () => { cssInjected = false; };
-    document.head.appendChild(link);
-  };
 
   const loadScript = (src) => new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
-    script.onload = resolve;
-    script.onerror = reject;
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.onload = () => { log('loaded', src); resolve(); };
+    script.onerror = () => { log('failed', src); reject(src); };
     document.head.appendChild(script);
   });
 
   const ensureCropper = () => {
-    if (window.Cropper) return Promise.resolve();
+    if (window.Cropper) {
+      log('Cropper already available');
+      return Promise.resolve();
+    }
     if (cropperLoader) return cropperLoader;
     cropperLoader = loadScript('{% static 'vendor/cropperjs/cropper.min.js' %}')
       .catch(() => loadScript('https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js'))
@@ -239,12 +246,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const setupCropper = () => {
     if (!img.src) return;
-    ensureCropperCss();
+    if (img.classList.contains('hidden')) img.classList.remove('hidden');
     ensureCropper()
       .then(() => {
         if (!window.Cropper) return;
         if (cropper) cropper.destroy();
-        cropper = new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 });
+        cropper = new Cropper(img, {
+          aspectRatio: 4 / 5,
+          viewMode: 1,
+          autoCropArea: 1,
+          dragMode: 'move',           // move image within fixed box
+          cropBoxResizable: false,    // lock crop box size
+          cropBoxMovable: false,      // lock crop box position
+          ready() { log('Cropper ready'); }
+        });
+        log('Cropper initialized');
       })
       .catch(() => {});
   };
@@ -265,9 +281,10 @@ document.addEventListener('DOMContentLoaded', function() {
   fileInput.addEventListener('change', (event) => {
     const [file] = event.target.files || [];
     if (!file) return;
+    log('New file selected', file.name || 'unnamed');
     const url = URL.createObjectURL(file);
     img.addEventListener('load', () => {
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
       setupCropper();
     }, { once: true });
     img.src = url;

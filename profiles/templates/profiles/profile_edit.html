@@ -15,9 +15,22 @@
       width: 100% !important;
     }
     .cropper-container {
+      width: 100%;
       max-width: 360px;
+      min-height: 320px;
       border-radius: 12px;
       overflow: hidden;
+      background: #f8fbfa;
+      border: 1px solid rgba(146, 220, 229, 0.6);
+    }
+    #profile-photo-preview {
+      display: block;
+      width: 100%;
+      max-width: 360px;
+      min-height: 320px;
+      height: auto;
+      object-fit: contain;
+      background: #f8fbfa;
     }
   </style>
   <link rel="stylesheet" href="{% static 'vendor/cropperjs/cropper.min.css' %}">
@@ -213,12 +226,21 @@
 
       const setupCropper = () => {
         if (!img.src) return;
+        if (img.classList.contains('hidden')) img.classList.remove('hidden');
         ensureCropperCss();
         ensureCropper()
           .then(() => {
             if (!window.Cropper) return;
             if (cropper) cropper.destroy();
-            cropper = new Cropper(img, { aspectRatio: 4 / 5, viewMode: 1, autoCropArea: 1 });
+            cropper = new Cropper(img, {
+              aspectRatio: 4 / 5,
+              viewMode: 1,
+              autoCropArea: 1,
+              dragMode: 'move',        // move image under fixed box
+              cropBoxResizable: false, // lock box size
+              cropBoxMovable: false,   // lock box position
+              ready() { /* keep default crop box */ }
+            });
           })
           .catch(() => {});
       };
@@ -241,7 +263,7 @@
         if (!file) return;
         const url = URL.createObjectURL(file);
         img.addEventListener('load', () => {
-          URL.revokeObjectURL(url);
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
           setupCropper();
         }, { once: true });
         img.src = url;
