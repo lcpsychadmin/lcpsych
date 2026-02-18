@@ -168,9 +168,9 @@
   <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
 {% endblock %}
 {% block body_extra %}
-  <script src="{% static 'vendor/cropperjs/cropper.min.js' %}" defer></script>
-  <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js" defer></script>
+  <script src="{% static 'vendor/cropperjs/cropper.min.js' %}"></script>
+  <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const fileInput = document.getElementById('id_photo');
@@ -230,6 +230,11 @@
           img.addEventListener('load', setupCropper, { once: true });
         }
       }
+
+      // Retry once after a brief delay in case scripts finish after DOMContentLoaded
+      setTimeout(() => {
+        if (!cropper) setupCropper();
+      }, 600);
 
       fileInput.addEventListener('change', (event) => {
         const [file] = event.target.files || [];
