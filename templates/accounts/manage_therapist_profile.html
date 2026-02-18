@@ -162,7 +162,7 @@
               <div class="rounded-xl border border-[#BEE3DB] bg-[#F7FCFB] p-3 space-y-2 mt-2">
                 <div class="text-xs text-slate-600">Crop to 4:5. Drag to reposition; scroll or pinch to zoom.</div>
                 <div class="cropper-container bg-white shadow-inner">
-                  <img id="admin-photo-preview" src="{% if profile.photo %}{{ profile.photo.url }}{% endif %}" alt="Photo preview" class="w-full h-full{% if not profile.photo %} hidden{% endif %}">
+                  <img id="admin-photo-preview" src="{% if profile.photo %}{% url 'profiles:photo_proxy' %}?url={{ profile.photo.url|urlencode }}{% endif %}" alt="Photo preview" crossorigin="anonymous" class="w-full h-full{% if not profile.photo %} hidden{% endif %}">
                 </div>
               </div>
               {% if form.photo.errors %}<div class="error-text">{{ form.photo.errors|striptags }}</div>{% endif %}

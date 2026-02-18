@@ -1,17 +1,29 @@
-from urllib.parse import quote as urlquote
+from urllib.parse import quote as urlquote, urlparse
 
+import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadGateway,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    StreamingHttpResponse,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from accounts.models import EmailConfirmation
 from .forms import TherapistProfileForm
 from .models import TherapistProfile
+
+
+ALLOWED_IMAGE_HOST = getattr(settings, "PROFILE_IMAGE_HOST", "lc-psych.s3.amazonaws.com")
+ALLOWED_IMAGE_PREFIXES = ("therapists/photos/",)
 
 
 def is_therapist_or_admin(user):
@@ -146,3 +158,39 @@ def profiles_list(request: HttpRequest) -> HttpResponse:
             "new_only": new_only,
         },
     )
+
+
+@login_required
+@user_passes_test(is_therapist_or_admin)
+def photo_proxy(request: HttpRequest) -> HttpResponse:
+    image_url = request.GET.get("url", "")
+    if not image_url:
+        return HttpResponseBadRequest("url required")
+
+    parsed = urlparse(image_url)
+    if parsed.netloc != ALLOWED_IMAGE_HOST:
+        return HttpResponseForbidden("host not allowed")
+
+    path = parsed.path.lstrip("/")
+    if not any(path.startswith(prefix) for prefix in ALLOWED_IMAGE_PREFIXES):
+        return HttpResponseForbidden("path not allowed")
+
+    try:
+        upstream = requests.get(image_url, stream=True, timeout=10)
+    except requests.RequestException:
+        return HttpResponseBadGateway("fetch failed")
+
+    if upstream.status_code != 200:
+        return HttpResponseBadGateway("fetch failed")
+
+    content_type = upstream.headers.get("Content-Type", "image/jpeg")
+    resp = StreamingHttpResponse(upstream.iter_content(65536), content_type=content_type, status=200)
+    resp["Access-Control-Allow-Origin"] = request.headers.get("Origin") or "*"
+    resp["Vary"] = "Origin"
+    resp["Cache-Control"] = "public, max-age=300"
+
+    content_length = upstream.headers.get("Content-Length")
+    if content_length:
+        resp["Content-Length"] = content_length
+
+    return resp

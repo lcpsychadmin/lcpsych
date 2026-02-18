@@ -153,7 +153,7 @@
             <div class="rounded-xl border border-[#BEE3DB] bg-[#F7FCFB] p-3 space-y-2">
               <div class="text-xs text-slate-600">Upload and crop to fit the 4:5 card. Drag to reposition; scroll or pinch to zoom.</div>
               <div class="cropper-container bg-white shadow-inner mx-auto">
-                <img id="profile-photo-preview" src="{% if profile.photo %}{{ profile.photo.url }}{% endif %}" alt="Photo preview" class="w-full h-full{% if not profile.photo %} hidden{% endif %}">
+                <img id="profile-photo-preview" src="{% if profile.photo %}{% url 'profiles:photo_proxy' %}?url={{ profile.photo.url|urlencode }}{% endif %}" alt="Photo preview" crossorigin="anonymous" class="w-full h-full{% if not profile.photo %} hidden{% endif %}">
               </div>
             </div>
             {{ form.photo.errors }}
