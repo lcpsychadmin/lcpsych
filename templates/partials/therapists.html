@@ -1,3 +1,4 @@
+        {% load static %}
         <div data-dce-background-color="#92DCE5" class="elementor-element elementor-element-a80adf4 e-flex e-con-boxed e-con e-parent" data-id="a80adf4" data-element_type="container" id="ourteam" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;shape_divider_top&quot;:&quot;wave-brush&quot;,&quot;shape_divider_bottom&quot;:&quot;wave-brush&quot;,&quot;_ha_eqh_enable&quot;:false}">
             <div class="e-con-inner">
                 <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
@@ -431,20 +432,12 @@
                                     padding: 6px 12px;
                                 }
 
-                                .elementor-1598 .therapist-card__placeholder {
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    height: 100%;
-                                    min-height: 0;
+                                .elementor-1598 .therapist-card__placeholder-img {
+                                    display: block;
                                     width: 100%;
-                                    background-color: #BEE3DB;
-                                    color: #005F6B;
-                                    font-family: "Poppins", Sans-serif;
-                                    font-size: 16px;
-                                    font-weight: 600;
-                                    text-align: center;
-                                    padding: 24px;
+                                    aspect-ratio: 4 / 5;
+                                    object-fit: cover;
+                                    background-color: #005F6B;
                                     border-radius: 10px 10px 0 0;
                                 }
 
@@ -493,7 +486,7 @@
                                                         {% if card.photo_url %}
                                                         <img loading="lazy" decoding="async" width="800" height="697" src="{{ card.photo_url }}" alt="{{ profile.display_name }} headshot"/>
                                                         {% else %}
-                                                        <div class="therapist-card__placeholder">Photo coming soon</div>
+                                                        <img loading="lazy" decoding="async" width="800" height="1000" src="{% static 'img/therapist-placeholder.svg' %}" alt="Headshot placeholder" class="therapist-card__placeholder-img"/>
                                                         {% endif %}
                                                     </a>
                                                 </div>

@@ -1,9 +1,11 @@
+from typing import cast
 from urllib.parse import quote as urlquote, urlparse
 
 import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import AbstractUser
 from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import (
@@ -21,8 +23,14 @@ from .forms import TherapistProfileForm
 from .models import TherapistProfile
 
 
-ALLOWED_IMAGE_HOST = getattr(settings, "PROFILE_IMAGE_HOST", "lc-psych.s3.amazonaws.com")
-ALLOWED_IMAGE_PREFIXES = ("therapists/photos/",)
+raw_hosts = getattr(settings, "PROFILE_IMAGE_HOSTS", "")
+ALLOWED_IMAGE_HOSTS = [h.strip() for h in raw_hosts.split(",") if h.strip()] or [
+    getattr(settings, "PROFILE_IMAGE_HOST", "lc-psych.s3.amazonaws.com"),
+]
+ALLOWED_IMAGE_PREFIXES = (
+    "therapists/photos/",
+    "media/therapists/photos/",  # local dev MEDIA_URL paths
+)
 
 
 def is_therapist_or_admin(user):
@@ -52,13 +60,17 @@ def profile_detail(request: HttpRequest, slug: str) -> HttpResponse:
 @login_required
 @user_passes_test(is_therapist_or_admin)
 def profile_edit(request: HttpRequest) -> HttpResponse:
+    user = cast(AbstractUser, request.user)
+    if not user.is_authenticated:
+        return HttpResponseForbidden("auth required")
+
     debug_activation_url = request.GET.get("activation_url", "") if settings.DEBUG else ""
     debug_email = request.GET.get("email", "") if settings.DEBUG else ""
     profile, _ = TherapistProfile.objects.get_or_create(
-        user=request.user,
+        user=user,
         defaults={
-            "first_name": request.user.first_name,
-            "last_name": request.user.last_name,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "accepts_new_clients": True,
         },
     )
@@ -66,16 +78,16 @@ def profile_edit(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "reset_password":
-            EmailConfirmation.objects.filter(user=request.user, used_at__isnull=True).delete()
+            EmailConfirmation.objects.filter(user=user, used_at__isnull=True).delete()
             token = EmailConfirmation.generate_token()
-            EmailConfirmation.objects.create(user=request.user, token=token)
+            EmailConfirmation.objects.create(user=user, token=token)
             activate_path = reverse("accounts:activate", args=[token])
             base_url = getattr(settings, "BASE_URL", "").rstrip("/")
             activate_url = f"{base_url}{activate_path}" if base_url else request.build_absolute_uri(activate_path)
 
             site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
             subject = f"Reset your {site_name} password"
-            greeting = request.user.get_full_name() or request.user.email or "there"
+            greeting = user.get_full_name() or user.email or "there"
             body = (
                 f"Hi {greeting},\n\n"
                 f"Use this link to set a new password for your {site_name} account:\n{activate_url}\n\n"
@@ -87,24 +99,24 @@ def profile_edit(request: HttpRequest) -> HttpResponse:
                     subject,
                     body,
                     getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                    [request.user.email],
+                    [user.email],
                     fail_silently=False,
                 )
-                messages.success(request, f"Password reset link sent to {request.user.email}.")
+                messages.success(request, f"Password reset link sent to {user.email}.")
             except Exception:
                 if not settings.DEBUG:
                     raise
-                messages.success(request, f"Password reset link ready for {request.user.email}.")
+                messages.success(request, f"Password reset link ready for {user.email}.")
 
             redirect_url = reverse("profiles:profile_edit")
             if settings.DEBUG:
-                redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(request.user.email)}"
+                redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(user.email)}"
             return redirect(redirect_url)
 
         form = TherapistProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             profile = form.save(commit=False)
-            profile.user = request.user
+            profile.user = user
             profile.save()
             form.save_m2m()
             return redirect("profiles:profile_detail", slug=profile.slug)
@@ -161,13 +173,22 @@ def profiles_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 @user_passes_test(is_therapist_or_admin)
-def photo_proxy(request: HttpRequest) -> HttpResponse:
+def photo_proxy(request: HttpRequest) -> HttpResponse | StreamingHttpResponse:
     image_url = request.GET.get("url", "")
     if not image_url:
         return HttpResponseBadRequest("url required")
 
     parsed = urlparse(image_url)
-    if parsed.netloc != ALLOWED_IMAGE_HOST:
+    if not parsed.netloc and image_url.startswith("/"):
+        # Allow relative media URLs from the same host (e.g., /media/therapists/...)
+        image_url = request.build_absolute_uri(image_url)
+        parsed = urlparse(image_url)
+    request_host = (request.get_host() or "").lower()
+    allowed_hosts = {h.lower() for h in ALLOWED_IMAGE_HOSTS}
+    if request_host:
+        allowed_hosts.add(request_host)
+
+    if parsed.netloc.lower() not in allowed_hosts:
         return HttpResponseForbidden("host not allowed")
 
     path = parsed.path.lstrip("/")

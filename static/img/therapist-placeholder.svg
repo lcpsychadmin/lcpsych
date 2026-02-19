@@ -1,0 +1,15 @@
+<svg width="800" height="1000" viewBox="0 0 800 1000" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Therapist placeholder silhouette</title>
+  <desc id="desc">A simple person silhouette used when no profile photo is available.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0A5F69" />
+      <stop offset="100%" stop-color="#0B4950" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)" rx="40" />
+  <g fill="#BEE3DB">
+    <circle cx="400" cy="300" r="140" />
+    <path d="M180 760c0-134 94-210 220-210s220 76 220 210v80H180v-80z" />
+  </g>
+</svg>

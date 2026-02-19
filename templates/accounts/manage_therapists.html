@@ -801,8 +801,8 @@
                             <input type="hidden" name="user_id" value="{{ user.id }}">
                             <button type="submit" class="action-btn">Send reset link</button>
                           </form>
-                          {% if row.is_office_manager %}
-                          <form method="post" class="inline" onsubmit="return confirm('Delete this user?');">
+                          {% if not row.is_admin %}
+                          <form method="post" class="inline" onsubmit="return confirm('Delete this user account? This cannot be undone.');">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="delete_user">
                             <input type="hidden" name="user_id" value="{{ user.id }}">
@@ -822,8 +822,8 @@
                             <input type="hidden" name="user_id" value="{{ user.id }}">
                             <button type="submit" class="action-btn">Make therapist</button>
                           </form>
-                          {% if row.is_office_manager %}
-                          <form method="post" class="inline" onsubmit="return confirm('Delete this user?');">
+                          {% if not row.is_admin %}
+                          <form method="post" class="inline" onsubmit="return confirm('Delete this user account? This cannot be undone.');">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="delete_user">
                             <input type="hidden" name="user_id" value="{{ user.id }}">

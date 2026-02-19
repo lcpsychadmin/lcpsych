@@ -134,7 +134,11 @@ class TherapistProfileForm(forms.ModelForm):
 
 class AdminTherapistProfileForm(TherapistProfileForm):
     class Meta(TherapistProfileForm.Meta):
-        fields = TherapistProfileForm.Meta.fields + ["is_published"]
+        fields = TherapistProfileForm.Meta.fields + ["home_order", "is_published"]
+        widgets = {
+            **TherapistProfileForm.Meta.widgets,
+            "home_order": forms.NumberInput(attrs={"min": 0, "class": "input-basic", "placeholder": "e.g., 1"}),
+        }
 
 
 class LicenseTypeForm(forms.ModelForm):

@@ -61,11 +61,15 @@ class TherapistProfile(models.Model):
     intro_video_url = models.URLField(blank=True)
     bio = RichTextField(blank=True)
     is_published = models.BooleanField(default=False)
+    home_order = models.PositiveIntegerField(
+        default=100,
+        help_text="Lower numbers appear first on the homepage therapist grid.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["last_name", "first_name", "pk"]
+        ordering = ["home_order", "last_name", "first_name", "pk"]
 
     def __str__(self) -> str:
         return self.display_name

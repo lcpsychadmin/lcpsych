@@ -213,7 +213,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         users_qs = (
             User.objects.select_related("therapist_profile")
             .prefetch_related("groups")
-            .order_by("last_name", "first_name", "email")
+            .order_by("therapist_profile__home_order", "last_name", "first_name", "email")
         )
         user_rows: list[dict] = []
         for user in users_qs:

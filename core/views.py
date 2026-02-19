@@ -82,7 +82,7 @@ def _published_therapists_queryset():
         TherapistProfile.objects.filter(is_published=True)
 		.select_related('license_type')
 		.prefetch_related('client_focuses', 'services', 'top_services')
-        .order_by('last_name', 'first_name')
+		.order_by('home_order', 'last_name', 'first_name', 'pk')
     )
 
 
@@ -162,7 +162,7 @@ def our_team(request):
 	if new_only:
 		profiles = profiles.filter(accepts_new_clients=True)
 
-	profiles = profiles.distinct()
+	profiles = profiles.order_by('home_order', 'last_name', 'first_name', 'pk').distinct()
 
 	context = {
 		**_static_seo_context(
@@ -252,7 +252,7 @@ def service_detail(request, slug: str):
 		service.therapists.filter(is_published=True)
 		.select_related('license_type')
 		.prefetch_related('client_focuses')
-		.order_by('last_name', 'first_name')
+		.order_by('home_order', 'last_name', 'first_name', 'pk')
 	)
 	therapists = _build_therapist_cards(therapists_qs)
 	context = {
