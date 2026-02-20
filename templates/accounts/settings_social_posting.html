@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Social Posting | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.btn-primary { background: #3C9C64; color: #fff; border-radius: 0.75rem; padding: 0.6rem 1.4rem; font-weight: 600; border: 0; transition: background 0.2s ease, color 0.2s ease; }
+.btn-primary:hover,
+.btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
+.action-btn { border-radius: 0.75rem; border: 1px solid rgba(15, 63, 70, 0.14); padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 600; color: #0f3f46; background: #fff; transition: all 0.2s ease; }
+.action-btn:hover,
+.action-btn:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
+.status-pill { display: inline-flex; align-items: center; padding: 0.15rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: rgba(146, 220, 229, 0.25); color: #0f3f46; text-transform: uppercase; letter-spacing: 0.05em; }
+.input-basic { width: 100%; padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 1.5px solid rgba(146, 220, 229, 0.7); background: rgba(255, 255, 255, 0.96); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.input-basic:focus { border-color: #92DCE5; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.55); outline: none; }
+.help-text { margin-top: 0.25rem; font-size: 0.85rem; color: rgba(15, 63, 70, 0.7); }
+.field-label { color: #0f3f46; font-weight: 600; display: block; margin-bottom: 0.35rem; }
+.error-text { color: #b91c1c; font-size: 0.85rem; margin-top: 0.35rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Social posting</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Manage credentials and defaults for auto-posting blog content to connected profiles.</p>
+    </div>
+  </section>
+
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="elementor-1393">
+      <div class="elementor-element elementor-element-a80adf4">
+        <div class="e-con-inner">
+          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
+            </svg>
+          </div>
+          <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" %}
+
+        <div class="space-y-6">
+          <div class="card-surface p-6 md:p-8">
+            <div class="space-y-2">
+              <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Platforms</h2>
+              <p class="text-slate-600 text-sm m-0">Enter page/profile identifiers and tokens. OAuth connect buttons will replace manual tokens later.</p>
+            </div>
+          </div>
+
+          <div class="grid gap-5 md:grid-cols-2">
+            {% for profile, form in profile_forms %}
+            <div class="card-surface p-6 md:p-7 space-y-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-xl font-semibold text-[#0f3f46] m-0">{{ profile.get_platform_display }}</h3>
+                  <p class="text-slate-600 text-sm m-0">Auto-post on publish: {{ profile.auto_post_on_publish|yesno:"On,Off" }}</p>
+                </div>
+                <span class="status-pill">{{ profile.is_configured|yesno:"Connected,Not set" }}</span>
+              </div>
+
+              <form method="post" class="space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="platform" value="{{ profile.platform }}">
+
+                <div>
+                  <label class="field-label">Account name / label</label>
+                  {{ form.account_name }}
+                  {% if form.account_name.errors %}<div class="error-text">{{ form.account_name.errors|striptags }}</div>{% endif %}
+                </div>
+                <div>
+                  <label class="field-label">Page/Profile ID</label>
+                  {{ form.account_id }}
+                  {% if form.account_id.errors %}<div class="error-text">{{ form.account_id.errors|striptags }}</div>{% endif %}
+                  <p class="help-text">Use the platform's page/profile/business ID. Required to send posts.</p>
+                </div>
+                <div>
+                  <label class="field-label">Access token</label>
+                  {{ form.access_token }}
+                  {% if form.access_token.errors %}<div class="error-text">{{ form.access_token.errors|striptags }}</div>{% endif %}
+                </div>
+                <div>
+                  <label class="field-label">Refresh token (if provided)</label>
+                  {{ form.refresh_token }}
+                  {% if form.refresh_token.errors %}<div class="error-text">{{ form.refresh_token.errors|striptags }}</div>{% endif %}
+                </div>
+                <div>
+                  <label class="field-label">Token expires at</label>
+                  {{ form.token_expires_at }}
+                  {% if form.token_expires_at.errors %}<div class="error-text">{{ form.token_expires_at.errors|striptags }}</div>{% endif %}
+                </div>
+                <div class="flex items-center gap-2">
+                  {{ form.auto_post_on_publish }}
+                  <label for="{{ form.auto_post_on_publish.id_for_label }}" class="text-sm text-[#0f3f46] font-semibold">Auto-post on publish</label>
+                </div>
+                <div>
+                  <label class="field-label">Message template</label>
+                  {{ form.message_template }}
+                  {% if form.message_template.errors %}<div class="error-text">{{ form.message_template.errors|striptags }}</div>{% endif %}
+                  <p class="help-text">Supports {title}, {excerpt}, {url}. We trim to platform limits.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 pt-1">
+                  <button type="submit" class="btn-primary">Save {{ profile.get_platform_display }}</button>
+                </div>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block before_footer %}
+  <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
+{% endblock %}

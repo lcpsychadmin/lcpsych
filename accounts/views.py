@@ -30,6 +30,7 @@ from .forms import (
     CompanyQuoteForm,
     ContactInfoForm,
     StaticPageSEOForm,
+    SocialProfileForm,
 )
 from .models import EmailConfirmation
 from core.models import (
@@ -45,6 +46,8 @@ from core.models import (
     ContactInfo,
     StaticPageSEO,
     JoinOurTeamSubmission,
+    SocialProfile,
+    SocialPlatform,
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
@@ -385,6 +388,62 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if settings.DEBUG:
                 redirect_qs = f"?activation_url={urlquote(activate_url)}&email={urlquote(email)}"
             return self._redirect_to_self(redirect_qs)
+
+
+class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "accounts/settings_social_posting.html"
+    platform_order = [
+        SocialPlatform.INSTAGRAM,
+        SocialPlatform.X,
+        SocialPlatform.FACEBOOK_PAGE,
+        SocialPlatform.GOOGLE_BUSINESS,
+        SocialPlatform.LINKEDIN_PAGE,
+    ]
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def _profiles(self):
+        profiles = []
+        for platform in self.platform_order:
+            profile, _ = SocialProfile.objects.get_or_create(platform=platform)
+            profiles.append(profile)
+        return profiles
+
+    def _forms(self, bound_platform: str | None = None, bound_form: SocialProfileForm | None = None):
+        profile_forms: list[tuple[SocialProfile, SocialProfileForm]] = []
+        for profile in self._profiles():
+            if bound_platform and profile.platform == bound_platform and bound_form is not None:
+                profile_forms.append((profile, bound_form))
+            else:
+                profile_forms.append((profile, SocialProfileForm(prefix=profile.platform, instance=profile)))
+        return profile_forms
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        ctx = {
+            "profile_forms": self._forms(),
+            "active_page": "social_posting",
+        }
+        return render(request, self.template_name, ctx)
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        platform = request.POST.get("platform")
+        if not platform:
+            messages.error(request, "Missing platform selection.")
+            return redirect(reverse("accounts:settings_social_posting"))
+
+        profile, _ = SocialProfile.objects.get_or_create(platform=platform)
+        form = SocialProfileForm(request.POST, prefix=platform, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Saved settings for {profile.get_platform_display()}.")
+            return redirect(reverse("accounts:settings_social_posting"))
+
+        ctx = {
+            "profile_forms": self._forms(bound_platform=platform, bound_form=form),
+            "active_page": "social_posting",
+        }
+        return render(request, self.template_name, ctx)
 
         if action == "payment_save":
             object_id = request.POST.get("object_id")

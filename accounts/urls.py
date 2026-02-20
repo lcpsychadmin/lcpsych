@@ -15,6 +15,7 @@ urlpatterns = [
     path("settings/what-we-do/", views.WhatWeDoSettingsView.as_view(), name="settings_whatwedo"),
     path("settings/faq/", views.FAQSettingsView.as_view(), name="settings_faq"),
     path("settings/payment/", views.PaymentSettingsView.as_view(), name="settings_payment"),
+    path("settings/social-posting/", views.SocialPostingSettingsView.as_view(), name="settings_social_posting"),
     path("settings/published/", views.PublishedSettingsView.as_view(), name="settings_published"),
     path("services/", views.ManageServicesView.as_view(), name="services"),
     path("seo-settings/", views.ManageSEOSettingsView.as_view(), name="seo_settings"),

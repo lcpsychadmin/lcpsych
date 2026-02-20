@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from django.utils import timezone
 
 from ckeditor.fields import RichTextField
 class PublishStatus(models.TextChoices):
@@ -425,3 +426,41 @@ class FAQItem(Timestamped):
 
 	def __str__(self) -> str:
 		return self.question
+
+
+class SocialPlatform(models.TextChoices):
+	INSTAGRAM = "instagram", "Instagram"
+	X = "x", "X (Twitter)"
+	FACEBOOK_PAGE = "facebook_page", "Facebook Page"
+	GOOGLE_BUSINESS = "google_business", "Google Business Profile"
+	LINKEDIN_PAGE = "linkedin_page", "LinkedIn Page"
+
+
+class SocialProfile(Timestamped):
+	platform = models.CharField(max_length=32, choices=SocialPlatform.choices, unique=True)
+	account_name = models.CharField(max_length=255, blank=True, help_text="Friendly label for the connected page/profile.")
+	account_id = models.CharField(max_length=255, blank=True, help_text="Platform-specific page/profile/business identifier.")
+	access_token = models.TextField(blank=True)
+	refresh_token = models.TextField(blank=True)
+	token_expires_at = models.DateTimeField(null=True, blank=True)
+	auto_post_on_publish = models.BooleanField(default=True)
+	message_template = models.TextField(
+		default="{title} — {excerpt} {url}",
+		help_text="Use placeholders: {title}, {excerpt}, {url}. We'll trim to platform limits.",
+	)
+
+	class Meta:
+		ordering = ["platform"]
+
+	def __str__(self) -> str:
+		return f"{self.get_platform_display()} profile"
+
+	@property
+	def is_configured(self) -> bool:
+		return bool(self.access_token and self.account_id)
+
+	@property
+	def is_token_expired(self) -> bool:
+		if not self.token_expires_at:
+			return False
+		return timezone.now() >= self.token_expires_at

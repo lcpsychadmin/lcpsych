@@ -15,6 +15,7 @@ from core.models import (
     CompanyQuote,
     ContactInfo,
     StaticPageSEO,
+    SocialProfile,
 )
 
 
@@ -282,6 +283,34 @@ class ContactInfoForm(forms.ModelForm):
             base = field.widget.attrs.get("class", "").strip()
             field.widget.attrs["class"] = f"{base} input-basic".strip()
         self.fields["is_active"].label = "Show this section"
+
+
+class SocialProfileForm(forms.ModelForm):
+    class Meta:
+        model = SocialProfile
+        fields = [
+            "account_name",
+            "account_id",
+            "access_token",
+            "refresh_token",
+            "token_expires_at",
+            "auto_post_on_publish",
+            "message_template",
+        ]
+        widgets = {
+            "message_template": forms.Textarea(attrs={"rows": 3}),
+            "token_expires_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == "auto_post_on_publish":
+                field.label = "Auto-post on publish"
+                continue
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["token_expires_at"].required = False
 
 
 class StaticPageSEOForm(forms.ModelForm):
