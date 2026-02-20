@@ -43,6 +43,8 @@ SITE_NAME = env('SITE_NAME', default='L+C Psychological Services')
 # Whether robots are allowed to index. Defaults to True in production, False in DEBUG.
 ROBOTS_ALLOW = env.bool('ROBOTS_ALLOW', default=not DEBUG)
 GOOGLE_SITE_VERIFICATION = env('GOOGLE_SITE_VERIFICATION', default='')
+# Optional IP info token for geolocating analytics events
+IPINFO_TOKEN = env('IPINFO_TOKEN', default='')
 
 TINYMCE_DEFAULT_CONFIG = {
     'height': 500,
