@@ -480,8 +480,14 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by("-count")[:10]
         )
 
+        current_host = request.get_host()
         landing_referrers = list(
-            events.values("metadata__landing_referrer")
+            events.exclude(
+                Q(metadata__landing_referrer__icontains="localhost")
+                | Q(metadata__landing_referrer__icontains="127.0.0.1")
+                | Q(metadata__landing_referrer__icontains=current_host)
+            )
+            .values("metadata__landing_referrer")
             .annotate(
                 sessions=Count("session_id", distinct=True),
                 events=Count("id"),
