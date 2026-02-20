@@ -370,7 +370,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request: HttpRequest) -> HttpResponse:
         action = request.POST.get("action")
         post_keys = list(request.POST.keys())
-        logger.info("action_received action=%s post_keys=%s", action, post_keys)
+        logger.info("action_received action=%r post_keys=%s", action, post_keys)
         active_page = self.section_slug or "therapists"
 
         if action == "invite":
