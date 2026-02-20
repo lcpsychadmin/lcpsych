@@ -1,6 +1,10 @@
+import logging
 import os
 from django.core.mail.backends.base import BaseEmailBackend
 from azure.communication.email import EmailClient
+
+
+logger = logging.getLogger(__name__)
 
 
 class AzureCommunicationEmailBackend(BaseEmailBackend):
@@ -36,8 +40,18 @@ class AzureCommunicationEmailBackend(BaseEmailBackend):
                 if html_parts:
                     payload["content"]["html"] = html_parts[0]
 
-            # Begin send and wait for completion to ensure delivery attempt
-            poller = self.client.begin_send(payload)
-            poller.wait()
-            sent += 1
+            try:
+                poller = self.client.begin_send(payload)
+                result = poller.result()
+                status = poller.status()
+                message_id = getattr(result, "message_id", None)
+                if status != "Succeeded":
+                    logger.error("ACS email send failed", extra={"status": status, "message_id": message_id, "to": message.to})
+                    raise RuntimeError(f"ACS email send failed with status {status}")
+                logger.info("ACS email sent", extra={"status": status, "message_id": message_id, "to": message.to})
+                sent += 1
+            except Exception:
+                logger.exception("ACS email send error", extra={"to": message.to})
+                if not self.fail_silently:
+                    raise
         return sent
