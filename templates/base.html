@@ -301,17 +301,17 @@ gtag('config', 'G-93EEDX0TQR');</script>
 		    }
 
 		    // Persist the first-touch referrer/path for the session so we know how users first arrived
-		    const landingRefKey = 'lcps_first_referrer';
-		    const landingPathKey = 'lcps_first_path';
-		    let landingReferrer = sessionStorage.getItem(landingRefKey);
+		    const landingRefKey = `lcps_first_referrer_${sessionId}`;
+		    const landingPathKey = `lcps_first_path_${sessionId}`;
+		    let landingReferrer = localStorage.getItem(landingRefKey);
 		    if (landingReferrer === null) {
 		      landingReferrer = document.referrer || '';
-		      sessionStorage.setItem(landingRefKey, landingReferrer);
+		      localStorage.setItem(landingRefKey, landingReferrer);
 		    }
-		    let landingPath = sessionStorage.getItem(landingPathKey);
+		    let landingPath = localStorage.getItem(landingPathKey);
 		    if (landingPath === null) {
 		      landingPath = location.pathname + location.search;
-		      sessionStorage.setItem(landingPathKey, landingPath);
+		      localStorage.setItem(landingPathKey, landingPath);
 		    }
 
 		    const pagePath = location.pathname + location.search;
