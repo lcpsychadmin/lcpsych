@@ -480,6 +480,15 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by("-count")[:10]
         )
 
+        landing_referrers = list(
+            events.values("metadata__landing_referrer")
+            .annotate(
+                sessions=Count("session_id", distinct=True),
+                events=Count("id"),
+            )
+            .order_by("-sessions")[:10]
+        )
+
         avg_scroll = (
             events.filter(event_type=AnalyticsEventType.SCROLL)
             .aggregate(avg=Avg("scroll_percent"))
@@ -511,6 +520,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "by_day": by_day,
             "top_pages": top_pages,
             "top_clicks": top_clicks,
+            "landing_referrers": landing_referrers,
             "avg_scroll": int(avg_scroll),
             "locations": locations,
             "auth_successes": auth_successes,
