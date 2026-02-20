@@ -2,6 +2,7 @@
 {% block title %}Site Settings | L+C Psych{% endblock %}
 
 {% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
 <style>
 .table-card { width: 100%; border-collapse: collapse; }
 .table-card td,
@@ -39,6 +40,17 @@
 .card-accordion summary::after { content: "›"; font-size: 1.1rem; transition: transform 0.2s ease; color: #0f3f46; }
 .card-accordion[open] summary::after { transform: rotate(90deg); }
 .card-accordion .card-surface { border: 0; border-radius: 0; box-shadow: none; }
+.settings-layout { display: grid; gap: 1.5rem; }
+@media (min-width: 1024px) {
+  .settings-layout { grid-template-columns: 260px 1fr; align-items: start; }
+}
+.settings-nav { position: sticky; top: 96px; align-self: start; background: #f7fcfb; border: 1px solid rgba(146, 220, 229, 0.6); border-radius: 1rem; padding: 1rem; box-shadow: 0 10px 30px rgba(0, 48, 57, 0.06); }
+.settings-nav h2 { font-size: 1rem; font-weight: 700; color: #0f3f46; margin: 0 0 0.25rem; }
+.settings-nav p { margin: 0 0 0.75rem; color: #475569; font-size: 0.9rem; }
+.settings-nav ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
+.settings-nav a { display: block; padding: 0.5rem 0.6rem; border-radius: 0.75rem; color: #0f3f46; font-weight: 600; text-decoration: none; border: 1px solid transparent; transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+.settings-nav a:hover, .settings-nav a:focus-visible { background: #e6f6f3; border-color: #92DCE5; outline: none; }
+.settings-nav a:active { background: #d4efe9; }
 </style>
 {% endblock %}
 
@@ -52,50 +64,54 @@
   </section>
 
   <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
-    <div class="max-w-[1200px] mx-auto px-4 space-y-10">
-      {% if debug_activation_url %}
-        <div class="card-surface p-5 md:p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p class="text-[#0f3f46] font-semibold text-lg m-0">Activation link{% if debug_activation_email %} for {{ debug_activation_email }}{% endif %}</p>
-              <p class="text-slate-600 text-sm mt-1 mb-0">Copy and share this link manually while developing locally.</p>
-            </div>
-            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <input id="activation-url" type="text" readonly class="rounded-xl border border-[#BEE3DB] px-4 py-2 text-sm flex-1" value="{{ debug_activation_url }}">
-              <button type="button" id="copy-activation" class="action-btn no-wrap">Copy link</button>
-            </div>
-          </div>
-        </div>
-        <script>
-          (function () {
-            var btn = document.getElementById('copy-activation');
-            if (!btn) return;
-            btn.addEventListener('click', function () {
-              var input = document.getElementById('activation-url');
-              if (!input) return;
-              var text = input.value;
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(function () {
-                  btn.textContent = 'Copied!';
-                  setTimeout(function () { btn.textContent = 'Copy link'; }, 1600);
-                }).catch(function () {
-                  input.select();
-                  document.execCommand('copy');
-                  btn.textContent = 'Copied!';
-                  setTimeout(function () { btn.textContent = 'Copy link'; }, 1600);
-                });
-              } else {
-                input.select();
-                document.execCommand('copy');
-                btn.textContent = 'Copied!';
-                setTimeout(function () { btn.textContent = 'Copy link'; }, 1600);
-              }
-            });
-          })();
-        </script>
-      {% endif %}
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" %}
 
-      <details class="card-accordion">
+        <div class="space-y-10">
+          {% if debug_activation_url %}
+            <div class="card-surface p-5 md:p-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-[#0f3f46] font-semibold text-lg m-0">Activation link{% if debug_activation_email %} for {{ debug_activation_email }}{% endif %}</p>
+                  <p class="text-slate-600 text-sm mt-1 mb-0">Copy and share this link manually while developing locally.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <input id="activation-url" type="text" readonly class="rounded-xl border border-[#BEE3DB] px-4 py-2 text-sm flex-1" value="{{ debug_activation_url }}">
+                  <button type="button" id="copy-activation" class="action-btn no-wrap">Copy link</button>
+                </div>
+              </div>
+            </div>
+            <script>
+              (function () {
+                var btn = document.getElementById('copy-activation');
+                if (!btn) return;
+                btn.addEventListener('click', function () {
+                  var input = document.getElementById('activation-url');
+                  if (!input) return;
+                  var text = input.value;
+                  if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function () {
+                      btn.textContent = 'Copied!';
+                      setTimeout(function () { btn.textContent = 'Copy link'; }, 1600);
+                    }).catch(function () {
+                      input.select();
+                      document.execCommand('copy');
+                      btn.textContent = 'Copied!';
+                      setTimeout(function () { btn.textContent = 'Copy link'; }, 1600);
+                    });
+                  } else {
+                    input.select();
+                    document.execCommand('copy');
+                    btn.textContent = 'Copied!';
+                    setTimeout(function () { btn.textContent = 'Copy link'; }, 1600);
+                  }
+                });
+              })();
+            </script>
+          {% endif %}
+
+      <details id="settings-invite" class="card-accordion">
         <summary>Send an invitation</summary>
         <div class="card-surface p-6 md:p-8 invite-card">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Send an invitation</h2>
@@ -110,7 +126,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-lookup" class="card-accordion">
         <summary>Profile lookup lists</summary>
         <div class="card-surface p-6 md:p-8">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-4">Profile lookup lists</h2>
@@ -122,7 +138,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-services" class="card-accordion">
         <summary>Services &amp; homepage cards</summary>
         <div class="card-surface p-6 md:p-8">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-4">Services &amp; homepage cards</h2>
@@ -133,7 +149,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-about" class="card-accordion">
         <summary>About Us &amp; Mission</summary>
         <div class="card-surface p-6 md:p-8">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">About Us &amp; Mission</h2>
@@ -184,7 +200,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-philosophy" class="card-accordion">
         <summary>Our Philosophy</summary>
         <div class="card-surface p-6 md:p-8">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Our Philosophy</h2>
@@ -211,7 +227,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-inspirational" class="card-accordion">
         <summary>Inspirational Quote</summary>
         <div class="card-surface p-6 md:p-8">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Inspirational Quote</h2>
@@ -238,7 +254,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-company" class="card-accordion">
         <summary>Company Quote</summary>
         <div class="card-surface p-6 md:p-8">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Company Quote</h2>
@@ -265,7 +281,7 @@
         </div>
       </details>
 
-        <details class="card-accordion">
+        <details id="settings-contact" class="card-accordion">
           <summary>Contact section</summary>
           <div class="card-surface p-6 md:p-8">
             <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Contact section</h2>
@@ -378,7 +394,7 @@
           </div>
         </details>
 
-      <details class="card-accordion">
+      <details id="settings-whatwedo" class="card-accordion">
         <summary>What We Do</summary>
         <div class="card-surface p-6 md:p-8">
           <div class="flex flex-col lg:flex-row lg:items-start lg:gap-8">
@@ -435,7 +451,7 @@
                   </div>
                   <div class="flex items-center gap-3 pt-1">
                     <button type="submit" class="btn-primary">{% if whatwedo_item_editing %}Update item{% else %}Add item{% endif %}</button>
-                    {% if whatwedo_item_editing %}<a href="{% url 'accounts:therapists' %}" class="action-btn">Cancel</a>{% endif %}
+                    {% if whatwedo_item_editing %}<a href="{% url 'settings' %}" class="action-btn">Cancel</a>{% endif %}
                   </div>
                 </form>
               </div>
@@ -464,7 +480,7 @@
                       </td>
                       <td class="text-sm text-muted">{{ item.order }}</td>
                       <td class="no-wrap space-x-2">
-                        <a href="{% url 'accounts:therapists' %}?edit_whatwedo_item={{ item.id }}" class="action-btn inline-flex items-center">Edit</a>
+                        <a href="{% url 'settings' %}?edit_whatwedo_item={{ item.id }}" class="action-btn inline-flex items-center">Edit</a>
                         <form method="post" class="inline" onsubmit="return confirm('Delete this bullet?');">
                           {% csrf_token %}
                           <input type="hidden" name="action" value="whatwedo_item_delete">
@@ -486,7 +502,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-faq" class="card-accordion">
         <summary>Frequently asked questions</summary>
         <div class="card-surface p-6 md:p-8">
           <div class="flex flex-col lg:flex-row lg:items-start lg:gap-8">
@@ -529,7 +545,7 @@
                 <div class="flex items-center gap-3 pt-1">
                   <button type="submit" class="btn-primary">{% if faq_editing %}Update FAQ{% else %}Add FAQ{% endif %}</button>
                   {% if faq_editing %}
-                    <a href="{% url 'accounts:therapists' %}" class="action-btn">Cancel</a>
+                    <a href="{% url 'settings' %}" class="action-btn">Cancel</a>
                   {% endif %}
                 </div>
               </form>
@@ -558,7 +574,7 @@
                       </td>
                       <td class="text-sm text-muted">{{ faq.order }}</td>
                       <td class="no-wrap space-x-2">
-                        <a href="{% url 'accounts:therapists' %}?edit_faq={{ faq.id }}" class="action-btn inline-flex items-center">Edit</a>
+                        <a href="{% url 'settings' %}?edit_faq={{ faq.id }}" class="action-btn inline-flex items-center">Edit</a>
                         <form method="post" class="inline" onsubmit="return confirm('Delete this FAQ?');">
                           {% csrf_token %}
                           <input type="hidden" name="action" value="faq_delete">
@@ -580,7 +596,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-payment" class="card-accordion">
         <summary>Payment options table</summary>
         <div class="card-surface p-6 md:p-8">
           <div class="flex flex-col lg:flex-row lg:items-start lg:gap-8">
@@ -639,7 +655,7 @@
                 <div class="flex items-center gap-3 pt-1">
                   <button type="submit" class="btn-primary">{% if payment_fee_editing %}Update row{% else %}Add row{% endif %}</button>
                   {% if payment_fee_editing %}
-                    <a href="{% url 'accounts:therapists' %}" class="action-btn">Cancel</a>
+                    <a href="{% url 'settings' %}" class="action-btn">Cancel</a>
                   {% endif %}
                 </div>
               </form>
@@ -667,7 +683,7 @@
                       <td class="text-sm">{{ row.masters_fee|default:"—" }}</td>
                       <td class="text-sm">{{ row.supervised_fee|default:"—" }}</td>
                       <td class="no-wrap space-x-2">
-                        <a href="{% url 'accounts:therapists' %}?edit_fee={{ row.id }}" class="action-btn inline-flex items-center">Edit</a>
+                        <a href="{% url 'settings' %}?edit_fee={{ row.id }}" class="action-btn inline-flex items-center">Edit</a>
                         <form method="post" class="inline" onsubmit="return confirm('Delete this row?');">
                           {% csrf_token %}
                           <input type="hidden" name="action" value="payment_delete">
@@ -689,7 +705,7 @@
         </div>
       </details>
 
-      <details class="card-accordion">
+      <details id="settings-published" class="card-accordion">
         <summary>Published therapists</summary>
         <div class="card-surface p-6 md:p-8">
           <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Users and therapists</h2>
@@ -844,32 +860,8 @@
         </div>
       </details>
 
-      <details class="card-accordion">
-        <summary>Therapist accounts without profiles</summary>
-        <div class="card-surface p-6 md:p-8">
-          <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Therapist accounts without profiles</h2>
-          {% if unassigned_users %}
-            <ul class="space-y-4">
-              {% for user in unassigned_users %}
-                <li class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-[#BEE3DB] rounded-xl px-4 py-3">
-                  <div>
-                    <div class="font-semibold text-[#0f3f46]">{{ user.get_full_name|default:user.email }}</div>
-                    <div class="text-sm text-slate-600">{{ user.email }}</div>
-                  </div>
-                  <form method="post" class="md:ml-auto">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="create_profile">
-                    <input type="hidden" name="user_id" value="{{ user.id }}">
-                    <button type="submit" class="action-btn">Create profile</button>
-                  </form>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-slate-600 m-0">All therapist accounts have profiles created.</p>
-          {% endif %}
         </div>
-      </details>
+      </div>
     </div>
   </section>
 </main>

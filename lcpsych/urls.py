@@ -21,6 +21,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.views.static import serve
 from core.sitemaps import StaticViewSitemap, PageSitemap, PostSitemap
 from core import views as core_views
+from accounts.views import ManageTherapistsView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -30,6 +31,7 @@ urlpatterns = [
     path('tinymce/', include('tinymce.urls')),
     path('accounts/', include('accounts.urls')),
     path('blog/', include('blog.urls')),
+    path('settings/', ManageTherapistsView.as_view(), name='settings'),
     path('sitemap.xml', sitemap, {
         'sitemaps': {
             'static': StaticViewSitemap,

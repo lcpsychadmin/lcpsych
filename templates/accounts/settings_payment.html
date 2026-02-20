@@ -1,26 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Manage License Types | L+C Psych{% endblock %}
+{% block title %}Payment Options | L+C Psych{% endblock %}
 
 {% block head_extra %}
 {% include "accounts/partials/settings_nav_styles.html" %}
 <style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.btn-primary { background: #3C9C64; color: #fff; border-radius: 0.75rem; padding: 0.65rem 1.6rem; font-weight: 600; border: 0; transition: background 0.2s ease, color 0.2s ease; }
+.btn-primary:hover,
+.btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
+.action-btn { border-radius: 0.75rem; border: 1px solid rgba(15, 63, 70, 0.14); padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 600; color: #0f3f46; background: #fff; transition: all 0.2s ease; }
+.action-btn:hover,
+.action-btn:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
 .table-card { width: 100%; border-collapse: collapse; }
 .table-card td,
 .table-card th { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(15, 63, 70, 0.12); text-align: left; }
 .table-card th { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(15, 63, 70, 0.68); }
-.action-btn { border-radius: 0.75rem; border: 1px solid rgba(15, 63, 70, 0.14); padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 600; color: #0f3f46; background: #fff; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem; }
-.action-btn:hover,
-.action-btn:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
-.btn-primary { background: #3C9C64; color: #fff; border-radius: 0.75rem; padding: 0.65rem 1.6rem; font-weight: 600; border: 0; transition: background 0.2s ease, color 0.2s ease; }
-.btn-primary:hover,
-.btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
-.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
-.field-label { color: #0f3f46; font-weight: 600; display: block; margin-bottom: 0.35rem; }
-.input-basic { width: 100%; padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 1.5px solid rgba(146, 220, 229, 0.7); background: rgba(255, 255, 255, 0.96); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-.input-basic:focus { border-color: #92DCE5; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.55); outline: none; }
-.error-text { color: #b91c1c; font-size: 0.85rem; margin-top: 0.35rem; }
-.badge-count { display: inline-flex; align-items: center; padding: 0.1rem 0.75rem; border-radius: 999px; background: rgba(146, 220, 229, 0.25); color: #0f3f46; font-size: 0.75rem; font-weight: 600; }
-.no-wrap { white-space: nowrap; }
+.pill { display: inline-flex; padding: 0.2rem 0.65rem; border-radius: 999px; background: rgba(146,220,229,0.28); color: #0f3f46; font-weight: 600; font-size: 0.8rem; }
+.text-muted { color: #6b7280; }
 </style>
 {% endblock %}
 
@@ -28,8 +24,8 @@
 <main id="content">
   <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
     <div class="max-w-[1100px] mx-auto px-4 text-center">
-      <h1 class="text-4xl leading-tight font-semibold m-0">Manage license types</h1>
-      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Create, edit, or retire the license credentials therapists can select on their profiles.</p>
+      <h1 class="text-4xl leading-tight font-semibold m-0">Payment options table</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Add or edit rows shown in the public Payment Options table.</p>
     </div>
   </section>
 
@@ -70,86 +66,110 @@
       <div class="settings-layout">
         {% include "accounts/partials/settings_nav.html" %}
 
-        <div class="space-y-10">
+        <div class="space-y-6">
           <div class="card-surface p-6 md:p-8">
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div>
-                <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">{% if editing %}Update license type{% else %}Add a license type{% endif %}</h2>
-                <p class="text-slate-600 mt-2 mb-0">{{ license_types|length }} total types. These appear anywhere a therapist chooses their credential.</p>
-              </div>
-              <a href="{% url 'settings' %}" class="action-btn">Back to settings</a>
-            </div>
-
-            {% if form.non_field_errors %}
-              <div class="mt-4 text-sm text-[#b91c1c]">{{ form.non_field_errors }}</div>
-            {% endif %}
-
-            <form method="post" class="mt-6 space-y-5">
-              {% csrf_token %}
-              {% if editing %}
-                <input type="hidden" name="object_id" value="{{ editing.id }}">
-              {% endif %}
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="field-label" for="id_name">Name</label>
-                  {{ form.name }}
-                  {% if form.name.errors %}
-                    <div class="error-text">{{ form.name.errors|striptags }}</div>
-                  {% endif %}
+            <div class="flex flex-col gap-6">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                  <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Payment options</h2>
+                  {% if payment_fee_editing %}<span class="pill">Editing</span>{% endif %}
                 </div>
-                <div>
-                  <label class="field-label" for="id_description">Description <span class="text-xs text-slate-500">(optional)</span></label>
-                  {{ form.description }}
-                  {% if form.description.errors %}
-                    <div class="error-text">{{ form.description.errors|striptags }}</div>
-                  {% endif %}
-                </div>
+                <p class="text-slate-600 text-sm mb-2">Manage payment rows and fee amounts.</p>
+                <form method="post" class="space-y-3">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="payment_save">
+                  {% if payment_fee_editing %}<input type="hidden" name="object_id" value="{{ payment_fee_editing.id }}">{% endif %}
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Name</label>
+                    {{ payment_fee_form.name }}
+                    {{ payment_fee_form.name.errors }}
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Category</label>
+                      {{ payment_fee_form.category }}
+                      {{ payment_fee_form.category.errors }}
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Order</label>
+                      {{ payment_fee_form.order }}
+                      {{ payment_fee_form.order.errors }}
+                      {% if payment_fee_form.order.help_text %}<p class="text-xs text-muted mt-1">{{ payment_fee_form.order.help_text }}</p>{% endif %}
+                    </div>
+                  </div>
+                  <div class="grid md:grid-cols-3 gap-3">
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Doctoral fee</label>
+                      {{ payment_fee_form.doctoral_fee }}
+                      {{ payment_fee_form.doctoral_fee.errors }}
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Master's fee</label>
+                      {{ payment_fee_form.masters_fee }}
+                      {{ payment_fee_form.masters_fee.errors }}
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Supervised fee</label>
+                      {{ payment_fee_form.supervised_fee }}
+                      {{ payment_fee_form.supervised_fee.errors }}
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Notes</label>
+                    {{ payment_fee_form.notes }}
+                    {{ payment_fee_form.notes.errors }}
+                  </div>
+                  <div class="flex items-center gap-3 pt-1">
+                    <button type="submit" class="btn-primary">{% if payment_fee_editing %}Update row{% else %}Add row{% endif %}</button>
+                    {% if payment_fee_editing %}
+                      <a href="{% url 'accounts:settings_payment' %}" class="action-btn">Cancel</a>
+                    {% endif %}
+                  </div>
+                </form>
               </div>
-              <div class="flex flex-wrap items-center gap-3">
-                <button type="submit" class="btn-primary">{% if editing %}Save changes{% else %}Add license type{% endif %}</button>
-                {% if editing %}
-                  <a href="{% url 'accounts:license_types' %}" class="action-btn">Cancel editing</a>
-                {% endif %}
-              </div>
-            </form>
-          </div>
 
-          <div class="card-surface p-6 md:p-8">
-            <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Existing license types</h2>
-            {% if license_types %}
-              <div class="overflow-x-auto">
-                <table class="table-card min-w-full">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Description</th>
-                      <th class="no-wrap">Therapists</th>
-                      <th class="no-wrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in license_types %}
+              <div class="card-surface border border-slate-100 p-4">
+                <h3 class="text-xl font-semibold text-[#0f3f46] mb-3">Payment rows</h3>
+                <div class="overflow-x-auto">
+                  <table class="table-card min-w-full">
+                    <thead>
                       <tr>
-                        <td class="font-semibold text-[#0f3f46]">{{ item.name }}</td>
-                        <td class="text-sm text-slate-600">{{ item.description|default:"—" }}</td>
-                        <td><span class="badge-count">{{ item.therapist_count }}</span></td>
-                        <td class="space-y-2">
-                          <a href="{% url 'accounts:license_types' %}?edit={{ item.id }}" class="action-btn">Edit</a>
-                          <form method="post" onsubmit="return confirm('Delete {{ item.name }}?');">
+                        <th>Name</th>
+                        <th class="no-wrap">Category</th>
+                        <th class="no-wrap">Doctoral</th>
+                        <th class="no-wrap">Master's</th>
+                        <th class="no-wrap">Supervised</th>
+                        <th class="no-wrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in payment_fees %}
+                      <tr>
+                        <td class="font-semibold text-[#0f3f46]">{{ row.name }}</td>
+                        <td class="text-sm text-slate-600">{{ row.get_category_display }}</td>
+                        <td class="text-sm">{{ row.doctoral_fee|default:"—" }}</td>
+                        <td class="text-sm">{{ row.masters_fee|default:"—" }}</td>
+                        <td class="text-sm">{{ row.supervised_fee|default:"—" }}</td>
+                        <td class="no-wrap space-x-2">
+                          <a href="{% url 'accounts:settings_payment' %}?edit_fee={{ row.id }}" class="action-btn inline-flex items-center">Edit</a>
+                          <form method="post" class="inline" onsubmit="return confirm('Delete this row?');">
                             {% csrf_token %}
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="object_id" value="{{ item.id }}">
+                            <input type="hidden" name="action" value="payment_delete">
+                            <input type="hidden" name="object_id" value="{{ row.id }}">
                             <button type="submit" class="action-btn">Delete</button>
                           </form>
                         </td>
                       </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                      {% empty %}
+                      <tr>
+                        <td colspan="6" class="text-sm text-muted">No payment rows yet. Add one with the form above.</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            {% else %}
-              <p class="text-slate-600 m-0">No license types recorded yet.</p>
-            {% endif %}
+            </div>
           </div>
         </div>
       </div>

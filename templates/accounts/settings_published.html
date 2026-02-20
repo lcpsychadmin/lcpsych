@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Therapists & Users | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.action-btn { border-radius: 0.6rem; border: 1px solid rgba(15, 63, 70, 0.14); padding: 0.35rem 0.65rem; font-size: 0.8rem; font-weight: 600; color: #0f3f46; background: #fff; transition: all 0.2s ease; }
+.action-btn:hover,
+.action-btn:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
+.table-card { width: 100%; border-collapse: collapse; }
+.table-card td,
+.table-card th { padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(15, 63, 70, 0.12); text-align: left; }
+.table-card th { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(15, 63, 70, 0.68); }
+.chip { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px; background: rgba(146, 220, 229, 0.25); color: #0f3f46; padding: 0.12rem 0.6rem; font-size: 0.72rem; font-weight: 600; }
+.status-dot { width: 0.55rem; height: 0.55rem; border-radius: 999px; display: inline-block; }
+.status-dot.is-on { background: #3C9C64; }
+.status-dot.is-off { background: rgba(15, 63, 70, 0.35); }
+.no-wrap { white-space: nowrap; }
+.action-menu { position: relative; display: inline-block; }
+.action-menu__button { border-radius: 0.6rem; border: 1px solid rgba(15,63,70,0.16); padding: 0.32rem 0.6rem; font-size: 0.82rem; font-weight: 700; background: #fff; color: #0f3f46; cursor: pointer; }
+.action-menu__panel { position: absolute; right: 0; top: 110%; min-width: 210px; background: #fff; border: 1px solid rgba(15,63,70,0.14); border-radius: 0.6rem; box-shadow: 0 12px 30px rgba(0,48,57,0.14); padding: 0.35rem; display: none; z-index: 30; }
+.action-menu.is-open .action-menu__panel { display: block; }
+.action-menu__panel form { margin: 0; }
+.action-menu__panel .action-btn { width: 100%; text-align: left; margin-bottom: 0.25rem; }
+.action-menu__panel .action-btn:last-child { margin-bottom: 0; }
+.action-menu__panel a.action-btn { display: block; text-align: left; }
+.action-menu__button:hover,
+.action-menu__button:focus-visible { background: #e6f6f3; border-color: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.35); }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Users and therapists</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Manage publication state, intake availability, and account links.</p>
+    </div>
+  </section>
+
+     <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="elementor-1393">
+           <div class="elementor-element elementor-element-a80adf4" >
+                <div class="e-con-inner">
+                    <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+                            <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+                            <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+                            <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+                            <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+                            <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+                            <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+                            <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+                            <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+                            <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+                        </svg>
+                    </div>
+                    <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+                            <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+                            <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+                            <path class="elementor-shape-fill" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+                            <path class="elementor-shape-fill" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+                            <path class="elementor-shape-fill" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+                            <path class="elementor-shape-fill" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+                            <path class="elementor-shape-fill" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+                            <path class="elementor-shape-fill" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+                            <path class="elementor-shape-fill" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" %}
+
+        <div class="space-y-10">
+          <div class="card-surface p-6 md:p-8" id="published">
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mb-6">Users and therapists</h2>
+            {% if user_rows %}
+              <div class="overflow-x-auto">
+                <table class="table-card min-w-full">
+                  <thead>
+                    <tr>
+                      <th class="no-wrap">User</th>
+                      <th class="no-wrap">Roles</th>
+                      <th class="no-wrap">Published</th>
+                      <th class="no-wrap">Accepting</th>
+                      <th class="no-wrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in user_rows %}
+                      {% with user=row.user profile=row.profile %}
+                      <tr>
+                        <td>
+                          <div class="font-semibold text-[#0f3f46] text-sm">
+                            {% if profile %}
+                              {{ profile.display_name|default:user.get_full_name|default:user.email }}
+                            {% else %}
+                              {{ user.get_full_name|default:user.email }}
+                            {% endif %}
+                          </div>
+                          {% if profile and profile.license_type %}<div class="text-xs text-slate-600">{{ profile.license_type }}</div>{% endif %}
+                          <div class="text-xs text-slate-500">{{ user.email }}</div>
+                        </td>
+                        <td class="text-sm space-x-1">
+                          {% if row.is_admin %}<span class="chip">Admin</span>{% endif %}
+                          {% if row.is_office_manager %}<span class="chip">Office Manager</span>{% endif %}
+                          {% if row.is_therapist %}<span class="chip">Therapist</span>{% endif %}
+                          {% if not row.is_admin and not row.is_office_manager and not row.is_therapist %}<span class="chip">User</span>{% endif %}
+                        </td>
+                        <td class="no-wrap">
+                          {% if profile %}
+                            <span class="chip">
+                              <span class="status-dot {% if profile.is_published %}is-on{% else %}is-off{% endif %}"></span>
+                              {% if profile.is_published %}Published{% else %}Hidden{% endif %}
+                            </span>
+                          {% else %}
+                            <span class="text-sm text-slate-500">—</span>
+                          {% endif %}
+                        </td>
+                        <td class="no-wrap">
+                          {% if profile %}
+                            <span class="chip">
+                              <span class="status-dot {% if profile.accepts_new_clients %}is-on{% else %}is-off{% endif %}"></span>
+                              {% if profile.accepts_new_clients %}Accepting{% else %}Not accepting{% endif %}
+                            </span>
+                          {% else %}
+                            <span class="text-sm text-slate-500">—</span>
+                          {% endif %}
+                        </td>
+                        <td class="no-wrap">
+                          <div class="action-menu" data-action-menu>
+                            <button type="button" class="action-menu__button" aria-haspopup="true" aria-expanded="false">Actions ▾</button>
+                            <div class="action-menu__panel">
+                              {% if profile %}
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="set_publish">
+                                <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                                <input type="hidden" name="value" value="{% if profile.is_published %}0{% else %}1{% endif %}">
+                                <button type="submit" class="action-btn w-full text-left">{% if profile.is_published %}Hide profile{% else %}Publish profile{% endif %}</button>
+                              </form>
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="set_accepts">
+                                <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                                <input type="hidden" name="value" value="{% if profile.accepts_new_clients %}0{% else %}1{% endif %}">
+                                <button type="submit" class="action-btn w-full text-left">{% if profile.accepts_new_clients %}Stop intake{% else %}Start intake{% endif %}</button>
+                              </form>
+                              <a href="{% url 'accounts:therapist_edit' profile.id %}" class="action-btn inline-flex items-center w-full">Edit profile</a>
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reset_password">
+                                <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                                <button type="submit" class="action-btn w-full text-left">Send reset link</button>
+                              </form>
+                              <form method="post" onsubmit="return confirm('Delete this user account? This cannot be undone.');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_user">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit" class="action-btn w-full text-left">Delete user</button>
+                              </form>
+                              {% else %}
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reset_password_user">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit" class="action-btn w-full text-left">Send reset link</button>
+                              </form>
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="create_profile">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit" class="action-btn w-full text-left">Make therapist</button>
+                              </form>
+                              <form method="post" onsubmit="return confirm('Delete this user account? This cannot be undone.');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_user">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit" class="action-btn w-full text-left">Delete user</button>
+                              </form>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      {% endwith %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-slate-600 m-0">No users found.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+  (function() {
+    var menus = document.querySelectorAll('[data-action-menu]');
+    menus.forEach(function(menu) {
+      var btn = menu.querySelector('.action-menu__button');
+      var panel = menu.querySelector('.action-menu__panel');
+      if (!btn || !panel) return;
+
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var isOpen = menu.classList.toggle('is-open');
+        btn.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!menu.contains(e.target)) {
+          menu.classList.remove('is-open');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}
+
+
+{% block before_footer %}
+  <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
+{% endblock %}

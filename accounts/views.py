@@ -1,3 +1,4 @@
+from typing import Any
 from urllib.parse import quote as urlquote
 
 from django.conf import settings
@@ -49,12 +50,13 @@ from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTy
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
 
 
-def is_admin(user: User) -> bool:
-    return user.is_superuser or user.groups.filter(name="admin").exists()
+def is_admin(user: Any) -> bool:
+    # Accept Any to handle request.user typing from auth backends.
+    return bool(getattr(user, "is_superuser", False) or getattr(user, "groups", None) and user.groups.filter(name="admin").exists())
 
 
-def is_office_manager(user: User) -> bool:
-    return user.groups.filter(name="office_manager").exists()
+def is_office_manager(user: Any) -> bool:
+    return bool(getattr(user, "groups", None) and user.groups.filter(name="office_manager").exists())
 
 
 def _create_user_invitation(
@@ -151,7 +153,14 @@ class InviteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
 
 
 class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
-    template_name = "accounts/manage_therapists.html"
+    template_name = "accounts/site_settings.html"
+    section_slug: str | None = None
+    success_url_name = "settings"
+
+    def _redirect_to_self(self, extra_query: str = "") -> HttpResponse:
+        """Redirect back to the current settings page (override per section view)."""
+        base_url = reverse(self.success_url_name)
+        return redirect(f"{base_url}{extra_query}")
 
     def _send_password_reset(self, request: HttpRequest, user: User) -> HttpResponse:
         EmailConfirmation.objects.filter(user=user, used_at__isnull=True).delete()
@@ -177,10 +186,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 raise
             messages.success(request, f"Password reset link ready for {user.email}.")
 
-        redirect_url = reverse("accounts:therapists")
+        redirect_url = ""
         if settings.DEBUG:
-            redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(user.email)}"
-        return redirect(redirect_url)
+            redirect_url = f"?activation_url={urlquote(activate_url)}&email={urlquote(user.email)}"
+        return self._redirect_to_self(redirect_url)
 
     def test_func(self):
         return is_admin(self.request.user)
@@ -203,6 +212,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         inspirational_form: InspirationalQuoteForm | None = None,
         company_form: CompanyQuoteForm | None = None,
         contact_form: ContactInfoForm | None = None,
+        active_page: str = "",
     ) -> dict:
         invite_form = form or InviteUserForm(initial={"is_therapist": True})
         therapists = (
@@ -268,6 +278,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         if not contact_section:
             contact_section = ContactInfo.objects.create()
         return {
+            "active_page": active_page,
             "invite_form": invite_form,
             "therapists": therapists,
             "user_rows": user_rows,
@@ -328,16 +339,18 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             editing_faq=editing_faq,
             whatwedo_item_form=whatwedo_item_form,
             editing_whatwedo_item=editing_whatwedo_item,
+            active_page=self.section_slug or "therapists",
         )
         return render(request, self.template_name, ctx)
 
     def post(self, request: HttpRequest) -> HttpResponse:
         action = request.POST.get("action")
+        active_page = self.section_slug or "therapists"
 
         if action == "invite":
             form = InviteUserForm(request.POST)
             if not form.is_valid():
-                ctx = self._build_context(request, form=form)
+                ctx = self._build_context(request, form=form, active_page=active_page)
                 return render(request, self.template_name, ctx)
 
             email = form.cleaned_data["email"].lower()
@@ -368,10 +381,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                     raise
                 messages.success(request, f"Invitation ready for {email}.")
 
-            redirect_url = reverse("accounts:therapists")
+            redirect_qs = ""
             if settings.DEBUG:
-                redirect_url = f"{redirect_url}?activation_url={urlquote(activate_url)}&email={urlquote(email)}"
-            return redirect(redirect_url)
+                redirect_qs = f"?activation_url={urlquote(activate_url)}&email={urlquote(email)}"
+            return self._redirect_to_self(redirect_qs)
 
         if action == "payment_save":
             object_id = request.POST.get("object_id")
@@ -381,12 +394,13 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 saved = fee_form.save()
                 verb = "updated" if editing_fee else "added"
                 messages.success(request, f"Fee row '{saved.name}' {verb}.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 fee_form=fee_form,
                 editing_fee=editing_fee,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -396,7 +410,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             name = row.name
             row.delete()
             messages.success(request, f"Deleted fee row '{name}'.")
-            return redirect("accounts:therapists")
+            return self._redirect_to_self()
 
         if action == "faq_save":
             object_id = request.POST.get("object_id")
@@ -406,12 +420,13 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 saved = faq_form.save()
                 verb = "updated" if editing_faq else "added"
                 messages.success(request, f"FAQ '{saved.question}' {verb}.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 faq_form=faq_form,
                 editing_faq=editing_faq,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -421,7 +436,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             name = row.question
             row.delete()
             messages.success(request, f"Deleted FAQ '{name}'.")
-            return redirect("accounts:therapists")
+            return self._redirect_to_self()
 
         if action == "about_save":
             section = AboutSection.objects.order_by("id").first()
@@ -431,11 +446,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if about_form.is_valid():
                 saved = about_form.save()
                 messages.success(request, f"Updated '{saved.about_title}' content.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 about_section_form=about_form,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -447,11 +463,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if philosophy_form.is_valid():
                 saved = philosophy_form.save()
                 messages.success(request, f"Updated '{saved.title}' content.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 philosophy_form=philosophy_form,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -463,11 +480,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if inspirational_form.is_valid():
                 saved = inspirational_form.save()
                 messages.success(request, "Updated inspirational quote content.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 inspirational_form=inspirational_form,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -479,11 +497,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if company_form.is_valid():
                 saved = company_form.save()
                 messages.success(request, "Updated company quote content.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 company_form=company_form,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -495,11 +514,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if contact_form.is_valid():
                 saved = contact_form.save()
                 messages.success(request, "Updated contact section content.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 contact_form=contact_form,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -511,11 +531,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if section_form.is_valid():
                 saved = section_form.save()
                 messages.success(request, f"Updated '{saved.title}' copy.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 whatwedo_section_form=section_form,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -527,12 +548,13 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 saved = item_form.save()
                 verb = "updated" if editing_item else "added"
                 messages.success(request, f"What We Do item '{saved.text}' {verb}.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
 
             ctx = self._build_context(
                 request,
                 whatwedo_item_form=item_form,
                 editing_whatwedo_item=editing_item,
+                active_page=active_page,
             )
             return render(request, self.template_name, ctx)
 
@@ -542,7 +564,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             name = row.text
             row.delete()
             messages.success(request, f"Deleted What We Do item '{name}'.")
-            return redirect("accounts:therapists")
+            return self._redirect_to_self()
 
         if action in {"set_publish", "set_accepts"}:
             profile_id = request.POST.get("profile_id")
@@ -558,7 +580,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 profile.save(update_fields=["accepts_new_clients", "updated_at"])
                 state = "accepting" if value else "not accepting"
                 messages.success(request, f"{profile.display_name} is now {state} new clients.")
-            return redirect("accounts:therapists")
+            return self._redirect_to_self()
 
         if action == "reset_password":
             profile_id = request.POST.get("profile_id")
@@ -576,11 +598,11 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             user = get_object_or_404(User, pk=user_id)
             if is_admin(user):
                 messages.error(request, "Admins cannot be deleted here.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
             email = user.email or "user"
             user.delete()
             messages.success(request, f"Deleted {email}.")
-            return redirect("accounts:therapists")
+            return self._redirect_to_self()
 
         if action == "delete_therapist":
             profile_id = request.POST.get("profile_id")
@@ -589,7 +611,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             user = profile.user
             if is_admin(user):
                 messages.error(request, "Admins cannot be deleted here.")
-                return redirect("accounts:therapists")
+                return self._redirect_to_self()
             therapist_group = Group.objects.filter(name="therapist").first()
             profile.delete()
             if therapist_group:
@@ -597,7 +619,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             user.is_active = False
             user.save(update_fields=["is_active", "updated_at"] if hasattr(user, "updated_at") else ["is_active"])
             messages.success(request, f"Deleted therapist profile for {name} and deactivated their account.")
-            return redirect("accounts:therapists")
+            return self._redirect_to_self()
 
         if action == "create_profile":
             user_id = request.POST.get("user_id")
@@ -609,10 +631,64 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 messages.success(request, f"Profile created for {user.email}.")
             else:
                 messages.info(request, f"{user.email} already has a profile.")
-            return redirect("accounts:therapists")
+            return self._redirect_to_self()
 
         messages.error(request, "Unsupported action.")
-        return redirect("accounts:therapists")
+        return self._redirect_to_self()
+
+
+class InviteSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_invite.html"
+    success_url_name = "accounts:settings_invite"
+    section_slug = "invite"
+
+
+class AboutSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_about.html"
+    success_url_name = "accounts:settings_about"
+    section_slug = "about"
+
+
+class PhilosophySettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_philosophy.html"
+    success_url_name = "accounts:settings_philosophy"
+    section_slug = "philosophy"
+
+
+class QuotesSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_quotes.html"
+    success_url_name = "accounts:settings_quotes"
+    section_slug = "quotes"
+
+
+class ContactSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_contact.html"
+    success_url_name = "accounts:settings_contact"
+    section_slug = "contact"
+
+
+class WhatWeDoSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_whatwedo.html"
+    success_url_name = "accounts:settings_whatwedo"
+    section_slug = "whatwedo"
+
+
+class FAQSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_faq.html"
+    success_url_name = "accounts:settings_faq"
+    section_slug = "faq"
+
+
+class PaymentSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_payment.html"
+    success_url_name = "accounts:settings_payment"
+    section_slug = "payment"
+
+
+class PublishedSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_published.html"
+    success_url_name = "accounts:settings_published"
+    section_slug = "published"
 
 
 class ManageJoinSubmissionsView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -653,7 +729,7 @@ class ManageJoinSubmissionsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 label = user.email.strip()
 
             forward_users.append({
-                "id": user.id,
+                "id": user.pk,
                 "email": user.email.strip(),
                 "label": label,
             })
@@ -750,6 +826,7 @@ class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):
             "form": form or ServiceForm(),
             "editing": editing,
             "services": services,
+            "active_page": "services",
         }
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -907,6 +984,7 @@ class ManageLicenseTypesView(LoginRequiredMixin, UserPassesTestMixin, View):
             "form": form or LicenseTypeForm(),
             "editing": editing,
             "license_types": license_types,
+            "active_page": "license_types",
         }
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -951,6 +1029,7 @@ class ManageClientFocusesView(LoginRequiredMixin, UserPassesTestMixin, View):
             "form": form or ClientFocusForm(),
             "editing": editing,
             "client_focuses": client_focuses,
+            "active_page": "client_focuses",
         }
 
     def get(self, request: HttpRequest) -> HttpResponse:

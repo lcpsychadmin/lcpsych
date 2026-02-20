@@ -1,0 +1,54 @@
+<button class="settings-nav__mobile-toggle" type="button" data-settings-nav-toggle aria-expanded="false" aria-controls="settings-nav">Menu ▾</button>
+
+<nav id="settings-nav" class="settings-nav" data-settings-nav>
+  <h2 class="nav-heading">Settings</h2>
+  <p class="nav-subtitle text-sm">Jump to a section.</p>
+  <ul class="nav-list">
+    <li class="nav-tree is-collapsed" data-collapsible>
+      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="false" aria-controls="nav-tree-users">Manage Users <span class="nav-tree__chevron">▸</span></button>
+      <ul id="nav-tree-users" class="nav-tree__items">
+        <li><a class="{% if active_page == 'invite' %}is-active{% endif %}" href="{% url 'accounts:settings_invite' %}">Send an invitation</a></li>
+        <li><a class="{% if active_page == 'published' %}is-active{% endif %}" href="{% url 'accounts:settings_published' %}">Site Users</a></li>
+      </ul>
+    </li>
+    <li class="nav-tree is-collapsed" data-collapsible>
+      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="false" aria-controls="nav-tree-lookups">Profile lookup lists <span class="nav-tree__chevron">▸</span></button>
+      <ul id="nav-tree-lookups" class="nav-tree__items">
+        <li><a class="{% if active_page == 'license_types' %}is-active{% endif %}" href="{% url 'accounts:license_types' %}">License types</a></li>
+        <li><a class="{% if active_page == 'client_focuses' %}is-active{% endif %}" href="{% url 'accounts:client_focuses' %}">Client focuses</a></li>
+      </ul>
+    </li>
+    <li><a class="{% if active_page == 'services' %}is-active{% endif %}" href="{% url 'accounts:services' %}">Manage services</a></li>
+    <li><a class="{% if active_page == 'about' %}is-active{% endif %}" href="{% url 'accounts:settings_about' %}">About &amp; Mission</a></li>
+    <li><a class="{% if active_page == 'philosophy' %}is-active{% endif %}" href="{% url 'accounts:settings_philosophy' %}">Our Philosophy</a></li>
+    <li><a class="{% if active_page == 'quotes' %}is-active{% endif %}" href="{% url 'accounts:settings_quotes' %}">Quotes</a></li>
+    <li><a class="{% if active_page == 'contact' %}is-active{% endif %}" href="{% url 'accounts:settings_contact' %}">Contact section</a></li>
+    <li><a class="{% if active_page == 'whatwedo' %}is-active{% endif %}" href="{% url 'accounts:settings_whatwedo' %}">What We Do</a></li>
+    <li><a class="{% if active_page == 'faq' %}is-active{% endif %}" href="{% url 'accounts:settings_faq' %}">FAQ</a></li>
+    <li><a class="{% if active_page == 'payment' %}is-active{% endif %}" href="{% url 'accounts:settings_payment' %}">Payment table</a></li>
+  </ul>
+
+  <script>
+    (function() {
+      var trees = document.querySelectorAll('[data-collapsible]');
+      trees.forEach(function(tree) {
+        var btn = tree.querySelector('[data-collapsible-toggle]');
+        var list = tree.querySelector('.nav-tree__items');
+        if (!btn || !list) return;
+        btn.addEventListener('click', function() {
+          var isCollapsed = tree.classList.toggle('is-collapsed');
+          btn.setAttribute('aria-expanded', String(!isCollapsed));
+        });
+      });
+
+      var toggle = document.querySelector('[data-settings-nav-toggle]');
+      var nav = document.querySelector('[data-settings-nav]');
+      if (toggle && nav) {
+        toggle.addEventListener('click', function() {
+          var isOpen = nav.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+      }
+    })();
+  </script>
+</nav>
