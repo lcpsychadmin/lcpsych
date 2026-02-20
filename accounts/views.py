@@ -775,11 +775,19 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(TherapistProfile, pk=profile_id)
             user = profile.user
+            logger.info(
+                "password_reset_action",
+                extra={"action": action, "profile_id": profile_id, "user_id": user.id, "user_email": user.email},
+            )
             return self._send_password_reset(request, user)
 
         if action == "reset_password_user":
             user_id = request.POST.get("user_id")
             user = get_object_or_404(User, pk=user_id)
+            logger.info(
+                "password_reset_action",
+                extra={"action": action, "user_id": user.id, "user_email": user.email},
+            )
             return self._send_password_reset(request, user)
 
         if action == "delete_user":
