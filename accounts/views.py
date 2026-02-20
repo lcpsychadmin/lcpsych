@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from urllib.parse import quote as urlquote
 
@@ -56,6 +57,9 @@ from core.models import (
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_admin(user: Any) -> bool:
@@ -187,9 +191,21 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         try:
+            logger.info(
+                "password_reset_send",
+                extra={
+                    "user_id": user.id,
+                    "user_email": user.email,
+                    "site": site_name,
+                },
+            )
             send_mail(subject, body, getattr(settings, "DEFAULT_FROM_EMAIL", None), [user.email], fail_silently=False)
             messages.success(request, f"Password reset link sent to {user.email}.")
         except Exception:
+            logger.exception(
+                "password_reset_send_failed",
+                extra={"user_id": user.id, "user_email": user.email},
+            )
             if not settings.DEBUG:
                 raise
             messages.success(request, f"Password reset link ready for {user.email}.")
