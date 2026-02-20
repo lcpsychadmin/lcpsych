@@ -280,6 +280,130 @@ gtag('config', 'G-93EEDX0TQR');</script>
 	    });
 	  })();
 	</script>
+
+		<script>
+		(function() {
+		  try {
+		    if (!window.localStorage) return;
+		    const isAuthed = {{ request.user.is_authenticated|yesno:"true,false" }};
+		    if (isAuthed) return;
+
+		    const endpoint = '/api/analytics/';
+		    const sessionKey = 'lcpsid';
+		    let sessionId = localStorage.getItem(sessionKey);
+		    if (!sessionId) {
+		      if (crypto.randomUUID) {
+		        sessionId = crypto.randomUUID();
+		      } else {
+		        sessionId = 'sid-' + Math.random().toString(16).slice(2) + '-' + Date.now();
+		      }
+		      localStorage.setItem(sessionKey, sessionId);
+		    }
+
+		    const pagePath = location.pathname + location.search;
+		    const referrer = document.referrer || '';
+		    const started = performance.now();
+		    let maxScroll = 0;
+		    let sentPageView = false;
+		    const scrollMarks = new Set();
+
+		    const send = (data, opts = {}) => {
+		      const body = JSON.stringify({
+		        session_id: sessionId,
+		        path: pagePath,
+		        referrer: referrer,
+		        ...data,
+		      });
+		      if (opts.beacon && navigator.sendBeacon) {
+		        navigator.sendBeacon(endpoint, new Blob([body], { type: 'application/json' }));
+		        return;
+		      }
+		      fetch(endpoint, {
+		        method: 'POST',
+		        headers: { 'Content-Type': 'application/json' },
+		        body,
+		        credentials: 'same-origin',
+		      }).catch(function() {});
+		    };
+
+		    const sendPageView = () => {
+		      if (sentPageView) return;
+		      sentPageView = true;
+		      const duration = Math.max(0, Math.round(performance.now() - started));
+		      send({ event_type: 'page_view', duration_ms: duration, scroll_percent: maxScroll }, { beacon: true });
+		    };
+
+		    const thresholds = [25, 50, 75, 90];
+		    const updateScroll = () => {
+		      const doc = document.documentElement;
+		      const scrollTop = window.scrollY || doc.scrollTop || 0;
+		      const winHeight = window.innerHeight || doc.clientHeight || 0;
+		      const scrollHeight = doc.scrollHeight || 0;
+		      if (!scrollHeight) return;
+		      const pct = Math.min(100, Math.round(((scrollTop + winHeight) / scrollHeight) * 100));
+		      if (pct > maxScroll) {
+		        maxScroll = pct;
+		        thresholds.forEach(function(mark) {
+		          if (pct >= mark && !scrollMarks.has(mark)) {
+		            scrollMarks.add(mark);
+		            send({ event_type: 'scroll', scroll_percent: mark });
+		          }
+		        });
+		      }
+		    };
+
+		    window.addEventListener('scroll', function() {
+		      window.requestAnimationFrame(updateScroll);
+		    }, { passive: true });
+
+		    document.addEventListener('click', function(evt) {
+		      const target = evt.target && evt.target.closest('a, button, [data-analytics-label]');
+		      if (!target) return;
+		      const label = (
+		        target.getAttribute('data-analytics-label') ||
+		        target.getAttribute('aria-label') ||
+		        target.textContent ||
+		        target.innerText ||
+		        target.id ||
+		        target.name ||
+		        target.href ||
+		        ''
+		      ).trim().slice(0, 255);
+		      if (!label) return;
+		      send({ event_type: 'click', label: label });
+		    });
+
+		    const formHandler = function(eventType) {
+		      return function(evt) {
+		        const form = evt.target && evt.target.closest('form');
+		        if (!form) return;
+		        const label = (
+		          form.getAttribute('data-analytics-label') ||
+		          form.getAttribute('name') ||
+		          form.getAttribute('id') ||
+		          form.action ||
+		          'form'
+		        ).slice(0, 255);
+		        send({ event_type: eventType, label: label });
+		      };
+		    };
+		    document.addEventListener('submit', formHandler('form_submit'), true);
+		    document.addEventListener('invalid', formHandler('form_error'), true);
+
+		    const visibilityHandler = function() {
+		      if (document.visibilityState === 'hidden') {
+		        sendPageView();
+		      }
+		    };
+		    document.addEventListener('visibilitychange', visibilityHandler);
+		    window.addEventListener('pagehide', sendPageView);
+
+		    updateScroll();
+		  } catch (e) {
+		    // Fail silently; analytics should never break the page
+		  }
+		})();
+		</script>
 	{% block body_extra %}{% endblock %}
 </body>
 </html>

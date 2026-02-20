@@ -134,6 +134,7 @@
                                                 {% if request.user|has_group:'admin' or request.user.is_superuser %}
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'settings' %}">Site Settings</a>
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:seo_settings' %}">SEO Settings</a>
+                                                    <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:settings_visitor_stats' %}">Visitor Stats</a>
                                                 {% endif %}
                                                 {% if request.user|has_group:'office_manager' or request.user|has_group:'admin' or request.user.is_superuser %}
                                                     <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:join_submissions' %}">

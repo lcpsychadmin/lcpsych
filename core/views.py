@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
@@ -8,11 +8,107 @@ from django.views.decorators.http import require_POST
 from django.template.loader import select_template
 from django.utils.safestring import mark_safe
 from django.utils.http import urlencode
+import json
+import logging
 import re
 from pathlib import Path
 from .forms import JoinOurTeamForm
-from .models import Page, Post, PublishStatus, Service, StaticPageSEO, ContactInfo
+from .models import (
+	Page,
+	Post,
+	PublishStatus,
+	Service,
+	StaticPageSEO,
+	ContactInfo,
+	AnalyticsEvent,
+	AnalyticsEventType,
+)
 from profiles.models import TherapistProfile
+
+
+def _client_ip(request) -> str:
+	xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
+	if xff:
+		return xff.split(",")[0].strip()
+	return request.META.get("REMOTE_ADDR", "") or ""
+
+
+def _geolocate_ip(ip: str) -> dict[str, str]:
+	"""Best-effort geolocation; returns empty values if GeoIP is unavailable."""
+	if not ip:
+		return {"country_code": "", "region": "", "city": "", "timezone": ""}
+	try:
+		from django.contrib.gis.geoip2 import GeoIP2  # type: ignore
+		geo = GeoIP2()
+		res = geo.city(ip)
+		return {
+			"country_code": (res.get("country_code") or "")[:2],
+			"region": (res.get("region") or res.get("subdivisions", [{}])[0].get("names", {}).get("en") or "")[:100] if isinstance(res.get("subdivisions"), list) else (res.get("region") or "")[:100],
+			"city": (res.get("city") or "")[:100],
+			"timezone": (res.get("time_zone") or res.get("timezone") or "")[:64],
+		}
+	except Exception as exc:  # pragma: no cover - optional dependency / data file
+		logging.getLogger(__name__).debug("GeoIP lookup failed", exc_info=exc)
+		return {"country_code": "", "region": "", "city": "", "timezone": ""}
+
+
+@csrf_exempt
+@require_POST
+def analytics_event(request):
+	"""Accept lightweight analytics events from the front-end tracker.
+
+	We skip authenticated users to keep the dataset anonymous, and we guard against
+	oversized payloads or unknown event types.
+	"""
+
+	if request.user.is_authenticated:
+		return HttpResponse(status=204)
+
+	try:
+		payload = json.loads(request.body or "{}")
+	except json.JSONDecodeError:
+		return JsonResponse({"error": "invalid json"}, status=400)
+
+	event_type = payload.get("event_type") or ""
+	if event_type not in AnalyticsEventType.values:
+		return JsonResponse({"error": "unknown event type"}, status=400)
+
+	session_id = (payload.get("session_id") or "").strip()[:64]
+	if not session_id:
+		return JsonResponse({"error": "session_id required"}, status=400)
+
+	path = (payload.get("path") or request.path or "").split("?")[0][:500]
+	referrer = (payload.get("referrer") or "")[:500]
+	label = (payload.get("label") or "")[:255]
+	duration_ms = int(payload.get("duration_ms") or 0)
+	scroll_percent = max(0, min(int(payload.get("scroll_percent") or 0), 100))
+	metadata = payload.get("metadata")
+	if not isinstance(metadata, dict):
+		metadata = {}
+
+	ip = _client_ip(request)
+	user_agent = (request.META.get("HTTP_USER_AGENT", "") or "")[:1000]
+	geo = _geolocate_ip(ip)
+
+	AnalyticsEvent.objects.create(
+		event_type=event_type,
+		session_id=session_id,
+		path=path,
+		referrer=referrer,
+		user_agent=user_agent,
+		ip_hash=AnalyticsEvent.hash_ip(ip),
+		label=label,
+		duration_ms=max(duration_ms, 0),
+		scroll_percent=scroll_percent,
+		metadata=metadata,
+		is_authenticated=False,
+		country_code=geo.get("country_code", ""),
+		region=geo.get("region", ""),
+		city=geo.get("city", ""),
+		timezone=geo.get("timezone", ""),
+	)
+
+	return HttpResponse(status=204)
 
 
 def _build_therapist_cards(profiles):

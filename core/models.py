@@ -3,6 +3,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
+import hashlib
 
 from ckeditor.fields import RichTextField
 class PublishStatus(models.TextChoices):
@@ -464,3 +465,48 @@ class SocialProfile(Timestamped):
 		if not self.token_expires_at:
 			return False
 		return timezone.now() >= self.token_expires_at
+
+
+class AnalyticsEventType(models.TextChoices):
+	PAGE_VIEW = "page_view", "Page view"
+	CLICK = "click", "Click"
+	SCROLL = "scroll", "Scroll depth"
+	FORM_SUBMIT = "form_submit", "Form submit"
+	FORM_ERROR = "form_error", "Form error"
+
+
+class AnalyticsEvent(Timestamped):
+	"""Lightweight event log for anonymous sessions."""
+
+	event_type = models.CharField(max_length=32, choices=AnalyticsEventType.choices)
+	session_id = models.CharField(max_length=64, db_index=True)
+	path = models.CharField(max_length=500, db_index=True)
+	referrer = models.CharField(max_length=500, blank=True)
+	user_agent = models.TextField(blank=True)
+	ip_hash = models.CharField(max_length=64, blank=True)
+	label = models.CharField(max_length=255, blank=True)
+	duration_ms = models.PositiveIntegerField(default=0, help_text="Client-reported duration for the event, if applicable.")
+	scroll_percent = models.PositiveSmallIntegerField(default=0)
+	metadata = models.JSONField(default=dict, blank=True)
+	is_authenticated = models.BooleanField(default=False)
+	country_code = models.CharField(max_length=2, blank=True)
+	region = models.CharField(max_length=100, blank=True)
+	city = models.CharField(max_length=100, blank=True)
+	timezone = models.CharField(max_length=64, blank=True)
+
+	class Meta:
+		ordering = ["-created"]
+		indexes = [
+			models.Index(fields=["event_type", "created"]),
+			models.Index(fields=["path", "created"]),
+		]
+
+	def __str__(self) -> str:
+		return f"{self.event_type} @ {self.path}"
+
+	@staticmethod
+	def hash_ip(ip: str) -> str:
+		if not ip:
+			return ""
+		secret = getattr(settings, "SECRET_KEY", "")
+		return hashlib.sha256(f"{ip}|{secret}".encode()).hexdigest()

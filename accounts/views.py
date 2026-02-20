@@ -8,11 +8,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
-from django.db.models import Count
+from django.db.models import Count, Avg
+from django.db.models.functions import TruncDate
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from datetime import timedelta
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
@@ -48,6 +50,8 @@ from core.models import (
     JoinOurTeamSubmission,
     SocialProfile,
     SocialPlatform,
+    AnalyticsEvent,
+    AnalyticsEventType,
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
@@ -423,6 +427,69 @@ class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
         ctx = {
             "profile_forms": self._forms(),
             "active_page": "social_posting",
+        }
+        return render(request, self.template_name, ctx)
+
+
+class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "accounts/settings_visitor_stats.html"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        since = timezone.now() - timedelta(days=30)
+        events = AnalyticsEvent.objects.filter(created__gte=since, is_authenticated=False)
+
+        page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
+        total_page_views = page_views.count()
+        avg_time_ms = page_views.aggregate(avg=Avg("duration_ms"))['avg'] or 0
+        unique_sessions = events.values("session_id").distinct().count()
+
+        by_day = list(
+            page_views.annotate(day=TruncDate("created"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        top_pages = list(
+            page_views.values("path")
+            .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
+            .order_by("-count")[:10]
+        )
+
+        top_clicks = list(
+            events.filter(event_type=AnalyticsEventType.CLICK)
+            .values("label")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+
+        avg_scroll = (
+            events.filter(event_type=AnalyticsEventType.SCROLL)
+            .aggregate(avg=Avg("scroll_percent"))
+            .get("avg")
+            or 0
+        )
+
+        locations = list(
+            events.exclude(country_code="")
+            .values("country_code", "region", "city", "timezone")
+            .annotate(count=Count("id"), sessions=Count("session_id", distinct=True))
+            .order_by("-count")[:20]
+        )
+
+        ctx = {
+            "active_page": "visitor_stats",
+            "total_page_views": total_page_views,
+            "avg_time_ms": int(avg_time_ms),
+            "unique_sessions": unique_sessions,
+            "by_day": by_day,
+            "top_pages": top_pages,
+            "top_clicks": top_clicks,
+            "avg_scroll": int(avg_scroll),
+            "locations": locations,
         }
         return render(request, self.template_name, ctx)
 

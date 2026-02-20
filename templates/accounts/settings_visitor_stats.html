@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Visitor Stats | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.table-basic th, .table-basic td { padding: 0.6rem 0.4rem; border-bottom: 1px solid rgba(15, 63, 70, 0.08); }
+.badge-muted { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(146, 220, 229, 0.22); color: #0f3f46; font-weight: 700; font-size: 0.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-12 pt-14">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Visitor stats</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Anonymous sessions only, last 30 days.</p>
+    </div>
+  </section>
+
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="elementor-1393">
+      <div class="elementor-element elementor-element-a80adf4">
+        <div class="e-con-inner">
+          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
+            </svg>
+          </div>
+          <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" with active_page="visitor_stats" %}
+
+        <div class="space-y-6">
+          <div class="grid gap-4 md:grid-cols-3">
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Page views</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ total_page_views }}</div>
+              <div class="text-xs text-slate-500">Last 30 days</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Avg time on page</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ avg_time_ms|floatformat:0 }} ms</div>
+              <div class="text-xs text-slate-500">Page views only</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Unique sessions</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ unique_sessions }}</div>
+              <div class="text-xs text-slate-500">Anonymous only</div>
+            </div>
+          </div>
+
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Daily page views</h2>
+              <span class="badge-muted">30 day window</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="table-basic text-sm w-full">
+                <thead class="text-[#0f3f46]">
+                  <tr><th>Date</th><th>Views</th></tr>
+                </thead>
+                <tbody>
+                  {% for row in by_day %}
+                  <tr>
+                    <td>{{ row.day }}</td>
+                    <td>{{ row.count }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="2" class="text-slate-500 py-2">No data yet</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Top pages</h2>
+                <span class="badge-muted">Most viewed</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Path</th><th>Views</th><th>Avg time (ms)</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in top_pages %}
+                    <tr>
+                      <td>{{ row.path }}</td>
+                      <td>{{ row.count }}</td>
+                      <td>{{ row.avg_duration|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-slate-500 py-2">No data yet</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Top clicks</h2>
+                <span class="badge-muted">Labels captured</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Label</th><th>Clicks</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in top_clicks %}
+                    <tr>
+                      <td>{{ row.label }}</td>
+                      <td>{{ row.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="text-slate-500 py-2">No data yet</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Top locations</h2>
+              <span class="badge-muted">By event count</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="table-basic text-sm w-full">
+                <thead class="text-[#0f3f46]">
+                  <tr><th>Country</th><th>Region/State</th><th>City</th><th>Timezone</th><th>Events</th><th>Sessions</th></tr>
+                </thead>
+                <tbody>
+                  {% for row in locations %}
+                  <tr>
+                    <td>{{ row.country_code|upper }}</td>
+                    <td>{{ row.region }}</td>
+                    <td>{{ row.city }}</td>
+                    <td>{{ row.timezone }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.sessions }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="6" class="text-slate-500 py-2">No location data captured yet</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card-surface p-6 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Average scroll depth</h2>
+              <p class="text-slate-600 text-sm m-0">Across scroll events</p>
+            </div>
+            <div class="text-3xl font-semibold text-[#0f3f46]">{{ avg_scroll|floatformat:0 }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block before_footer %}
+  <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
+{% endblock %}
