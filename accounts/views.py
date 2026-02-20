@@ -9,7 +9,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
-from django.db.models import Count, Avg, Q
+from django.db.models import Count, Avg, Q, FloatField
+from django.db.models.functions import Cast
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -794,7 +795,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .annotate(
                 count=Count("id"),
                 sessions=Count("session_id", distinct=True),
-                avg_scroll=Avg("metadata__exit_scroll"),
+                avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
             )
             .order_by("-count")[:10]
         )
@@ -807,7 +808,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .annotate(
                 count=Count("id"),
                 sessions=Count("session_id", distinct=True),
-                avg_scroll=Avg("metadata__exit_scroll"),
+                avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
             )
             .order_by("-count")[:10]
         )
@@ -895,7 +896,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "hover_event_count": hover_qs.count(),
             "exit_rate": exit_rate,
             "exit_by_path": exit_by_path,
-            "avg_exit_scroll": round(exit_qs.aggregate(avg=Avg("metadata__exit_scroll"))["avg"] or 0),
+            "avg_exit_scroll": round(exit_qs.aggregate(avg=Avg(Cast("metadata__exit_scroll", FloatField())))["avg"] or 0),
             "click_paths": click_paths,
             "exit_sessions": exit_sessions,
             "rage_click_count": rage_click_count,
