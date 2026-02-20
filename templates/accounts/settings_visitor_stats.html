@@ -49,8 +49,8 @@
             </div>
             <div class="card-surface p-5">
               <div class="text-sm text-slate-600">Avg time on page</div>
-              <div class="text-3xl font-semibold text-[#0f3f46]">{{ avg_time_ms|floatformat:0 }} ms</div>
-              <div class="text-xs text-slate-500">Page views only</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ avg_time_label }}</div>
+              <div class="text-xs text-slate-500">Page views only (m:s)</div>
             </div>
             <div class="card-surface p-5">
               <div class="text-sm text-slate-600">Unique sessions</div>
@@ -92,14 +92,14 @@
               <div class="overflow-x-auto">
                 <table class="table-basic text-sm w-full">
                   <thead class="text-[#0f3f46]">
-                    <tr><th>Path</th><th>Views</th><th>Avg time (ms)</th></tr>
+                    <tr><th>Path</th><th>Views</th><th>Avg time</th></tr>
                   </thead>
                   <tbody>
                     {% for row in top_pages %}
                     <tr>
                       <td>{{ row.path }}</td>
                       <td>{{ row.count }}</td>
-                      <td>{{ row.avg_duration|floatformat:0 }}</td>
+                      <td>{{ row.avg_duration_label }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="3" class="text-slate-500 py-2">No data yet</td></tr>

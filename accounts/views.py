@@ -434,6 +434,16 @@ class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
 class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "accounts/settings_visitor_stats.html"
 
+    @staticmethod
+    def _format_ms(ms: int | float | None) -> str:
+        if not ms or ms <= 0:
+            return "<1s"
+        total_seconds = int(round(ms / 1000))
+        minutes, seconds = divmod(total_seconds, 60)
+        if minutes:
+            return f"{minutes}m {seconds:02d}s"
+        return f"{seconds}s"
+
     def test_func(self):
         return is_admin(self.request.user)
 
@@ -444,6 +454,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
         total_page_views = page_views.count()
         avg_time_ms = page_views.aggregate(avg=Avg("duration_ms"))['avg'] or 0
+        avg_time_label = self._format_ms(avg_time_ms)
         unique_sessions = events.values("session_id").distinct().count()
 
         by_day = list(
@@ -458,6 +469,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
             .order_by("-count")[:10]
         )
+        for row in top_pages:
+            row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
 
         top_clicks = list(
             events.filter(event_type=AnalyticsEventType.CLICK)
@@ -484,6 +497,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "active_page": "visitor_stats",
             "total_page_views": total_page_views,
             "avg_time_ms": int(avg_time_ms),
+            "avg_time_label": avg_time_label,
             "unique_sessions": unique_sessions,
             "by_day": by_day,
             "top_pages": top_pages,
