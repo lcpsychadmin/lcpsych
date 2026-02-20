@@ -368,10 +368,30 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         return render(request, self.template_name, ctx)
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        action = request.POST.get("action")
+        action_raw = request.POST.get("action", "")
+        action = action_raw.strip()
         post_keys = list(request.POST.keys())
-        logger.info("action_received action=%r post_keys=%s", action, post_keys)
+        logger.info("action_received action_raw=%r action=%r post_keys=%s", action_raw, action, post_keys)
         active_page = self.section_slug or "therapists"
+
+        if action in {"reset_password", "reset_password_user"}:
+            if action == "reset_password":
+                profile_id = request.POST.get("profile_id")
+                profile = get_object_or_404(TherapistProfile, pk=profile_id)
+                user = profile.user
+                logger.info(
+                    "password_reset_action",
+                    extra={"action": action, "profile_id": profile_id, "user_id": user.id, "user_email": user.email},
+                )
+                return self._send_password_reset(request, user)
+
+            user_id = request.POST.get("user_id")
+            user = get_object_or_404(User, pk=user_id)
+            logger.info(
+                "password_reset_action",
+                extra={"action": action, "user_id": user.id, "user_email": user.email},
+            )
+            return self._send_password_reset(request, user)
 
         if action == "invite":
             form = InviteUserForm(request.POST)
