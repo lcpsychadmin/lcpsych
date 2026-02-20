@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Q
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
