@@ -12,6 +12,7 @@ import json
 import logging
 import re
 from pathlib import Path
+import requests
 from .forms import JoinOurTeamForm
 from .models import (
 	Page,
@@ -49,7 +50,23 @@ def _geolocate_ip(ip: str) -> dict[str, str]:
 		}
 	except Exception as exc:  # pragma: no cover - optional dependency / data file
 		logging.getLogger(__name__).debug("GeoIP lookup failed", exc_info=exc)
-		return {"country_code": "", "region": "", "city": "", "timezone": ""}
+
+	token = getattr(settings, "IPINFO_TOKEN", "")
+	if token and ip and not ip.startswith("127."):
+		try:
+			resp = requests.get(f"https://ipinfo.io/{ip}/json", params={"token": token}, timeout=1.5)
+			if resp.status_code == 200:
+				data = resp.json()
+				return {
+					"country_code": (data.get("country") or "")[:2],
+					"region": (data.get("region") or "")[:100],
+					"city": (data.get("city") or "")[:100],
+					"timezone": (data.get("timezone") or "")[:64],
+				}
+		except Exception as exc:  # pragma: no cover - network fallback best-effort
+			logging.getLogger(__name__).debug("ipinfo lookup failed", exc_info=exc)
+
+	return {"country_code": "", "region": "", "city": "", "timezone": ""}
 
 
 @csrf_exempt
