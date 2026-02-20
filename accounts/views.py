@@ -432,171 +432,6 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 redirect_qs = f"?activation_url={urlquote(activate_url)}&email={urlquote(email)}"
             return self._redirect_to_self(redirect_qs)
 
-        # Default: if no recognized action, redirect back safely
-        messages.error(request, "No action was performed.")
-        return self._redirect_to_self()
-
-
-class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
-    template_name = "accounts/settings_social_posting.html"
-    platform_order = [
-        SocialPlatform.INSTAGRAM,
-        SocialPlatform.X,
-        SocialPlatform.FACEBOOK_PAGE,
-        SocialPlatform.GOOGLE_BUSINESS,
-        SocialPlatform.LINKEDIN_PAGE,
-    ]
-
-    def test_func(self):
-        return is_admin(self.request.user)
-
-    def _profiles(self):
-        profiles = []
-        for platform in self.platform_order:
-            profile, _ = SocialProfile.objects.get_or_create(platform=platform)
-            profiles.append(profile)
-        return profiles
-
-    def _forms(self, bound_platform: str | None = None, bound_form: SocialProfileForm | None = None):
-        profile_forms: list[tuple[SocialProfile, SocialProfileForm]] = []
-        for profile in self._profiles():
-            if bound_platform and profile.platform == bound_platform and bound_form is not None:
-                profile_forms.append((profile, bound_form))
-            else:
-                profile_forms.append((profile, SocialProfileForm(prefix=profile.platform, instance=profile)))
-        return profile_forms
-
-    def get(self, request: HttpRequest) -> HttpResponse:
-        ctx = {
-            "profile_forms": self._forms(),
-            "active_page": "social_posting",
-        }
-        return render(request, self.template_name, ctx)
-
-
-class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
-    template_name = "accounts/settings_visitor_stats.html"
-
-    @staticmethod
-    def _format_ms(ms: int | float | None) -> str:
-        if not ms or ms <= 0:
-            return "<1s"
-        total_seconds = int(round(ms / 1000))
-        minutes, seconds = divmod(total_seconds, 60)
-        if minutes:
-            return f"{minutes}m {seconds:02d}s"
-        return f"{seconds}s"
-
-    def test_func(self):
-        return is_admin(self.request.user)
-
-    def get(self, request: HttpRequest) -> HttpResponse:
-        since = timezone.now() - timedelta(days=30)
-        all_events = AnalyticsEvent.objects.filter(created__gte=since)
-        events = all_events.filter(is_authenticated=False)
-
-        page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
-        total_page_views = page_views.count()
-        avg_time_ms = page_views.aggregate(avg=Avg("duration_ms"))['avg'] or 0
-        avg_time_label = self._format_ms(avg_time_ms)
-        unique_sessions = events.values("session_id").distinct().count()
-
-        by_day = list(
-            page_views.annotate(day=TruncDate("created"))
-            .values("day")
-            .annotate(count=Count("id"))
-            .order_by("day")
-        )
-
-        top_pages = list(
-            page_views.values("path")
-            .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
-            .order_by("-count")[:10]
-        )
-        for row in top_pages:
-            row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
-
-        top_clicks = list(
-            events.filter(event_type=AnalyticsEventType.CLICK)
-            .values("label")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:10]
-        )
-
-        current_host = request.get_host()
-        landing_referrers = list(
-            events.exclude(
-                Q(metadata__landing_referrer__icontains="localhost")
-                | Q(metadata__landing_referrer__icontains="127.0.0.1")
-                | Q(metadata__landing_referrer__icontains=current_host)
-            )
-            .values("metadata__landing_referrer")
-            .annotate(
-                sessions=Count("session_id", distinct=True),
-                events=Count("id"),
-            )
-            .order_by("-sessions")[:10]
-        )
-
-        avg_scroll = (
-            events.filter(event_type=AnalyticsEventType.SCROLL)
-            .aggregate(avg=Avg("scroll_percent"))
-            .get("avg")
-            or 0
-        )
-
-        locations = list(
-            events.exclude(country_code="")
-            .values("country_code", "region", "city", "timezone")
-            .annotate(count=Count("id"), sessions=Count("session_id", distinct=True))
-            .order_by("-count")[:20]
-        )
-
-        auth_successes = all_events.filter(event_type=AnalyticsEventType.AUTH_SUCCESS).count()
-        auth_failures = all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED).count()
-        recent_failures = list(
-            all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED)
-            .order_by("-created")
-            .values("created", "path", "referrer", "region", "city", "timezone", "user_agent", "ip_hash")[:20]
-        )
-
-        ctx = {
-            "active_page": "visitor_stats",
-            "total_page_views": total_page_views,
-            "avg_time_ms": int(avg_time_ms),
-            "avg_time_label": avg_time_label,
-            "unique_sessions": unique_sessions,
-            "by_day": by_day,
-            "top_pages": top_pages,
-            "top_clicks": top_clicks,
-            "landing_referrers": landing_referrers,
-            "avg_scroll": int(avg_scroll),
-            "locations": locations,
-            "auth_successes": auth_successes,
-            "auth_failures": auth_failures,
-            "recent_failures": recent_failures,
-        }
-        return render(request, self.template_name, ctx)
-
-    def post(self, request: HttpRequest) -> HttpResponse:
-        platform = request.POST.get("platform")
-        if not platform:
-            messages.error(request, "Missing platform selection.")
-            return redirect(reverse("accounts:settings_social_posting"))
-
-        profile, _ = SocialProfile.objects.get_or_create(platform=platform)
-        form = SocialProfileForm(request.POST, prefix=platform, instance=profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"Saved settings for {profile.get_platform_display()}.")
-            return redirect(reverse("accounts:settings_social_posting"))
-
-        ctx = {
-            "profile_forms": self._forms(bound_platform=platform, bound_form=form),
-            "active_page": "social_posting",
-        }
-        return render(request, self.template_name, ctx)
-
         if action == "payment_save":
             object_id = request.POST.get("object_id")
             editing_fee = get_object_or_404(PaymentFeeRow, pk=object_id) if object_id else None
@@ -604,9 +439,26 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if fee_form.is_valid():
                 saved = fee_form.save()
                 verb = "updated" if editing_fee else "added"
+                logger.info(
+                    "payment_fee_saved",
+                    extra={
+                        "object_id": object_id,
+                        "saved_id": saved.id,
+                        "fee_name": saved.name,
+                        "category": saved.category,
+                        "order": saved.order,
+                    },
+                )
                 messages.success(request, f"Fee row '{saved.name}' {verb}.")
                 return self._redirect_to_self()
 
+            logger.info(
+                "payment_fee_invalid",
+                extra={
+                    "object_id": object_id,
+                    "errors": fee_form.errors.get_json_data(),
+                },
+            )
             ctx = self._build_context(
                 request,
                 fee_form=fee_form,
@@ -793,25 +645,6 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 messages.success(request, f"{profile.display_name} is now {state} new clients.")
             return self._redirect_to_self()
 
-        if action == "reset_password":
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(TherapistProfile, pk=profile_id)
-            user = profile.user
-            logger.info(
-                "password_reset_action",
-                extra={"action": action, "profile_id": profile_id, "user_id": user.id, "user_email": user.email},
-            )
-            return self._send_password_reset(request, user)
-
-        if action == "reset_password_user":
-            user_id = request.POST.get("user_id")
-            user = get_object_or_404(User, pk=user_id)
-            logger.info(
-                "password_reset_action",
-                extra={"action": action, "user_id": user.id, "user_email": user.email},
-            )
-            return self._send_password_reset(request, user)
-
         if action == "delete_user":
             user_id = request.POST.get("user_id")
             user = get_object_or_404(User, pk=user_id)
@@ -852,8 +685,170 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 messages.info(request, f"{user.email} already has a profile.")
             return self._redirect_to_self()
 
-        messages.error(request, "Unsupported action.")
+        # Default: if no recognized action, redirect back safely
+        messages.error(request, "No action was performed.")
         return self._redirect_to_self()
+
+
+class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "accounts/settings_social_posting.html"
+    platform_order = [
+        SocialPlatform.INSTAGRAM,
+        SocialPlatform.X,
+        SocialPlatform.FACEBOOK_PAGE,
+        SocialPlatform.GOOGLE_BUSINESS,
+        SocialPlatform.LINKEDIN_PAGE,
+    ]
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def _profiles(self):
+        profiles = []
+        for platform in self.platform_order:
+            profile, _ = SocialProfile.objects.get_or_create(platform=platform)
+            profiles.append(profile)
+        return profiles
+
+    def _forms(self, bound_platform: str | None = None, bound_form: SocialProfileForm | None = None):
+        profile_forms: list[tuple[SocialProfile, SocialProfileForm]] = []
+        for profile in self._profiles():
+            if bound_platform and profile.platform == bound_platform and bound_form is not None:
+                profile_forms.append((profile, bound_form))
+            else:
+                profile_forms.append((profile, SocialProfileForm(prefix=profile.platform, instance=profile)))
+        return profile_forms
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        ctx = {
+            "profile_forms": self._forms(),
+            "active_page": "social_posting",
+        }
+        return render(request, self.template_name, ctx)
+
+
+class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = "accounts/settings_visitor_stats.html"
+
+    @staticmethod
+    def _format_ms(ms: int | float | None) -> str:
+        if not ms or ms <= 0:
+            return "<1s"
+        total_seconds = int(round(ms / 1000))
+        minutes, seconds = divmod(total_seconds, 60)
+        if minutes:
+            return f"{minutes}m {seconds:02d}s"
+        return f"{seconds}s"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        since = timezone.now() - timedelta(days=30)
+        all_events = AnalyticsEvent.objects.filter(created__gte=since)
+        events = all_events.filter(is_authenticated=False)
+
+        page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
+        total_page_views = page_views.count()
+        avg_time_ms = page_views.aggregate(avg=Avg("duration_ms"))['avg'] or 0
+        avg_time_label = self._format_ms(avg_time_ms)
+        unique_sessions = events.values("session_id").distinct().count()
+
+        by_day = list(
+            page_views.annotate(day=TruncDate("created"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        top_pages = list(
+            page_views.values("path")
+            .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
+            .order_by("-count")[:10]
+        )
+        for row in top_pages:
+            row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
+
+        top_clicks = list(
+            events.filter(event_type=AnalyticsEventType.CLICK)
+            .values("label")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+
+        current_host = request.get_host()
+        landing_referrers = list(
+            events.exclude(
+                Q(metadata__landing_referrer__icontains="localhost")
+                | Q(metadata__landing_referrer__icontains="127.0.0.1")
+                | Q(metadata__landing_referrer__icontains=current_host)
+            )
+            .values("metadata__landing_referrer")
+            .annotate(
+                sessions=Count("session_id", distinct=True),
+                events=Count("id"),
+            )
+            .order_by("-sessions")[:10]
+        )
+
+        avg_scroll = (
+            events.filter(event_type=AnalyticsEventType.SCROLL)
+            .aggregate(avg=Avg("scroll_percent"))
+            .get("avg")
+            or 0
+        )
+
+        locations = list(
+            events.exclude(country_code="")
+            .values("country_code", "region", "city", "timezone")
+            .annotate(count=Count("id"), sessions=Count("session_id", distinct=True))
+            .order_by("-count")[:20]
+        )
+
+        auth_successes = all_events.filter(event_type=AnalyticsEventType.AUTH_SUCCESS).count()
+        auth_failures = all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED).count()
+        recent_failures = list(
+            all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED)
+            .order_by("-created")
+            .values("created", "path", "referrer", "region", "city", "timezone", "user_agent", "ip_hash")[:20]
+        )
+
+        ctx = {
+            "active_page": "visitor_stats",
+            "total_page_views": total_page_views,
+            "avg_time_ms": int(avg_time_ms),
+            "avg_time_label": avg_time_label,
+            "unique_sessions": unique_sessions,
+            "by_day": by_day,
+            "top_pages": top_pages,
+            "top_clicks": top_clicks,
+            "landing_referrers": landing_referrers,
+            "avg_scroll": int(avg_scroll),
+            "locations": locations,
+            "auth_successes": auth_successes,
+            "auth_failures": auth_failures,
+            "recent_failures": recent_failures,
+        }
+        return render(request, self.template_name, ctx)
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        platform = request.POST.get("platform")
+        if not platform:
+            messages.error(request, "Missing platform selection.")
+            return redirect(reverse("accounts:settings_social_posting"))
+
+        profile, _ = SocialProfile.objects.get_or_create(platform=platform)
+        form = SocialProfileForm(request.POST, prefix=platform, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Saved settings for {profile.get_platform_display()}.")
+            return redirect(reverse("accounts:settings_social_posting"))
+
+        ctx = {
+            "profile_forms": self._forms(bound_platform=platform, bound_form=form),
+            "active_page": "social_posting",
+        }
+        return render(request, self.template_name, ctx)
 
 
 class InviteSettingsView(ManageTherapistsView):
