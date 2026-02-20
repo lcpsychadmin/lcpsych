@@ -59,6 +59,29 @@
             </div>
           </div>
 
+          <div class="grid gap-4 md:grid-cols-4">
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Rage clicks</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ rage_click_count }}</div>
+              <div class="text-xs text-slate-500">Rapid repeated clicks</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Dead clicks</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ dead_click_count }}</div>
+              <div class="text-xs text-slate-500">Clicks without change</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Avg hover dwell</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ avg_hover_label }}</div>
+              <div class="text-xs text-slate-500">{{ hover_event_count }} hovers tracked</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Exit rate</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ exit_rate }}%</div>
+              <div class="text-xs text-slate-500">{{ exit_event_count }} exit events</div>
+            </div>
+          </div>
+
           <div class="card-surface p-6">
             <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
               <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Daily page views</h2>
@@ -131,6 +154,135 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Rage click hotspots</h2>
+                <span class="badge-muted">Rapid repeated clicks</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Label</th><th>Rage clicks</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in rage_hotspots %}
+                    <tr>
+                      <td>{{ row.label|default:"(no label)" }}</td>
+                      <td>{{ row.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="text-slate-500 py-2">No rage clicks yet</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Dead click hotspots</h2>
+                <span class="badge-muted">Clicks without change</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Label</th><th>Dead clicks</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in dead_hotspots %}
+                    <tr>
+                      <td>{{ row.label|default:"(no label)" }}</td>
+                      <td>{{ row.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="text-slate-500 py-2">No dead clicks yet</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Hover intent targets</h2>
+                <span class="badge-muted">Longer dwells</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Target</th><th>Hovers</th><th>Avg dwell</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in hover_targets %}
+                    <tr>
+                      <td>{{ row.label|default:"(no label)" }}</td>
+                      <td>{{ row.count }}</td>
+                      <td>{{ row.avg_duration_label }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-slate-500 py-2">No hover intents yet</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Exit paths</h2>
+                <span class="badge-muted">Where sessions end</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Path</th><th>Exits</th><th>Sessions</th><th>Avg scroll</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in exit_by_path %}
+                    <tr>
+                      <td>{{ row.path }}</td>
+                      <td>{{ row.count }}</td>
+                      <td>{{ row.sessions }}</td>
+                      <td>{{ row.avg_scroll_label }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-slate-500 py-2">No exits tracked yet</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Click path sequences</h2>
+              <span class="badge-muted">Last interactions before exit</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="table-basic text-sm w-full">
+                <thead class="text-[#0f3f46]">
+                  <tr><th>Sequence</th><th>Occurrences</th><th>Sessions</th><th>Avg scroll</th></tr>
+                </thead>
+                <tbody>
+                  {% for row in click_paths %}
+                  <tr>
+                    <td>{{ row.metadata__click_path }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.sessions }}</td>
+                    <td>{{ row.avg_scroll_label }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="4" class="text-slate-500 py-2">No click paths recorded yet</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
           </div>
 

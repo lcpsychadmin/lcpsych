@@ -475,6 +475,10 @@ class AnalyticsEventType(models.TextChoices):
 	FORM_ERROR = "form_error", "Form error"
 	AUTH_SUCCESS = "auth_success", "Auth success"
 	AUTH_FAILED = "auth_failed", "Auth failed"
+	RAGE_CLICK = "rage_click", "Rage click"
+	DEAD_CLICK = "dead_click", "Dead click"
+	HOVER_INTENT = "hover_intent", "Hover intent"
+	SESSION_EXIT = "session_exit", "Session exit"
 
 
 class AnalyticsEvent(Timestamped):

@@ -754,6 +754,66 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         avg_time_label = self._format_ms(avg_time_ms)
         unique_sessions = events.values("session_id").distinct().count()
 
+        rage_clicks_qs = events.filter(event_type=AnalyticsEventType.RAGE_CLICK)
+        dead_clicks_qs = events.filter(event_type=AnalyticsEventType.DEAD_CLICK)
+        hover_qs = events.filter(event_type=AnalyticsEventType.HOVER_INTENT)
+        exit_qs = events.filter(event_type=AnalyticsEventType.SESSION_EXIT)
+
+        rage_click_count = rage_clicks_qs.count()
+        dead_click_count = dead_clicks_qs.count()
+        exit_event_count = exit_qs.count()
+
+        rage_hotspots = list(
+            rage_clicks_qs.values("label")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+
+        dead_hotspots = list(
+            dead_clicks_qs.values("label")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+
+        hover_targets = list(
+            hover_qs.values("label")
+            .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
+            .order_by("-count")[:10]
+        )
+        for row in hover_targets:
+            row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
+
+        avg_hover_ms = hover_qs.aggregate(avg=Avg("duration_ms"))["avg"] or 0
+        avg_hover_label = self._format_ms(avg_hover_ms)
+
+        exit_sessions = exit_qs.values("session_id").distinct().count()
+        exit_rate = round((exit_sessions / unique_sessions) * 100, 1) if unique_sessions else 0
+
+        exit_by_path = list(
+            exit_qs.values("path")
+            .annotate(
+                count=Count("id"),
+                sessions=Count("session_id", distinct=True),
+                avg_scroll=Avg("metadata__exit_scroll"),
+            )
+            .order_by("-count")[:10]
+        )
+        for row in exit_by_path:
+            row["avg_scroll_label"] = f"{round(row.get('avg_scroll') or 0):.0f}%"
+
+        click_paths = list(
+            exit_qs.exclude(metadata__click_path="")
+            .values("metadata__click_path")
+            .annotate(
+                count=Count("id"),
+                sessions=Count("session_id", distinct=True),
+                avg_scroll=Avg("metadata__exit_scroll"),
+            )
+            .order_by("-count")[:10]
+        )
+        for row in click_paths:
+            row["avg_scroll_label"] = f"{round(row.get('avg_scroll') or 0):.0f}%"
+
         by_day = list(
             page_views.annotate(day=TruncDate("created"))
             .values("day")
@@ -828,6 +888,19 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "auth_successes": auth_successes,
             "auth_failures": auth_failures,
             "recent_failures": recent_failures,
+            "rage_hotspots": rage_hotspots,
+            "dead_hotspots": dead_hotspots,
+            "hover_targets": hover_targets,
+            "avg_hover_label": avg_hover_label,
+            "hover_event_count": hover_qs.count(),
+            "exit_rate": exit_rate,
+            "exit_by_path": exit_by_path,
+            "avg_exit_scroll": round(exit_qs.aggregate(avg=Avg("metadata__exit_scroll"))["avg"] or 0),
+            "click_paths": click_paths,
+            "exit_sessions": exit_sessions,
+            "rage_click_count": rage_click_count,
+            "dead_click_count": dead_click_count,
+            "exit_event_count": exit_event_count,
         }
         return render(request, self.template_name, ctx)
 
