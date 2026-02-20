@@ -449,7 +449,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def get(self, request: HttpRequest) -> HttpResponse:
         since = timezone.now() - timedelta(days=30)
-        events = AnalyticsEvent.objects.filter(created__gte=since, is_authenticated=False)
+        all_events = AnalyticsEvent.objects.filter(created__gte=since)
+        events = all_events.filter(is_authenticated=False)
 
         page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
         total_page_views = page_views.count()
@@ -493,6 +494,14 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by("-count")[:20]
         )
 
+        auth_successes = all_events.filter(event_type=AnalyticsEventType.AUTH_SUCCESS).count()
+        auth_failures = all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED).count()
+        recent_failures = list(
+            all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED)
+            .order_by("-created")
+            .values("created", "path", "referrer", "region", "city", "timezone", "user_agent", "ip_hash")[:20]
+        )
+
         ctx = {
             "active_page": "visitor_stats",
             "total_page_views": total_page_views,
@@ -504,6 +513,9 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "top_clicks": top_clicks,
             "avg_scroll": int(avg_scroll),
             "locations": locations,
+            "auth_successes": auth_successes,
+            "auth_failures": auth_failures,
+            "recent_failures": recent_failures,
         }
         return render(request, self.template_name, ctx)
 

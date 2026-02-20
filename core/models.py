@@ -473,6 +473,8 @@ class AnalyticsEventType(models.TextChoices):
 	SCROLL = "scroll", "Scroll depth"
 	FORM_SUBMIT = "form_submit", "Form submit"
 	FORM_ERROR = "form_error", "Form error"
+	AUTH_SUCCESS = "auth_success", "Auth success"
+	AUTH_FAILED = "auth_failed", "Auth failed"
 
 
 class AnalyticsEvent(Timestamped):
