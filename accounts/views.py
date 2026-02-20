@@ -393,6 +393,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 redirect_qs = f"?activation_url={urlquote(activate_url)}&email={urlquote(email)}"
             return self._redirect_to_self(redirect_qs)
 
+        # Default: if no recognized action, redirect back safely
+        messages.error(request, "No action was performed.")
+        return self._redirect_to_self()
+
 
 class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "accounts/settings_social_posting.html"
