@@ -300,18 +300,33 @@ gtag('config', 'G-93EEDX0TQR');</script>
 		      localStorage.setItem(sessionKey, sessionId);
 		    }
 
+		    // Persist the first-touch referrer/path for the session so we know how users first arrived
+		    const landingRefKey = 'lcps_first_referrer';
+		    const landingPathKey = 'lcps_first_path';
+		    let landingReferrer = sessionStorage.getItem(landingRefKey);
+		    if (landingReferrer === null) {
+		      landingReferrer = document.referrer || '';
+		      sessionStorage.setItem(landingRefKey, landingReferrer);
+		    }
+		    let landingPath = sessionStorage.getItem(landingPathKey);
+		    if (landingPath === null) {
+		      landingPath = location.pathname + location.search;
+		      sessionStorage.setItem(landingPathKey, landingPath);
+		    }
+
 		    const pagePath = location.pathname + location.search;
-		    const referrer = document.referrer || '';
 		    const started = performance.now();
 		    let maxScroll = 0;
 		    let sentPageView = false;
 		    const scrollMarks = new Set();
 
 		    const send = (data, opts = {}) => {
+		      const baseMetadata = { landing_path: landingPath, landing_referrer: landingReferrer };
 		      const body = JSON.stringify({
 		        session_id: sessionId,
 		        path: pagePath,
-		        referrer: referrer,
+		        referrer: landingReferrer,
+		        metadata: { ...baseMetadata, ...(data.metadata || {}) },
 		        ...data,
 		      });
 		      if (opts.beacon && navigator.sendBeacon) {
