@@ -20,6 +20,7 @@ from django.views import View
 
 from .forms import (
     ActivationSetPasswordForm,
+    LoginForm,
     InviteUserForm,
     ServiceForm,
     PaymentFeeRowForm,
@@ -1272,6 +1273,7 @@ class LogoutView(View):
 
 class LoginView(DjangoLoginView):
     template_name = "accounts/login.html"
+    form_class = LoginForm
 
     def get_success_url(self):
         next_url = self.get_redirect_url()

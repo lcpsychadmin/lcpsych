@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import SetPasswordForm as DjangoSetPasswordForm
+from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm as DjangoSetPasswordForm
 
 from ckeditor.widgets import CKEditorWidget
 
@@ -28,6 +28,12 @@ class InviteUserForm(forms.Form):
 
 class ActivationSetPasswordForm(DjangoSetPasswordForm):
     pass
+
+
+class LoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Email/Username"
 
 
 class ServiceForm(forms.ModelForm):
