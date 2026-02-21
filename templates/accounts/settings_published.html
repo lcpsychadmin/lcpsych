@@ -154,9 +154,9 @@
                               <a href="{% url 'accounts:therapist_edit' profile.id %}" class="action-btn inline-flex items-center w-full">Edit profile</a>
                               <form method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="action" value="reset_password">
-                                <input type="hidden" name="profile_id" value="{{ profile.id }}">
-                                <button type="submit" class="action-btn w-full text-left">Send reset link</button>
+                                <input type="hidden" name="action" value="send_login_link">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit" class="action-btn w-full text-left">Send login link</button>
                               </form>
                               <form method="post" onsubmit="return confirm('Delete this user account? This cannot be undone.');">
                                 {% csrf_token %}
@@ -167,9 +167,9 @@
                               {% else %}
                               <form method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="action" value="reset_password_user">
+                                <input type="hidden" name="action" value="send_login_link">
                                 <input type="hidden" name="user_id" value="{{ user.id }}">
-                                <button type="submit" class="action-btn w-full text-left">Send reset link</button>
+                                <button type="submit" class="action-btn w-full text-left">Send login link</button>
                               </form>
                               <form method="post">
                                 {% csrf_token %}

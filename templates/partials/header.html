@@ -151,10 +151,6 @@
                                                 <a class="block px-3 py-2 hover:bg-[#F2FAF9]" href="{% url 'accounts:logout' %}">Sign out</a>
                                             </div>
                                         </li>
-                                        {% else %}
-                                        <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-login">
-                                            <a href="{% url 'accounts:login' %}" class="elementor-item">Provider Sign-In</a>
-                                        </li>
                                         {% endif %}
                                     </ul>
                                 </nav>
@@ -344,10 +340,6 @@
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-auth">
                                         <a class="elementor-item" href="{% url 'accounts:logout' %}" tabindex="-1">Sign out</a>
-                                    </li>
-                                    {% else %}
-                                    <li class="menu-item menu-item-type-custom menu-item-object-custom menu-item-login">
-                                        <a href="{% url 'accounts:login' %}" class="elementor-item" tabindex="-1">Provider Sign-In</a>
                                     </li>
                                     {% endif %}
                                 </ul>

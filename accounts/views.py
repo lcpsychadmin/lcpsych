@@ -2,6 +2,7 @@ import logging
 from typing import Any
 from urllib.parse import quote as urlquote
 
+import msal
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -116,6 +117,14 @@ def _activation_url(request: HttpRequest, token: str) -> str:
     return request.build_absolute_uri(activate_path)
 
 
+def _login_url(request: HttpRequest) -> str:
+    login_path = reverse("accounts:azure_login") if settings.AZURE_AD_ENABLED else reverse("accounts:login")
+    base_url = getattr(settings, "BASE_URL", "").rstrip("/")
+    if base_url:
+        return f"{base_url}{login_path}"
+    return request.build_absolute_uri(login_path)
+
+
 class InviteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return is_admin(self.request.user)
@@ -140,13 +149,13 @@ class InviteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
             is_therapist_flag,
             is_office_manager_flag,
         )
-        activate_url = _activation_url(request, token)
+        login_url = _login_url(request)
 
         site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
         subject = f"You're invited to {site_name}"
         body = (
             f"Hi,\n\nAn account was created for you on {site_name}.\n"
-            f"Please confirm your email and set your password here:\n{activate_url}\n\n"
+            f"Sign in with your LCPsych email and Office 365 password here:\n{login_url}\n\n"
             "If you did not expect this invitation, you can ignore this email."
         )
 
@@ -161,7 +170,7 @@ class InviteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
             redirect_target = reverse("accounts:invite")
 
         if settings.DEBUG:
-            redirect_target = f"{redirect_target}?activation_url={urlquote(activate_url)}&email={urlquote(email)}"
+            redirect_target = f"{redirect_target}?login_url={urlquote(login_url)}&email={urlquote(email)}"
         return redirect(redirect_target)
 
 
@@ -393,6 +402,34 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 extra={"action": action, "user_id": user.id, "user_email": user.email},
             )
             return self._send_password_reset(request, user)
+
+        if action == "send_login_link":
+            user_id = request.POST.get("user_id")
+            user = get_object_or_404(User, pk=user_id)
+            if not user.email:
+                messages.error(request, "User has no email address on file.")
+                return self._redirect_to_self()
+
+            login_url = _login_url(request)
+            site_name = getattr(settings, "SITE_NAME", "L+C Psychological Services")
+            subject = f"Sign in to {site_name}"
+            greeting = user.get_full_name() or user.email or "there"
+            body = (
+                f"Hi {greeting},\n\n"
+                f"Sign in with your LCPsych email and Office 365 password here:\n{login_url}\n\n"
+                "If you did not expect this email, you can ignore it."
+            )
+
+            try:
+                send_mail(subject, body, getattr(settings, "DEFAULT_FROM_EMAIL", None), [user.email], fail_silently=False)
+                messages.success(request, f"Login link sent to {user.email}.")
+            except Exception:
+                logger.exception("send_login_link_failed", extra={"user_id": user.id, "user_email": user.email})
+                if not settings.DEBUG:
+                    raise
+                messages.success(request, f"Login link ready for {user.email}.")
+
+            return self._redirect_to_self()
 
         if action == "invite":
             form = InviteUserForm(request.POST)
@@ -1384,6 +1421,89 @@ class LogoutView(View):
 
     def post(self, request: HttpRequest) -> HttpResponse:
         return self.get(request)
+
+
+def _build_msal_client() -> msal.ConfidentialClientApplication:
+    if not settings.AZURE_AD_ENABLED:
+        raise Http404("Azure AD not configured.")
+    if not settings.AZURE_AD_AUTHORITY or not settings.AZURE_AD_CLIENT_ID or not settings.AZURE_AD_CLIENT_SECRET:
+        raise Http404("Azure AD credentials missing.")
+    return msal.ConfidentialClientApplication(
+        client_id=settings.AZURE_AD_CLIENT_ID,
+        client_credential=settings.AZURE_AD_CLIENT_SECRET,
+        authority=settings.AZURE_AD_AUTHORITY,
+    )
+
+
+def _azure_scopes() -> list[str]:
+    # Provide only non-reserved scopes; MSAL will add openid/profile/offline_access automatically
+    return ["email"]
+
+
+class AzureLoginView(View):
+    def get(self, request: HttpRequest) -> HttpResponse:
+        if not settings.AZURE_AD_ENABLED:
+            raise Http404("Azure AD not configured.")
+
+        next_url = request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            request.session["azure_next"] = next_url
+
+        cca = _build_msal_client()
+        flow = cca.initiate_auth_code_flow(
+            scopes=_azure_scopes(),
+            redirect_uri=settings.AZURE_AD_REDIRECT_URI,
+        )
+        logger.info("azure_login_flow", extra={"auth_uri": flow.get("auth_uri")})
+        request.session["azure_auth_flow"] = flow
+        return redirect(flow["auth_uri"])
+
+
+class AzureCallbackView(View):
+    def get(self, request: HttpRequest) -> HttpResponse:
+        if not settings.AZURE_AD_ENABLED:
+            raise Http404("Azure AD not configured.")
+
+        flow = request.session.pop("azure_auth_flow", None)
+        if not flow:
+            return HttpResponse("Session expired. Start sign-in again.", status=400)
+
+        if request.GET.get("state") != flow.get("state"):
+            return HttpResponse("State mismatch.", status=400)
+
+        cca = _build_msal_client()
+        result = cca.acquire_token_by_auth_code_flow(flow, request.GET)
+        if not result or "error" in result:
+            logger.error(
+                "azure_login_error",
+                extra={
+                    "error": result.get("error") if result else "unknown",
+                    "description": result.get("error_description") if result else "unknown",
+                },
+            )
+            return HttpResponse("Azure sign-in failed. Please try again.", status=400)
+
+        claims = result.get("id_token_claims") or {}
+        email = claims.get("preferred_username") or claims.get("email") or claims.get("upn")
+        if not email:
+            return HttpResponse("No email returned from Azure.", status=400)
+
+        email = email.lower()
+        user, _created = User.objects.get_or_create(
+            username=email,
+            defaults={"email": email, "is_active": True},
+        )
+        if user.email != email or not user.is_active:
+            user.email = email
+            user.is_active = True
+            user.save(update_fields=["email", "is_active"])
+
+        login(request, user)
+        next_url = request.session.pop("azure_next", None) or request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            return redirect(next_url)
+
+        return redirect(settings.LOGIN_REDIRECT_URL or "/")
 
 
 class LoginView(DjangoLoginView):

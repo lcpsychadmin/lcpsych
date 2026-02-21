@@ -256,8 +256,17 @@ CKEDITOR_CONFIGS = {
     }
 }
 
+# Azure AD SSO (conditional enable via env)
+AZURE_AD_TENANT_ID = env('AZURE_AD_TENANT_ID', default='')
+AZURE_AD_CLIENT_ID = env('AZURE_AD_CLIENT_ID', default='')
+AZURE_AD_CLIENT_SECRET = env('AZURE_AD_CLIENT_SECRET', default='')
+AZURE_AD_REDIRECT_URI = env('AZURE_AD_REDIRECT_URI', default=f"{BASE_URL}/accounts/azure/callback" if BASE_URL else '')
+AZURE_AD_SCOPES = env.list('AZURE_AD_SCOPES', default=['openid', 'profile', 'email'])
+AZURE_AD_AUTHORITY = f"https://login.microsoftonline.com/{AZURE_AD_TENANT_ID}" if AZURE_AD_TENANT_ID else ''
+AZURE_AD_ENABLED = bool(AZURE_AD_TENANT_ID and AZURE_AD_CLIENT_ID and AZURE_AD_CLIENT_SECRET and AZURE_AD_REDIRECT_URI)
+
 # Auth redirects
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = '/accounts/azure/login/' if AZURE_AD_ENABLED else '/accounts/login/'
 LOGIN_REDIRECT_URL = '/therapists/edit/'
 LOGOUT_REDIRECT_URL = '/'
 

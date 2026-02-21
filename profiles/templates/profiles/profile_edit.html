@@ -214,18 +214,6 @@
           {{ form.accepts_new_clients.errors }}
         </div>
 
-        <div class="rounded-2xl border border-[#BEE3DB] bg-[#F7FCFB] p-4 space-y-2">
-          <p class="font-semibold text-[#0f3f46] m-0">Need a new password?</p>
-          <p class="text-slate-600 text-sm mt-1 mb-0">We’ll email you a link to set a fresh password.</p>
-          <button type="submit" name="action" value="reset_password" class="action-btn">Email reset link</button>
-          {% if debug_activation_url %}
-            <div class="rounded-xl border border-[#BEE3DB] bg-white p-3 text-sm text-slate-700">
-              <div class="font-semibold text-[#0f3f46]">Debug reset link{% if debug_email %} for {{ debug_email }}{% endif %}</div>
-              <div class="mt-1 break-all">{{ debug_activation_url }}</div>
-            </div>
-          {% endif %}
-        </div>
-
         <div class="flex items-center justify-between pt-4">
           <div>
             <a href="{% url 'profiles:profile_detail' profile.slug %}" class="text-sm text-[#116466] hover:underline">View public profile</a>

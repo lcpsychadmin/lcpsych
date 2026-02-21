@@ -102,21 +102,29 @@
         </div>
     <div class="container mx-auto px-4">
       <div class="max-w-md mx-auto">
-        <form method="post" class="form-card space-y-4 bg-white p-6 md:p-8 rounded-2xl ring-1 ring-slate-200 shadow-sm">
-          {% csrf_token %}
-          {% if form.non_field_errors %}
-            <div class="text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 text-sm">
-              {{ form.non_field_errors }}
+        {% comment %} Build Azure login URL with optional next param {% endcomment %}
+        {% url 'accounts:azure_login' as base_login_url %}
+        {% if next %}
+          {% with next|urlencode as next_qs %}
+            {% with base_login_url|add:'?next='|add:next_qs as azure_login_url %}
+              <div class="form-card space-y-4 bg-white p-6 md:p-8 rounded-2xl ring-1 ring-slate-200 shadow-sm text-center">
+                <p class="text-slate-700 text-base">Sign in with your LCPsych email using Office 365.</p>
+                <a href="{{ azure_login_url }}" class="inline-flex items-center justify-center btn-soft-focus rounded-xl bg-[#3C9C64] text-white font-semibold py-2.75 px-5 transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B] focus-visible:bg-[#92DCE5] focus-visible:text-[#005F6B]">
+                  Continue with Microsoft
+                </a>
+              </div>
+            {% endwith %}
+          {% endwith %}
+        {% else %}
+          {% with base_login_url as azure_login_url %}
+            <div class="form-card space-y-4 bg-white p-6 md:p-8 rounded-2xl ring-1 ring-slate-200 shadow-sm text-center">
+              <p class="text-slate-700 text-base">Sign in with your LCPsych email using Office 365.</p>
+              <a href="{{ azure_login_url }}" class="inline-flex items-center justify-center btn-soft-focus rounded-xl bg-[#3C9C64] text-white font-semibold py-2.75 px-5 transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B] focus-visible:bg-[#92DCE5] focus-visible:text-[#005F6B]">
+                Continue with Microsoft
+              </a>
             </div>
-          {% endif %}
-          {{ form.as_p }}
-          {% if next %}
-            <input type="hidden" name="next" value="{{ next }}" />
-          {% endif %}
-          <div class="pt-2">
-            <button type="submit" class="btn-soft-focus rounded-xl bg-[#3C9C64] text-white font-semibold py-2.5 px-5 transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B] focus-visible:bg-[#92DCE5] focus-visible:text-[#005F6B]">Sign in</button>
-          </div>
-        </form>
+          {% endwith %}
+        {% endif %}
       </div>
     </div>
   </section>

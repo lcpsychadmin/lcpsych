@@ -14,3 +14,4 @@ django-ckeditor==6.7.1
 Pillow==10.4.0
 django-storages[boto3]==1.14.4
 boto3==1.35.36
+msal==1.28.0

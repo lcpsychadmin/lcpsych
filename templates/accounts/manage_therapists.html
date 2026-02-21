@@ -793,9 +793,9 @@
                           </form>
                           <form method="post" class="inline">
                             {% csrf_token %}
-                            <input type="hidden" name="action" value="reset_password">
-                            <input type="hidden" name="profile_id" value="{{ profile.id }}">
-                            <button type="submit" class="action-btn">Send reset link</button>
+                            <input type="hidden" name="action" value="send_login_link">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="action-btn">Send login link</button>
                           </form>
                           <a class="action-btn inline-flex items-center gap-1" href="{% url 'accounts:therapist_edit' profile.id %}">Edit profile</a>
                           <form method="post" class="inline" onsubmit="return confirm('Delete this therapist profile? This will remove their profile and therapist role.');">
@@ -813,9 +813,9 @@
                           </form>
                           <form method="post" class="inline">
                             {% csrf_token %}
-                            <input type="hidden" name="action" value="reset_password_user">
+                            <input type="hidden" name="action" value="send_login_link">
                             <input type="hidden" name="user_id" value="{{ user.id }}">
-                            <button type="submit" class="action-btn">Send reset link</button>
+                            <button type="submit" class="action-btn">Send login link</button>
                           </form>
                           {% if not row.is_admin %}
                           <form method="post" class="inline" onsubmit="return confirm('Delete this user account? This cannot be undone.');">
@@ -828,15 +828,15 @@
                         {% else %}
                           <form method="post" class="inline">
                             {% csrf_token %}
-                            <input type="hidden" name="action" value="reset_password_user">
-                            <input type="hidden" name="user_id" value="{{ user.id }}">
-                            <button type="submit" class="action-btn">Send reset link</button>
-                          </form>
-                          <form method="post" class="inline">
-                            {% csrf_token %}
                             <input type="hidden" name="action" value="create_profile">
                             <input type="hidden" name="user_id" value="{{ user.id }}">
                             <button type="submit" class="action-btn">Make therapist</button>
+                          </form>
+                          <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="send_login_link">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="action-btn">Send login link</button>
                           </form>
                           {% if not row.is_admin %}
                           <form method="post" class="inline" onsubmit="return confirm('Delete this user account? This cannot be undone.');">

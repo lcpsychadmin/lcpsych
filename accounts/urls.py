@@ -1,9 +1,12 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 app_name = "accounts"
 
 urlpatterns = [
+    # Accept both with and without trailing slashes to match Azure redirect URIs exactly.
+    re_path(r"^azure/login/?$", views.AzureLoginView.as_view(), name="azure_login"),
+    re_path(r"^azure/callback/?$", views.AzureCallbackView.as_view(), name="azure_callback"),
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("invite/", views.InviteUserView.as_view(), name="invite"),
