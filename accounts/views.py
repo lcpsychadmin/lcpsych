@@ -1535,6 +1535,7 @@ class AzureCallbackView(View):
 
         session_cookie_name = getattr(settings, "SESSION_COOKIE_NAME", "sessionid")
         session_cookie_val = request.COOKIES.get(session_cookie_name)
+        raw_cookie_header = request.META.get("HTTP_COOKIE", "")
         has_session_cookie = bool(session_cookie_val)
         next_from_session_raw = request.session.get("azure_next")
 
@@ -1568,6 +1569,7 @@ class AzureCallbackView(View):
             cached.get("next") if cached else None,
             request.GET.get("next"),
         )
+        logger.info("azure_callback_cookie_header %s", raw_cookie_header)
 
         if not flow:
             request.session.flush()
@@ -1659,6 +1661,10 @@ class AzureCallbackView(View):
                 "session_cookie_samesite": getattr(settings, "SESSION_COOKIE_SAMESITE", None),
             },
         )
+        request.session.save()
+        session_cookie_domain = getattr(settings, "SESSION_COOKIE_DOMAIN", None)
+        session_cookie_samesite = getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax")
+        session_cookie_secure = getattr(settings, "SESSION_COOKIE_SECURE", False)
         next_from_session = request.session.pop("azure_next", None)
         next_from_cache = cached.get("next") if cached else None
         next_from_param = request.GET.get("next")
@@ -1683,11 +1689,21 @@ class AzureCallbackView(View):
             resolved_next_source,
             next_url,
         )
-
-        if next_url:
-            return redirect(next_url)
-
-        return redirect(settings.LOGIN_REDIRECT_URL or "/")
+        response = redirect(next_url) if next_url else redirect(settings.LOGIN_REDIRECT_URL or "/")
+        # Clear any stale host-only and domain cookies, then set the fresh session cookie explicitly.
+        response.delete_cookie(session_cookie_name, path="/")
+        if session_cookie_domain:
+            response.delete_cookie(session_cookie_name, domain=session_cookie_domain, path="/")
+        response.set_cookie(
+            session_cookie_name,
+            request.session.session_key,
+            domain=session_cookie_domain,
+            path="/",
+            secure=session_cookie_secure,
+            samesite=session_cookie_samesite,
+            httponly=True,
+        )
+        return response
 
 
 class LoginView(DjangoLoginView):
