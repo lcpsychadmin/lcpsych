@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from urllib.parse import urlparse
+from typing import Any
 import os
 import dj_database_url
 import environ
@@ -24,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-env = environ.Env(
+env: Any = environ.Env(
     DEBUG=(bool, True),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -195,6 +196,7 @@ STORAGES = {
 # Security & Proxy (Heroku)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_NAME = env('SESSION_COOKIE_NAME', default='lc_sessionid')
 SESSION_COOKIE_SECURE = env.bool('SESSION_COOKIE_SECURE', default=True)
 CSRF_COOKIE_SECURE = env.bool('CSRF_COOKIE_SECURE', default=True)
 X_FRAME_OPTIONS = 'DENY'

@@ -1695,9 +1695,13 @@ class AzureCallbackView(View):
         cookie_domains = [None]
         if session_cookie_domain:
             cookie_domains.extend({session_cookie_domain, session_cookie_domain.lstrip('.')})
+        # Also clear legacy default name to prevent collisions when the name changes.
+        legacy_cookie_name = "sessionid"
+        clear_paths = {session_cookie_path, settings.AZURE_AD_REDIRECT_URI or "/accounts/azure/callback"}
         for dom in cookie_domains:
-            response.delete_cookie(session_cookie_name, domain=dom, path=session_cookie_path)
-            response.delete_cookie(session_cookie_name, domain=dom, path=settings.AZURE_AD_REDIRECT_URI or "/accounts/azure/callback")
+            for p in clear_paths:
+                response.delete_cookie(session_cookie_name, domain=dom, path=p)
+                response.delete_cookie(legacy_cookie_name, domain=dom, path=p)
         response.set_cookie(
             session_cookie_name,
             request.session.session_key,
