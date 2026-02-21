@@ -1514,7 +1514,15 @@ class AzureLoginView(View):
             scopes=_azure_scopes(),
             redirect_uri=settings.AZURE_AD_REDIRECT_URI,
         )
-        logger.info("azure_login_flow", extra={"auth_uri": flow.get("auth_uri")})
+        logger.info(
+            "azure_login_flow",
+            extra={
+                "auth_uri": flow.get("auth_uri"),
+                "host": request.get_host(),
+                "redirect_uri": settings.AZURE_AD_REDIRECT_URI,
+                "state": flow.get("state"),
+            },
+        )
         request.session["azure_auth_flow"] = flow
         cache.set(f"azure_flow:{flow.get('state')}", {"flow": flow, "next": request.session.get("azure_next")}, timeout=600)
         return redirect(flow["auth_uri"])
@@ -1531,6 +1539,17 @@ class AzureCallbackView(View):
             cached = cache.get(f"azure_flow:{request.GET.get('state')}") if request.GET.get("state") else None
             if cached:
                 flow = cached.get("flow")
+
+        logger.info(
+            "azure_callback_start",
+            extra={
+                "host": request.get_host(),
+                "state_param": request.GET.get("state"),
+                "has_session_flow": bool(flow),
+                "has_cached_flow": bool(cached),
+                "session_key": request.session.session_key,
+            },
+        )
 
         if not flow:
             request.session.flush()
