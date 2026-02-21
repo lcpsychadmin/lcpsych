@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from urllib.parse import urlparse
 import os
 import dj_database_url
 import environ
@@ -38,6 +39,17 @@ CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 # SEO / Site
 # Public site base URL, e.g. https://www.yourdomain.com (no trailing slash)
 BASE_URL = env('BASE_URL', default='')
+# Derive a cookie domain that keeps sessions valid across the canonical host (e.g., www and apex).
+_base_hostname = urlparse(BASE_URL).hostname if BASE_URL else ''
+_session_cookie_domain = env('SESSION_COOKIE_DOMAIN', default='')
+if not _session_cookie_domain and _base_hostname:
+    # Drop leading www so the cookie works for both apex and www.
+    domain_host = _base_hostname[4:] if _base_hostname.startswith('www.') else _base_hostname
+    SESSION_COOKIE_DOMAIN = f".{domain_host}"
+else:
+    SESSION_COOKIE_DOMAIN = _session_cookie_domain or None
+# Keep default CSRF domain unless explicitly provided via environment.
+CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default=None)
 # Human-friendly site name used in emails and meta tags
 SITE_NAME = env('SITE_NAME', default='L+C Psychological Services')
 # Whether robots are allowed to index. Defaults to True in production, False in DEBUG.

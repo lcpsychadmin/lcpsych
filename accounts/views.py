@@ -1498,7 +1498,8 @@ class AzureCallbackView(View):
             user.is_active = True
             user.save(update_fields=["email", "is_active"])
 
-        login(request, user)
+        # Explicit backend ensures Django persists auth without relying on prior authenticate()
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         next_url = request.session.pop("azure_next", None) or request.GET.get("next")
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
