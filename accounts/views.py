@@ -1498,6 +1498,12 @@ class AzureCallbackView(View):
             user.is_active = True
             user.save(update_fields=["email", "is_active"])
 
+        # Ensure therapists can land on /therapists/edit/ without looping back to login.
+        # Default any new Azure SSO account into the therapist group unless it already has an allowed role.
+        if not user.groups.filter(name__in=["therapist", "admin", "office_manager"]).exists():
+            therapist_group, _ = Group.objects.get_or_create(name="therapist")
+            user.groups.add(therapist_group)
+
         # Explicit backend ensures Django persists auth without relying on prior authenticate()
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         logger.info(
