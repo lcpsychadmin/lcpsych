@@ -1545,28 +1545,28 @@ class AzureCallbackView(View):
             if cached:
                 flow = cached.get("flow")
                 logger.info(
-                    "azure_callback_flow_restored_from_cache",
-                    extra={
-                        "state_param": request.GET.get("state"),
-                        "has_flow": bool(flow),
-                        "has_cached_next": bool(cached.get("next")) if cached else False,
-                    },
+                    "azure_callback_flow_restored_from_cache state=%s has_flow=%s has_cached_next=%s",
+                    request.GET.get("state"),
+                    bool(flow),
+                    bool(cached.get("next")) if cached else False,
                 )
 
         logger.info(
-            "azure_callback_start",
-            extra={
-                "host": request.get_host(),
-                "state_param": request.GET.get("state"),
-                "has_session_flow": bool(flow),
-                "has_cached_flow": bool(cached),
-                "session_key": request.session.session_key,
-                "has_session_cookie": has_session_cookie,
-                "session_cookie_len": len(session_cookie_val) if session_cookie_val else 0,
-                "next_from_session": next_from_session_raw,
-                "next_from_cache": cached.get("next") if cached else None,
-                "next_from_param": request.GET.get("next"),
-            },
+            (
+                "azure_callback_start host=%s state=%s has_session_flow=%s has_cached_flow=%s "
+                "session_key=%s has_session_cookie=%s session_cookie_len=%s next_session=%s "
+                "next_cache=%s next_param=%s"
+            ),
+            request.get_host(),
+            request.GET.get("state"),
+            bool(flow),
+            bool(cached),
+            request.session.session_key,
+            has_session_cookie,
+            len(session_cookie_val) if session_cookie_val else 0,
+            next_from_session_raw,
+            cached.get("next") if cached else None,
+            request.GET.get("next"),
         )
 
         if not flow:
@@ -1668,14 +1668,12 @@ class AzureCallbackView(View):
             resolved_next_source = "param"
 
         logger.info(
-            "azure_callback_next_resolution",
-            extra={
-                "next_from_session": next_from_session,
-                "next_from_cache": next_from_cache,
-                "next_from_param": next_from_param,
-                "resolved_next_source": resolved_next_source,
-                "resolved_next": next_url,
-            },
+            "azure_callback_next_resolution session=%s cache=%s param=%s resolved_source=%s resolved=%s",
+            next_from_session,
+            next_from_cache,
+            next_from_param,
+            resolved_next_source,
+            next_url,
         )
 
         if next_url:
