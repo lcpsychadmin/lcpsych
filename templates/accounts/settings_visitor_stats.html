@@ -7,6 +7,13 @@
 .card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
 .table-basic th, .table-basic td { padding: 0.6rem 0.4rem; border-bottom: 1px solid rgba(15, 63, 70, 0.08); }
 .badge-muted { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(146, 220, 229, 0.22); color: #0f3f46; font-weight: 700; font-size: 0.8rem; }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); gap: 10px; align-items: end; }
+.chart-bar { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.chart-bar-stack { display: grid; gap: 4px; width: 100%; height: 180px; align-items: end; }
+.chart-bar-stack .bar { border-radius: 10px; width: 100%; min-height: 2px; }
+.chart-bar-stack .bar.pv { background: #3C9C64; }
+.chart-bar-stack .bar.sessions { background: #92DCE5; }
+.chart-label { font-size: 0.75rem; color: #0f3f46; text-align: center; white-space: nowrap; }
 </style>
 {% endblock %}
 
@@ -15,7 +22,7 @@
   <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-12 pt-14">
     <div class="max-w-[1100px] mx-auto px-4 text-center">
       <h1 class="text-4xl leading-tight font-semibold m-0">Visitor stats</h1>
-      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Anonymous sessions only, last 30 days.</p>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Anonymous sessions only, {{ range_label }} ({{ range_days }} days).</p>
     </div>
   </section>
 
@@ -41,11 +48,50 @@
         {% include "accounts/partials/settings_nav.html" with active_page="visitor_stats" %}
 
         <div class="space-y-6">
+          <div class="card-surface p-6">
+            <form class="flex flex-wrap gap-4 items-end" method="get">
+              <div>
+                <label class="block text-sm font-semibold text-[#0f3f46] mb-1" for="start">Start date</label>
+                <input id="start" name="start" type="date" value="{{ start_date|date:'Y-m-d' }}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-[#0f3f46] shadow-sm focus:border-[#92DCE5] focus:ring-2 focus:ring-[#92DCE5]">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-[#0f3f46] mb-1" for="end">End date</label>
+                <input id="end" name="end" type="date" value="{{ end_date|date:'Y-m-d' }}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-[#0f3f46] shadow-sm focus:border-[#92DCE5] focus:ring-2 focus:ring-[#92DCE5]">
+              </div>
+              <div class="flex-1 min-w-[160px]">
+                <span class="text-sm text-slate-600">Up to past 365 days. Default is last 30 days.</span>
+              </div>
+              <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#3C9C64] text-white font-semibold hover:bg-[#92DCE5] hover:text-[#005F6B] transition-colors">Update range</button>
+            </form>
+          </div>
+
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Sessions vs page views</h2>
+              <div class="flex items-center gap-3 text-sm text-slate-600">
+                <span class="inline-flex items-center gap-2"><span class="inline-block h-3 w-3 rounded-full bg-[#92DCE5]"></span>Sessions</span>
+                <span class="inline-flex items-center gap-2"><span class="inline-block h-3 w-3 rounded-full bg-[#3C9C64]"></span>Page views</span>
+              </div>
+            </div>
+            <div class="chart-grid">
+              {% for row in chart_by_day %}
+              <div class="chart-bar">
+                <div class="chart-bar-stack">
+                  <div class="bar sessions" style="height: {{ row.sessions_pct }}%" title="{{ row.day }} · Sessions: {{ row.sessions }}"></div>
+                  <div class="bar pv" style="height: {{ row.page_views_pct }}%" title="{{ row.day }} · Page views: {{ row.page_views }}"></div>
+                </div>
+                <div class="chart-label">{{ row.day|date:"M j" }}</div>
+              </div>
+              {% empty %}
+              <p class="text-slate-500">No data yet for this range.</p>
+              {% endfor %}
+            </div>
+          </div>
           <div class="grid gap-4 md:grid-cols-3">
             <div class="card-surface p-5">
               <div class="text-sm text-slate-600">Page views</div>
               <div class="text-3xl font-semibold text-[#0f3f46]">{{ total_page_views }}</div>
-              <div class="text-xs text-slate-500">Last 30 days</div>
+              <div class="text-xs text-slate-500">{{ range_label }}</div>
             </div>
             <div class="card-surface p-5">
               <div class="text-sm text-slate-600">Avg time on page</div>
@@ -85,7 +131,7 @@
           <div class="card-surface p-6">
             <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
               <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Daily page views</h2>
-              <span class="badge-muted">30 day window</span>
+              <span class="badge-muted">{{ range_label }}</span>
             </div>
             <div class="overflow-x-auto">
               <table class="table-basic text-sm w-full">

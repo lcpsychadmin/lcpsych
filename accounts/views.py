@@ -1,4 +1,5 @@
 import logging
+from datetime import date, datetime, time, timedelta
 from typing import Any, cast
 from urllib.parse import quote as urlquote
 
@@ -10,14 +11,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
-from django.db.models import Count, Avg, Q, FloatField
-from django.db.models.functions import Cast
-from django.db.models.functions import TruncDate
+from django.db.models import Avg, Count, FloatField, Q
+from django.db.models.functions import Cast, TruncDate
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
@@ -801,8 +800,32 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         return is_admin(self.request.user)
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        since = timezone.now() - timedelta(days=30)
-        all_events = AnalyticsEvent.objects.filter(created__gte=since)
+        today = timezone.localdate()
+        default_end = today
+        default_start = default_end - timedelta(days=29)
+
+        def _parse_date(val: str | None, fallback: date) -> date:
+            if not val:
+                return fallback
+            try:
+                return datetime.strptime(val, "%Y-%m-%d").date()
+            except ValueError:
+                return fallback
+
+        start_date = _parse_date(request.GET.get("start"), default_start)
+        end_date = _parse_date(request.GET.get("end"), default_end)
+        if end_date < start_date:
+            end_date = start_date
+
+        max_span_days = 365
+        if (end_date - start_date).days > max_span_days:
+            start_date = end_date - timedelta(days=max_span_days)
+
+        tz = timezone.get_current_timezone()
+        start_dt = timezone.make_aware(datetime.combine(start_date, time.min), tz)
+        end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), tz)
+
+        all_events = AnalyticsEvent.objects.filter(created__gte=start_dt, created__lt=end_dt)
         events = all_events.filter(is_authenticated=False)
 
         page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
@@ -871,12 +894,43 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         for row in click_paths:
             row["avg_scroll_label"] = f"{round(row.get('avg_scroll') or 0):.0f}%"
 
-        by_day = list(
+        page_views_by_day = list(
             page_views.annotate(day=TruncDate("created"))
             .values("day")
             .annotate(count=Count("id"))
             .order_by("day")
         )
+
+        sessions_by_day = list(
+            events.annotate(day=TruncDate("created"))
+            .values("day")
+            .annotate(sessions=Count("session_id", distinct=True))
+            .order_by("day")
+        )
+
+        daily_map: dict[date, dict[str, int]] = {}
+        for row in page_views_by_day:
+            daily_map[row["day"]] = {"page_views": row["count"], "sessions": 0}
+        for row in sessions_by_day:
+            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0})
+            existing["sessions"] = row["sessions"]
+
+        chart_by_day = []
+        max_value = 0
+        for day_key, row in daily_map.items():
+            max_value = max(max_value, row["page_views"], row["sessions"])
+        max_value = max_value or 1
+        for day_key in sorted(daily_map.keys()):
+            row = daily_map[day_key]
+            chart_by_day.append(
+                {
+                    "day": day_key,
+                    "page_views": row["page_views"],
+                    "sessions": row["sessions"],
+                    "page_views_pct": round((row["page_views"] / max_value) * 100, 1),
+                    "sessions_pct": round((row["sessions"] / max_value) * 100, 1),
+                }
+            )
 
         top_pages = list(
             page_views.values("path")
@@ -932,11 +986,16 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         ctx = {
             "active_page": "visitor_stats",
+            "start_date": start_date,
+            "end_date": end_date,
+            "range_days": (end_date - start_date).days + 1,
+            "range_label": f"{start_date.strftime('%b %d, %Y')} — {end_date.strftime('%b %d, %Y')}",
             "total_page_views": total_page_views,
             "avg_time_ms": int(avg_time_ms),
             "avg_time_label": avg_time_label,
             "unique_sessions": unique_sessions,
-            "by_day": by_day,
+            "by_day": page_views_by_day,
+            "chart_by_day": chart_by_day,
             "top_pages": top_pages,
             "top_clicks": top_clicks,
             "landing_referrers": landing_referrers,
