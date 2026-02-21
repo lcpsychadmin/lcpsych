@@ -19,6 +19,9 @@ class CanonicalDomainMiddleware:
     def __call__(self, request):
         # Only enforce in non-debug and when BASE_URL is configured
         if not settings.DEBUG and self._canonical_host:
+            # Avoid host redirects on Azure SSO endpoints to prevent auth loops
+            if request.path.startswith('/accounts/azure/'):
+                return self.get_response(request)
             req_host = request.get_host()
             # Allow Heroku preview/app host access without redirect for testing
             if req_host.endswith('.herokuapp.com'):
