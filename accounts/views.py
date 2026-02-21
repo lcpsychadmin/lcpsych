@@ -1533,12 +1533,25 @@ class AzureCallbackView(View):
         if not settings.AZURE_AD_ENABLED:
             raise Http404("Azure AD not configured.")
 
+        session_cookie_name = getattr(settings, "SESSION_COOKIE_NAME", "sessionid")
+        session_cookie_val = request.COOKIES.get(session_cookie_name)
+        has_session_cookie = bool(session_cookie_val)
+        next_from_session_raw = request.session.get("azure_next")
+
         flow = request.session.pop("azure_auth_flow", None)
         cached = None
         if not flow:
             cached = cache.get(f"azure_flow:{request.GET.get('state')}") if request.GET.get("state") else None
             if cached:
                 flow = cached.get("flow")
+                logger.info(
+                    "azure_callback_flow_restored_from_cache",
+                    extra={
+                        "state_param": request.GET.get("state"),
+                        "has_flow": bool(flow),
+                        "has_cached_next": bool(cached.get("next")) if cached else False,
+                    },
+                )
 
         logger.info(
             "azure_callback_start",
@@ -1548,6 +1561,11 @@ class AzureCallbackView(View):
                 "has_session_flow": bool(flow),
                 "has_cached_flow": bool(cached),
                 "session_key": request.session.session_key,
+                "has_session_cookie": has_session_cookie,
+                "session_cookie_len": len(session_cookie_val) if session_cookie_val else 0,
+                "next_from_session": next_from_session_raw,
+                "next_from_cache": cached.get("next") if cached else None,
+                "next_from_param": request.GET.get("next"),
             },
         )
 
@@ -1633,8 +1651,34 @@ class AzureCallbackView(View):
                 "session_cookie_samesite": getattr(settings, "SESSION_COOKIE_SAMESITE", None),
             },
         )
-        next_url = request.session.pop("azure_next", None) or (cached.get("next") if cached else None) or request.GET.get("next")
-        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_from_session = request.session.pop("azure_next", None)
+        next_from_cache = cached.get("next") if cached else None
+        next_from_param = request.GET.get("next")
+
+        resolved_next_source = None
+        next_url = None
+        if next_from_session and url_has_allowed_host_and_scheme(next_from_session, allowed_hosts={request.get_host()}):
+            next_url = next_from_session
+            resolved_next_source = "session"
+        elif next_from_cache and url_has_allowed_host_and_scheme(next_from_cache, allowed_hosts={request.get_host()}):
+            next_url = next_from_cache
+            resolved_next_source = "cache"
+        elif next_from_param and url_has_allowed_host_and_scheme(next_from_param, allowed_hosts={request.get_host()}):
+            next_url = next_from_param
+            resolved_next_source = "param"
+
+        logger.info(
+            "azure_callback_next_resolution",
+            extra={
+                "next_from_session": next_from_session,
+                "next_from_cache": next_from_cache,
+                "next_from_param": next_from_param,
+                "resolved_next_source": resolved_next_source,
+                "resolved_next": next_url,
+            },
+        )
+
+        if next_url:
             return redirect(next_url)
 
         return redirect(settings.LOGIN_REDIRECT_URL or "/")
