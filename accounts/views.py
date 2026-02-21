@@ -1525,10 +1525,13 @@ class AzureCallbackView(View):
 
         flow = request.session.pop("azure_auth_flow", None)
         if not flow:
-            return HttpResponse("Session expired. Start sign-in again.", status=400)
+            messages.error(request, "Session expired. Please start sign-in again.")
+            return redirect(reverse("accounts:azure_login"))
 
         if request.GET.get("state") != flow.get("state"):
-            return HttpResponse("State mismatch.", status=400)
+            logger.warning("azure_login_state_mismatch", extra={"expected": flow.get("state"), "got": request.GET.get("state")})
+            messages.error(request, "Sign-in session mismatch. Please start sign-in again.")
+            return redirect(reverse("accounts:azure_login"))
 
         cca = _build_msal_client()
         result = cca.acquire_token_by_auth_code_flow(flow, request.GET)
