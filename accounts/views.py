@@ -1525,11 +1525,13 @@ class AzureCallbackView(View):
 
         flow = request.session.pop("azure_auth_flow", None)
         if not flow:
+            request.session.flush()
             messages.error(request, "Session expired. Please start sign-in again.")
             return redirect(reverse("accounts:azure_login"))
 
         if request.GET.get("state") != flow.get("state"):
             logger.warning("azure_login_state_mismatch", extra={"expected": flow.get("state"), "got": request.GET.get("state")})
+            request.session.flush()
             messages.error(request, "Sign-in session mismatch. Please start sign-in again.")
             return redirect(reverse("accounts:azure_login"))
 
