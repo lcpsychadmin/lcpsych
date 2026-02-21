@@ -11,6 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
+from django.core.cache import cache
 from django.db.models import Avg, Count, FloatField, Q
 from django.db.models.functions import Cast, TruncDate
 from django.http import Http404, HttpRequest, HttpResponse
@@ -1515,6 +1516,7 @@ class AzureLoginView(View):
         )
         logger.info("azure_login_flow", extra={"auth_uri": flow.get("auth_uri")})
         request.session["azure_auth_flow"] = flow
+        cache.set(f"azure_flow:{flow.get('state')}", {"flow": flow, "next": request.session.get("azure_next")}, timeout=600)
         return redirect(flow["auth_uri"])
 
 
@@ -1524,6 +1526,12 @@ class AzureCallbackView(View):
             raise Http404("Azure AD not configured.")
 
         flow = request.session.pop("azure_auth_flow", None)
+        cached = None
+        if not flow:
+            cached = cache.get(f"azure_flow:{request.GET.get('state')}") if request.GET.get("state") else None
+            if cached:
+                flow = cached.get("flow")
+
         if not flow:
             request.session.flush()
             messages.error(request, "Session expired. Please start sign-in again.")
@@ -1532,6 +1540,7 @@ class AzureCallbackView(View):
         if request.GET.get("state") != flow.get("state"):
             logger.warning("azure_login_state_mismatch", extra={"expected": flow.get("state"), "got": request.GET.get("state")})
             request.session.flush()
+            cache.delete(f"azure_flow:{request.GET.get('state')}")
             messages.error(request, "Sign-in session mismatch. Please start sign-in again.")
             return redirect(reverse("accounts:azure_login"))
 
@@ -1605,7 +1614,7 @@ class AzureCallbackView(View):
                 "session_cookie_samesite": getattr(settings, "SESSION_COOKIE_SAMESITE", None),
             },
         )
-        next_url = request.session.pop("azure_next", None) or request.GET.get("next")
+        next_url = request.session.pop("azure_next", None) or (cached.get("next") if cached else None) or request.GET.get("next")
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
 
