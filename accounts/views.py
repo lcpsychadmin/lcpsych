@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote as urlquote
 
 import msal
@@ -204,7 +204,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             logger.info(
                 "password_reset_send",
                 extra={
-                    "user_id": user.id,
+                    "user_id": user.pk,
                     "user_email": user.email,
                     "site": site_name,
                 },
@@ -214,7 +214,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         except Exception:
             logger.exception(
                 "password_reset_send_failed",
-                extra={"user_id": user.id, "user_email": user.email},
+                extra={"user_id": user.pk, "user_email": user.email},
             )
             if not settings.DEBUG:
                 raise
@@ -391,7 +391,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 user = profile.user
                 logger.info(
                     "password_reset_action",
-                    extra={"action": action, "profile_id": profile_id, "user_id": user.id, "user_email": user.email},
+                    extra={"action": action, "profile_id": profile_id, "user_id": user.pk, "user_email": user.email},
                 )
                 return self._send_password_reset(request, user)
 
@@ -399,7 +399,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             user = get_object_or_404(User, pk=user_id)
             logger.info(
                 "password_reset_action",
-                extra={"action": action, "user_id": user.id, "user_email": user.email},
+                extra={"action": action, "user_id": user.pk, "user_email": user.email},
             )
             return self._send_password_reset(request, user)
 
@@ -424,7 +424,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 send_mail(subject, body, getattr(settings, "DEFAULT_FROM_EMAIL", None), [user.email], fail_silently=False)
                 messages.success(request, f"Login link sent to {user.email}.")
             except Exception:
-                logger.exception("send_login_link_failed", extra={"user_id": user.id, "user_email": user.email})
+                logger.exception("send_login_link_failed", extra={"user_id": user.pk, "user_email": user.email})
                 if not settings.DEBUG:
                     raise
                 messages.success(request, f"Login link ready for {user.email}.")
@@ -764,6 +764,25 @@ class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
         }
         return render(request, self.template_name, ctx)
 
+    def post(self, request: HttpRequest) -> HttpResponse:
+        platform = request.POST.get("platform")
+        if not platform:
+            messages.error(request, "Missing platform selection.")
+            return redirect(reverse("accounts:settings_social_posting"))
+
+        profile, _ = SocialProfile.objects.get_or_create(platform=platform)
+        form = SocialProfileForm(request.POST, prefix=platform, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Saved settings for {profile.get_platform_display()}.")  # type: ignore[attr-defined]
+            return redirect(reverse("accounts:settings_social_posting"))
+
+        ctx = {
+            "profile_forms": self._forms(bound_platform=platform, bound_form=form),
+            "active_page": "social_posting",
+        }
+        return render(request, self.template_name, ctx)
+
 
 class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "accounts/settings_visitor_stats.html"
@@ -939,25 +958,6 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "rage_click_count": rage_click_count,
             "dead_click_count": dead_click_count,
             "exit_event_count": exit_event_count,
-        }
-        return render(request, self.template_name, ctx)
-
-    def post(self, request: HttpRequest) -> HttpResponse:
-        platform = request.POST.get("platform")
-        if not platform:
-            messages.error(request, "Missing platform selection.")
-            return redirect(reverse("accounts:settings_social_posting"))
-
-        profile, _ = SocialProfile.objects.get_or_create(platform=platform)
-        form = SocialProfileForm(request.POST, prefix=platform, instance=profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"Saved settings for {profile.get_platform_display()}.")
-            return redirect(reverse("accounts:settings_social_posting"))
-
-        ctx = {
-            "profile_forms": self._forms(bound_platform=platform, bound_form=form),
-            "active_page": "social_posting",
         }
         return render(request, self.template_name, ctx)
 
@@ -1494,9 +1494,9 @@ class AzureCallbackView(View):
         username_match = User.objects.filter(username__iexact=email).first()
         email_match = User.objects.filter(email__iexact=email).first()
 
-        if username_match:
-            user = username_match
-        elif email_match:
+        if username_match is not None:
+            user: User = username_match
+        elif email_match is not None:
             user = email_match
         else:
             user = User.objects.create(username=email, email=email, is_active=True)
@@ -1534,7 +1534,7 @@ class AzureCallbackView(View):
         logger.info(
             "azure_login_success",
             extra={
-                "user_id": user.id,
+                "user_id": user.pk,
                 "user_email": user.email,
                 "session_key": request.session.session_key,
                 "session_cookie_domain": getattr(settings, "SESSION_COOKIE_DOMAIN", None),
