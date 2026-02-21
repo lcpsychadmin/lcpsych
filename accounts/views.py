@@ -1489,14 +1489,39 @@ class AzureCallbackView(View):
             return HttpResponse("No email returned from Azure.", status=400)
 
         email = email.lower()
-        user, _created = User.objects.get_or_create(
-            username=email,
-            defaults={"email": email, "is_active": True},
-        )
-        if user.email != email or not user.is_active:
+
+        # Keep username and email aligned to the Azure email, preferring an existing username match.
+        username_match = User.objects.filter(username__iexact=email).first()
+        email_match = User.objects.filter(email__iexact=email).first()
+
+        if username_match:
+            user = username_match
+        elif email_match:
+            user = email_match
+        else:
+            user = User.objects.create(username=email, email=email, is_active=True)
+
+        # If a separate email-only user exists, log and keep the username-anchored record to avoid conflicts.
+        if username_match and email_match and username_match.pk != email_match.pk:
+            logger.warning(
+                "azure_login_user_conflict",
+                extra={"username_pk": username_match.pk, "email_pk": email_match.pk, "email": email},
+            )
+
+        # Sync core fields; only change username if it is safe to do so.
+        username_conflict = User.objects.filter(username=email).exclude(pk=user.pk).exists()
+        updates = {}
+        if user.username.lower() != email and not username_conflict:
+            user.username = email
+            updates["username"] = email
+        if user.email.lower() != email:
             user.email = email
+            updates["email"] = email
+        if not user.is_active:
             user.is_active = True
-            user.save(update_fields=["email", "is_active"])
+            updates["is_active"] = True
+        if updates:
+            user.save(update_fields=list(updates.keys()))
 
         # Ensure therapists can land on /therapists/edit/ without looping back to login.
         # Default any new Azure SSO account into the therapist group unless it already has an allowed role.
