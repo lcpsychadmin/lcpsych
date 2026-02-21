@@ -1665,6 +1665,7 @@ class AzureCallbackView(View):
         session_cookie_domain = getattr(settings, "SESSION_COOKIE_DOMAIN", None)
         session_cookie_samesite = getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax")
         session_cookie_secure = getattr(settings, "SESSION_COOKIE_SECURE", False)
+        session_cookie_path = "/"
         next_from_session = request.session.pop("azure_next", None)
         next_from_cache = cached.get("next") if cached else None
         next_from_param = request.GET.get("next")
@@ -1690,18 +1691,22 @@ class AzureCallbackView(View):
             next_url,
         )
         response = redirect(next_url) if next_url else redirect(settings.LOGIN_REDIRECT_URL or "/")
-        # Clear any stale host-only and domain cookies, then set the fresh session cookie explicitly.
-        response.delete_cookie(session_cookie_name, path="/")
+        # Clear any stale host-only and domain cookies (common Safari duplication), then set the fresh session cookie explicitly.
+        cookie_domains = [None]
         if session_cookie_domain:
-            response.delete_cookie(session_cookie_name, domain=session_cookie_domain, path="/")
+            cookie_domains.extend({session_cookie_domain, session_cookie_domain.lstrip('.')})
+        for dom in cookie_domains:
+            response.delete_cookie(session_cookie_name, domain=dom, path=session_cookie_path)
+            response.delete_cookie(session_cookie_name, domain=dom, path=settings.AZURE_AD_REDIRECT_URI or "/accounts/azure/callback")
         response.set_cookie(
             session_cookie_name,
             request.session.session_key,
             domain=session_cookie_domain,
-            path="/",
+            path=session_cookie_path,
             secure=session_cookie_secure,
             samesite=session_cookie_samesite,
             httponly=True,
+            max_age=60 * 60 * 24,  # one-day persistence to encourage Safari to adopt
         )
         return response
 
