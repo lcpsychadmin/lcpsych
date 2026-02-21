@@ -12,6 +12,7 @@ import json
 import logging
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 import requests
 from .forms import JoinOurTeamForm
 from .models import (
@@ -94,7 +95,10 @@ def analytics_event(request):
 	if not session_id:
 		return JsonResponse({"error": "session_id required"}, status=400)
 
-	path = (payload.get("path") or request.path or "").split("?")[0][:500]
+	raw_path = (payload.get("path") or request.path or "").split("?")[0]
+	if "://" in raw_path:
+		raw_path = urlparse(raw_path).path or raw_path
+	path = raw_path[:500]
 	referrer = (payload.get("referrer") or "")[:500]
 	label = (payload.get("label") or "")[:255]
 	duration_ms = int(payload.get("duration_ms") or 0)
@@ -106,6 +110,11 @@ def analytics_event(request):
 	ip = _client_ip(request)
 	user_agent = (request.META.get("HTTP_USER_AGENT", "") or "")[:1000]
 	geo = _geolocate_ip(ip)
+
+	blocked_paths = ("/admin", "/accounts/login", "/accounts/logout")
+	if event_type not in {AnalyticsEventType.AUTH_SUCCESS, AnalyticsEventType.AUTH_FAILED}:
+		if any(path.startswith(p) for p in blocked_paths):
+			return HttpResponse(status=204)
 
 	AnalyticsEvent.objects.create(
 		event_type=event_type,

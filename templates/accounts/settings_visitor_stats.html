@@ -7,10 +7,11 @@
 .card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
 .table-basic th, .table-basic td { padding: 0.6rem 0.4rem; border-bottom: 1px solid rgba(15, 63, 70, 0.08); }
 .badge-muted { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(146, 220, 229, 0.22); color: #0f3f46; font-weight: 700; font-size: 0.8rem; }
-.date-field { appearance: none; -webkit-appearance: none; border-radius: 0.75rem; border: 1px solid rgba(15, 63, 70, 0.14); padding: 0.55rem 0.75rem; font-size: 0.95rem; color: #0f3f46; box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); }
-.date-field:focus { outline: none; border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
-.preset-btn { border: 1px solid rgba(15, 63, 70, 0.14); border-radius: 999px; padding: 0.4rem 0.9rem; font-weight: 600; color: #0f3f46; background: #f7f9f9; transition: all 0.15s ease; }
-.preset-btn:hover { border-color: #92DCE5; color: #005F6B; background: #ecf8fa; }
+.date-field-wrapper { position: relative; display: inline-flex; align-items: center; gap: 0.4rem; background: #f7f9f9; border: 1px solid rgba(15, 63, 70, 0.12); border-radius: 0.9rem; padding: 0.5rem 0.75rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); }
+.date-field-icon { width: 18px; height: 18px; color: #0f3f46; opacity: 0.55; }
+.date-field { appearance: none; -webkit-appearance: none; border: none; background: transparent; font-size: 0.98rem; color: #0f3f46; min-width: 150px; }
+.date-field:focus { outline: none; }
+.date-field-wrapper:focus-within { border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.35); }
 .chart-legend { display: flex; gap: 12px; align-items: center; font-size: 0.95rem; color: #0f3f46; }
 .legend-chip { display: inline-flex; align-items: center; gap: 8px; }
 .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
@@ -18,6 +19,7 @@
 .legend-dot.views { background: #3C9C64; }
 .line-chart-wrapper { position: relative; width: 100%; overflow: hidden; }
 .line-chart { width: 100%; height: 240px; }
+.chart-tooltip { position: absolute; pointer-events: none; background: #0f3f46; color: #fff; padding: 6px 8px; border-radius: 8px; font-size: 11px; box-shadow: 0 6px 18px rgba(0,0,0,0.16); transform: translate(-50%, -120%); display: none; white-space: nowrap; }
 .chart-empty { color: #475569; font-size: 0.95rem; }
 </style>
 {% endblock %}
@@ -57,21 +59,20 @@
             <form class="flex flex-wrap gap-4 items-end" method="get">
               <div>
                 <label class="block text-sm font-semibold text-[#0f3f46] mb-1" for="start">Start date</label>
-                <input id="start" name="start" type="date" value="{{ start_date|date:'Y-m-d' }}" class="date-field">
+                <div class="date-field-wrapper">
+                  <svg class="date-field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2a1 1 0 0 0-1 1v1H5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3h-1V3a1 1 0 1 0-2 0v1H9V3A1 1 0 0 0 7 2Zm12 7H5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9Z"/></svg>
+                  <input id="start" name="start" type="date" value="{{ start_date|date:'Y-m-d' }}" class="date-field">
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-[#0f3f46] mb-1" for="end">End date</label>
-                <input id="end" name="end" type="date" value="{{ end_date|date:'Y-m-d' }}" class="date-field">
+                <div class="date-field-wrapper">
+                  <svg class="date-field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2a1 1 0 0 0-1 1v1H5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3h-1V3a1 1 0 1 0-2 0v1H9V3A1 1 0 0 0 7 2Zm12 7H5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9Z"/></svg>
+                  <input id="end" name="end" type="date" value="{{ end_date|date:'Y-m-d' }}" class="date-field">
+                </div>
               </div>
-              <div class="flex flex-wrap gap-2 items-center">
-                <button type="button" class="preset-btn" data-days="7">7d</button>
-                <button type="button" class="preset-btn" data-days="30">30d</button>
-                <button type="button" class="preset-btn" data-days="90">90d</button>
-                <button type="button" class="preset-btn" data-days="180">180d</button>
-                <button type="button" class="preset-btn" data-days="365">365d</button>
-              </div>
-              <div class="flex-1 min-w-[160px] text-sm text-slate-600">
-                <span>Up to past 365 days. Default is last 30 days.</span>
+              <div class="flex-1 min-w-[200px] text-sm text-slate-600">
+                <span>Select up to the past 365 days. Default is last 30 days.</span>
               </div>
               <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#3C9C64] text-white font-semibold hover:bg-[#92DCE5] hover:text-[#005F6B] transition-colors">Update range</button>
             </form>
@@ -96,22 +97,62 @@
                   const data = JSON.parse(script.textContent || '[]');
                   const svg = document.getElementById('line-chart');
                   if (!svg || !data.length) return;
+                  const wrapper = svg.parentElement;
+                  if (wrapper) {
+                    wrapper.style.position = 'relative';
+                  }
 
-                  const padX = 28;
-                  const padY = 18;
-                  const width = svg.clientWidth || svg.parentElement.clientWidth;
-                  const height = svg.clientHeight || 240;
-                  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                  const tooltip = document.createElement('div');
+                  tooltip.className = 'chart-tooltip';
+                  if (wrapper) {
+                    wrapper.appendChild(tooltip);
+                  }
 
-                  const maxVal = Math.max(...data.map(d => Math.max(d.sessions, d.page_views, 1)));
-                  const stepX = data.length > 1 ? (width - padX * 2) / (data.length - 1) : 0;
-
-                  const toY = (val) => {
-                    const pct = val / maxVal;
-                    return padY + (1 - pct) * (height - padY * 2);
+                  const showTooltip = (evt, text) => {
+                    if (!tooltip || !wrapper) return;
+                    tooltip.textContent = text;
+                    tooltip.style.display = 'block';
+                    const wrapRect = wrapper.getBoundingClientRect();
+                    const ttRect = tooltip.getBoundingClientRect();
+                    const offsetX = evt.clientX - wrapRect.left;
+                    const offsetY = evt.clientY - wrapRect.top;
+                    const pad = 8;
+                    const halfW = ttRect.width / 2;
+                    const clampedX = Math.min(Math.max(offsetX, pad + halfW), wrapRect.width - pad - halfW);
+                    const clampedY = Math.min(Math.max(offsetY, pad + ttRect.height), wrapRect.height - pad);
+                    tooltip.style.left = `${clampedX}px`;
+                    tooltip.style.top = `${clampedY}px`;
                   };
 
-                  const buildPoints = (key) => data.map((d, idx) => `${padX + idx * stepX},${toY(d[key])}`).join(' ');
+                  const hideTooltip = () => {
+                    if (!tooltip) return;
+                    tooltip.style.display = 'none';
+                  };
+
+                  const padLeft = 64;
+                  const padRight = 18;
+                  const padTop = 20;
+                  const padBottom = 56;
+                  const width = svg.clientWidth || svg.parentElement.clientWidth || 800;
+                  const height = svg.clientHeight || 260;
+                  const plotWidth = width - padLeft - padRight;
+                  const plotHeight = height - padTop - padBottom;
+                  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+                  const formatDate = (iso) => {
+                    const dt = new Date(`${iso}T00:00:00`);
+                    if (Number.isNaN(dt.getTime())) return iso;
+                    return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                  };
+
+                  const maxValRaw = Math.max(...data.map(d => Math.max(d.sessions, d.page_views, 1)));
+                  const maxVal = Math.max(maxValRaw, 4);
+                  const stepX = data.length > 1 ? plotWidth / (data.length - 1) : 0;
+
+                  const toX = (idx) => padLeft + idx * stepX;
+                  const toY = (val) => padTop + (1 - val / maxVal) * plotHeight;
+
+                  const buildPoints = (key) => data.map((d, idx) => `${toX(idx)},${toY(d[key])}`).join(' ');
 
                   const pvPoints = buildPoints('page_views');
                   const sessionPoints = buildPoints('sessions');
@@ -127,12 +168,108 @@
                     return el;
                   };
 
+                  const axisGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                  axisGroup.setAttribute('stroke', '#d7e8ec');
+                  axisGroup.setAttribute('stroke-width', '1');
+                  axisGroup.setAttribute('fill', 'none');
+
+                  const axisX = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                  axisX.setAttribute('x1', padLeft);
+                  axisX.setAttribute('y1', height - padBottom);
+                  axisX.setAttribute('x2', width - padRight);
+                  axisX.setAttribute('y2', height - padBottom);
+
+                  const axisY = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                  axisY.setAttribute('x1', padLeft);
+                  axisY.setAttribute('y1', padTop);
+                  axisY.setAttribute('x2', padLeft);
+                  axisY.setAttribute('y2', height - padBottom);
+
+                  axisGroup.appendChild(axisX);
+                  axisGroup.appendChild(axisY);
+
+                  const ticksY = 4;
+                  const tickGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                  tickGroup.setAttribute('stroke', '#d7e8ec');
+                  tickGroup.setAttribute('stroke-width', '1');
+                  tickGroup.setAttribute('fill', 'none');
+
+                  const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                  labelGroup.setAttribute('fill', '#0f3f46');
+                  labelGroup.setAttribute('font-size', '11');
+                  labelGroup.setAttribute('font-family', 'inherit');
+
+                  for (let i = 0; i <= ticksY; i += 1) {
+                    const val = (maxVal / ticksY) * i;
+                    const y = toY(val);
+                    const grid = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    grid.setAttribute('x1', padLeft);
+                    grid.setAttribute('x2', width - padRight);
+                    grid.setAttribute('y1', y);
+                    grid.setAttribute('y2', y);
+                    grid.setAttribute('stroke', i === ticksY ? '#b7d6dd' : '#e3eff2');
+                    grid.setAttribute('stroke-dasharray', i === ticksY ? '0' : '3 4');
+                    tickGroup.appendChild(grid);
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', padLeft - 10);
+                    label.setAttribute('y', y + 4);
+                    label.setAttribute('text-anchor', 'end');
+                    label.textContent = Math.round(val).toString();
+                    labelGroup.appendChild(label);
+                  }
+
+                  const pickXTickIndexes = () => {
+                    if (data.length <= 5) return data.map((_, idx) => idx);
+                    const last = data.length - 1;
+                    return [0, Math.floor(last / 3), Math.floor((2 * last) / 3), last];
+                  };
+
+                  pickXTickIndexes().forEach((idx) => {
+                    const x = toX(idx);
+                    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    tick.setAttribute('x1', x);
+                    tick.setAttribute('x2', x);
+                    tick.setAttribute('y1', height - padBottom);
+                    tick.setAttribute('y2', height - padBottom + 6);
+                    tick.setAttribute('stroke', '#b7d6dd');
+                    tickGroup.appendChild(tick);
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', x);
+                    label.setAttribute('y', height - padBottom + 20);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.textContent = formatDate(data[idx].day);
+                    labelGroup.appendChild(label);
+                  });
+
+                  const axisLabels = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                  axisLabels.setAttribute('fill', '#0f3f46');
+                  axisLabels.setAttribute('font-size', '12');
+                  axisLabels.setAttribute('font-weight', '600');
+
+                  const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                  xLabel.setAttribute('x', padLeft + plotWidth / 2);
+                  xLabel.setAttribute('y', height - 16);
+                  xLabel.setAttribute('text-anchor', 'middle');
+                  xLabel.textContent = 'Date';
+
+                  const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                  yLabel.setAttribute('x', 16);
+                  yLabel.setAttribute('y', padTop + plotHeight / 2);
+                  yLabel.setAttribute('text-anchor', 'middle');
+                  yLabel.setAttribute('transform', `rotate(-90 16 ${padTop + plotHeight / 2})`);
+                  yLabel.textContent = 'Count';
+
+                  axisLabels.appendChild(xLabel);
+                  axisLabels.appendChild(yLabel);
+
                   const pvLine = makeLine(pvPoints, '#3C9C64');
                   const sessionLine = makeLine(sessionPoints, '#92DCE5');
 
-                  const addDots = (key, color) => {
+                  const addDots = (key, color, labelFn) => {
                     data.forEach((d, idx) => {
-                      const cx = padX + idx * stepX;
+                      const cx = toX(idx);
                       const cy = toY(d[key]);
                       const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                       dot.setAttribute('cx', cx);
@@ -140,15 +277,22 @@
                       dot.setAttribute('r', '4');
                       dot.setAttribute('fill', color);
                       dot.setAttribute('aria-label', `${d.day} ${key}: ${d[key]}`);
+                      dot.addEventListener('mouseenter', (evt) => showTooltip(evt, labelFn(d)));
+                      dot.addEventListener('mousemove', (evt) => showTooltip(evt, labelFn(d)));
+                      dot.addEventListener('mouseleave', hideTooltip);
                       svg.appendChild(dot);
                     });
                   };
 
                   svg.innerHTML = '';
+                  svg.appendChild(tickGroup);
+                  svg.appendChild(axisGroup);
+                  svg.appendChild(labelGroup);
+                  svg.appendChild(axisLabels);
                   svg.appendChild(sessionLine);
                   svg.appendChild(pvLine);
-                  addDots('sessions', '#92DCE5');
-                  addDots('page_views', '#3C9C64');
+                  addDots('sessions', '#92DCE5', (d) => `${formatDate(d.day)} • Sessions: ${d.sessions}`);
+                  addDots('page_views', '#3C9C64', (d) => `${formatDate(d.day)} • Page views: ${d.page_views}`);
                 })();
               </script>
               {% else %}
