@@ -48,6 +48,9 @@ if not _session_cookie_domain and _base_hostname:
     SESSION_COOKIE_DOMAIN = f".{domain_host}"
 else:
     SESSION_COOKIE_DOMAIN = _session_cookie_domain or None
+# Allow Azure AD callback navigation to carry cookies from a third-party origin.
+SESSION_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
+CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
 # Keep default CSRF domain unless explicitly provided via environment.
 CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default=None)
 # Human-friendly site name used in emails and meta tags

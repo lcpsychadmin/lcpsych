@@ -1500,6 +1500,16 @@ class AzureCallbackView(View):
 
         # Explicit backend ensures Django persists auth without relying on prior authenticate()
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        logger.info(
+            "azure_login_success",
+            extra={
+                "user_id": user.id,
+                "user_email": user.email,
+                "session_key": request.session.session_key,
+                "session_cookie_domain": getattr(settings, "SESSION_COOKIE_DOMAIN", None),
+                "session_cookie_samesite": getattr(settings, "SESSION_COOKIE_SAMESITE", None),
+            },
+        )
         next_url = request.session.pop("azure_next", None) or request.GET.get("next")
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
