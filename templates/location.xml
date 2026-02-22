@@ -6,14 +6,4 @@
   <url>
     <loc>{{ site_base }}/contact-us/</loc>
   </url>
-  {% if contact.directions_url and '://' in contact.directions_url %}
-  <url>
-    <loc>{{ contact.directions_url }}</loc>
-  </url>
-  {% endif %}
-  {% if contact.cta_url and '://' in contact.cta_url %}
-  <url>
-    <loc>{{ contact.cta_url }}</loc>
-  </url>
-  {% endif %}
 </urlset>
