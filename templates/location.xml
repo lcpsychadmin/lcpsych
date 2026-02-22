@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<location>
-  <name>{{ contact.heading|default:"L+C Psychological Services" }}</name>
-  <website>{{ site_base }}/</website>
-  <address>
-    {% for line in contact.office_address.splitlines %}
-    <line>{{ line|escape }}</line>
-    {% endfor %}
-  </address>
-  <phone>{{ contact.phone_number }}</phone>
-  <fax>{{ contact.fax_number }}</fax>
-  <email>{{ contact.email_address }}</email>
-  <hours>
-    {% for line in contact.office_hours.splitlines %}
-    <rule>{{ line|escape }}</rule>
-    {% endfor %}
-  </hours>
-  <mapEmbed>{{ contact.map_embed_url }}</mapEmbed>
-  <directions>{{ contact.directions_url }}</directions>
-  <schedule>{{ contact.cta_url }}</schedule>
-</location>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{{ site_base }}/</loc>
+  </url>
+  <url>
+    <loc>{{ site_base }}/contact-us/</loc>
+  </url>
+  {% if contact.directions_url and '://' in contact.directions_url %}
+  <url>
+    <loc>{{ contact.directions_url }}</loc>
+  </url>
+  {% endif %}
+  {% if contact.cta_url and '://' in contact.cta_url %}
+  <url>
+    <loc>{{ contact.cta_url }}</loc>
+  </url>
+  {% endif %}
+</urlset>
