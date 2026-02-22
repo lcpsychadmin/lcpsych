@@ -34,6 +34,9 @@ class StaticViewSitemap(Sitemap):
         base = getattr(settings, 'BASE_URL', '').rstrip('/')
         if base:
             for u in urls:
+                # Only prefix base when location is relative
+                if u['location'].startswith('http://') or u['location'].startswith('https://'):
+                    continue
                 u['location'] = f"{base}{u['location']}"
         return urls
 
@@ -60,6 +63,8 @@ class PageSitemap(Sitemap):
         base = getattr(settings, 'BASE_URL', '').rstrip('/')
         if base:
             for u in urls:
+                if u['location'].startswith('http://') or u['location'].startswith('https://'):
+                    continue
                 u['location'] = f"{base}{u['location']}"
         return urls
 
@@ -83,5 +88,7 @@ class PostSitemap(Sitemap):
         base = getattr(settings, 'BASE_URL', '').rstrip('/')
         if base:
             for u in urls:
+                if u['location'].startswith('http://') or u['location'].startswith('https://'):
+                    continue
                 u['location'] = f"{base}{u['location']}"
         return urls
