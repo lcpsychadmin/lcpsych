@@ -944,6 +944,15 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 }
             )
 
+        table_by_day = [
+            {
+                "day": entry["day"],
+                "page_views": entry["page_views"],
+                "sessions": entry["sessions"],
+            }
+            for entry in chart_by_day
+        ]
+
         top_pages = list(
             page_views.values("path")
             .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
@@ -1006,7 +1015,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "avg_time_ms": int(avg_time_ms),
             "avg_time_label": avg_time_label,
             "unique_sessions": unique_sessions,
-            "by_day": page_views_by_day,
+            "by_day": table_by_day,
             "chart_by_day": chart_by_day,
             "top_pages": top_pages,
             "top_clicks": top_clicks,

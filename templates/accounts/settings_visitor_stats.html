@@ -344,22 +344,23 @@
 
           <div class="card-surface p-6">
             <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
-              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Daily page views</h2>
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Daily page views & sessions</h2>
               <span class="badge-muted">{{ range_label }}</span>
             </div>
             <div class="overflow-x-auto">
               <table class="table-basic text-sm w-full">
                 <thead class="text-[#0f3f46]">
-                  <tr><th>Date</th><th>Views</th></tr>
+                  <tr><th>Date</th><th>Views</th><th>Unique sessions</th></tr>
                 </thead>
                 <tbody>
                   {% for row in by_day %}
                   <tr>
                     <td>{{ row.day }}</td>
-                    <td>{{ row.count }}</td>
+                    <td>{{ row.page_views }}</td>
+                    <td>{{ row.sessions }}</td>
                   </tr>
                   {% empty %}
-                  <tr><td colspan="2" class="text-slate-500 py-2">No data yet</td></tr>
+                  <tr><td colspan="3" class="text-slate-500 py-2">No data yet</td></tr>
                   {% endfor %}
                 </tbody>
               </table>
