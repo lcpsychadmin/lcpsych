@@ -802,18 +802,18 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         return is_admin(self.request.user)
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        tz_name = settings.TIME_ZONE
+        tz_name = "America/New_York"
         profile = getattr(request.user, "therapist_profile", None)
         if profile and getattr(profile, "timezone", ""):
             tz_name = profile.timezone
 
         try:
-            tz = ZoneInfo(tz_name)
+            tzinfo = ZoneInfo(tz_name)
         except Exception:
-            tz = timezone.get_default_timezone()
+            tzinfo = timezone.get_default_timezone()
             tz_name = timezone.get_default_timezone_name()
 
-        today = timezone.localtime(timezone.now(), tz=tz).date()
+        today = timezone.localtime(timezone.now(), timezone=tzinfo).date()
         default_end = today
         default_start = default_end - timedelta(days=29)
 
@@ -834,8 +834,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         if (end_date - start_date).days > max_span_days:
             start_date = end_date - timedelta(days=max_span_days)
 
-        start_dt = timezone.make_aware(datetime.combine(start_date, time.min), tz)
-        end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), tz)
+        start_dt = timezone.make_aware(datetime.combine(start_date, time.min), timezone=tzinfo)
+        end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), timezone=tzinfo)
 
         all_events = AnalyticsEvent.objects.filter(created__gte=start_dt, created__lt=end_dt)
         events = all_events.filter(is_authenticated=False)
