@@ -1,9 +1,9 @@
 from django import forms
 from django.utils.text import slugify
-import base64
-
-from django.core.files.base import ContentFile
+from django.conf import settings
 from django.utils import timezone
+from zoneinfo import available_timezones
+import base64
 
 from ckeditor.widgets import CKEditorWidget
 
@@ -46,6 +46,13 @@ class TherapistProfileForm(forms.ModelForm):
         label="Bio",
         help_text="Share background, approach, or anything clients should know.",
     )
+    timezone = forms.ChoiceField(
+        choices=[(tz, tz) for tz in sorted(available_timezones())],
+        required=False,
+        initial=settings.TIME_ZONE,
+        label="Timezone",
+        help_text="Used for scheduling/analytics; leave blank to use site default.",
+    )
 
     class Meta:
         model = TherapistProfile
@@ -60,6 +67,7 @@ class TherapistProfileForm(forms.ModelForm):
             "top_services",
             "bio",
             "accepts_new_clients",
+            "timezone",
             "photo",
             "intro_video_url",
         ]

@@ -2,6 +2,7 @@ import logging
 from datetime import date, datetime, time, timedelta
 from typing import Any, cast
 from urllib.parse import quote as urlquote
+from zoneinfo import ZoneInfo
 
 import msal
 from django.conf import settings
@@ -801,7 +802,18 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         return is_admin(self.request.user)
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        today = timezone.localdate()
+        tz_name = settings.TIME_ZONE
+        profile = getattr(request.user, "therapist_profile", None)
+        if profile and getattr(profile, "timezone", ""):
+            tz_name = profile.timezone
+
+        try:
+            tz = ZoneInfo(tz_name)
+        except Exception:
+            tz = timezone.get_default_timezone()
+            tz_name = timezone.get_default_timezone_name()
+
+        today = timezone.localtime(timezone.now(), tz=tz).date()
         default_end = today
         default_start = default_end - timedelta(days=29)
 
@@ -822,7 +834,6 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         if (end_date - start_date).days > max_span_days:
             start_date = end_date - timedelta(days=max_span_days)
 
-        tz = timezone.get_current_timezone()
         start_dt = timezone.make_aware(datetime.combine(start_date, time.min), tz)
         end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), tz)
 
@@ -1018,6 +1029,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "rage_click_count": rage_click_count,
             "dead_click_count": dead_click_count,
             "exit_event_count": exit_event_count,
+            "active_timezone": tz_name,
         }
         return render(request, self.template_name, ctx)
 

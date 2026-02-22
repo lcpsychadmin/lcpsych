@@ -57,6 +57,12 @@ class TherapistProfile(models.Model):
         help_text="Optionally choose up to three services to feature on cards.",
     )
     accepts_new_clients = models.BooleanField(default=True)
+    timezone = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        help_text="IANA timezone (e.g., America/New_York). Leave blank to use site default.",
+    )
     photo = models.ImageField(upload_to="therapists/photos/", blank=True, null=True)
     intro_video_url = models.URLField(blank=True)
     bio = RichTextField(blank=True)
