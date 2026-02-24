@@ -2,6 +2,7 @@ from django import forms
 from django.utils.text import slugify
 from django.conf import settings
 from django.utils import timezone
+from django.core.files.base import ContentFile
 from zoneinfo import available_timezones
 import base64
 
