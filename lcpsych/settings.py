@@ -120,6 +120,8 @@ TEMPLATES = [
                 'core.context_processors.nav',
                 'core.context_processors.seo',
                 'core.context_processors.payment_fees',
+                'core.context_processors.insurance_providers',
+                'core.context_processors.insurance_exclusions',
                 'core.context_processors.faqs',
                 'core.context_processors.what_we_do',
                 'core.context_processors.about',

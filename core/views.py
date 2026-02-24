@@ -24,6 +24,8 @@ from .models import (
 	ContactInfo,
 	AnalyticsEvent,
 	AnalyticsEventType,
+	InsuranceProvider,
+	InsuranceExclusion,
 )
 from profiles.models import TherapistProfile
 
@@ -246,8 +248,11 @@ def home(request):
 	)
 
 	therapists = _build_therapist_cards(_published_therapists_queryset())
+	accepted_providers = list(
+		InsuranceProvider.objects.filter(is_active=True).order_by('order', 'name', 'id')
+	)
 
-	ctx = {**seo_ctx, 'services': services, 'therapists': therapists}
+	ctx = {**seo_ctx, 'services': services, 'therapists': therapists, 'accepted_providers': accepted_providers}
 	return render(request, 'home.html', ctx)
 
 
@@ -311,12 +316,25 @@ def about_us(request):
 
 
 def insurance(request):
-	context = _static_seo_context(
-		'insurance',
-		'Insurance & Payment Options | L+C Psych',
-		'Review accepted insurance plans, Medicare coverage, and payment details for therapy and psychological services at L+C Psychological Services.',
-		'Insurance & Payment',
-	)
+	query = (request.GET.get('q') or '').strip()
+	accepted = InsuranceProvider.objects.filter(is_active=True).order_by('order', 'name', 'id')
+	if query:
+		accepted = accepted.filter(name__icontains=query)
+
+	exclusions = InsuranceExclusion.objects.filter(is_active=True).order_by('order', 'name', 'id')
+
+	context = {
+		**_static_seo_context(
+			'insurance',
+			'Insurance & Payment Options | L+C Psych',
+			'Review accepted insurance plans, Medicare coverage, and payment details for therapy and psychological services at L+C Psychological Services.',
+			'Insurance & Payment',
+		),
+		'accepted_providers': accepted,
+		'insurance_exclusions': exclusions,
+		'query': query,
+		'match_count': accepted.count(),
+	}
 	return render(request, 'pages/insurance.html', context)
 
 

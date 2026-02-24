@@ -6,6 +6,8 @@ from ckeditor.widgets import CKEditorWidget
 from core.models import (
     Service,
     PaymentFeeRow,
+    InsuranceProvider,
+    InsuranceExclusion,
     FAQItem,
     WhatWeDoItem,
     WhatWeDoSection,
@@ -114,6 +116,34 @@ class PaymentFeeRowForm(forms.ModelForm):
             base = field.widget.attrs.get("class", "").strip()
             field.widget.attrs["class"] = f"{base} input-basic".strip()
         self.fields["order"].help_text = "Controls display ordering within its category."
+
+
+class InsuranceProviderForm(forms.ModelForm):
+    class Meta:
+        model = InsuranceProvider
+        fields = ["name", "order", "logo", "logo_url", "is_active"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["order"].help_text = "Controls display ordering in the accepted list."
+        self.fields["is_active"].label = "Show on site"
+
+
+class InsuranceExclusionForm(forms.ModelForm):
+    class Meta:
+        model = InsuranceExclusion
+        fields = ["name", "order", "is_active"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            base = field.widget.attrs.get("class", "").strip()
+            field.widget.attrs["class"] = f"{base} input-basic".strip()
+        self.fields["order"].help_text = "Controls display ordering in the non-accepted list."
+        self.fields["is_active"].label = "Show on site"
 
 
 class FAQItemForm(forms.ModelForm):

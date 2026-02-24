@@ -3,6 +3,8 @@ from django.conf import settings
 from .models import (
     PaymentFeeRow,
     FeeCategory,
+    InsuranceProvider,
+    InsuranceExclusion,
     FAQItem,
     WhatWeDoItem,
     WhatWeDoSection,
@@ -79,6 +81,24 @@ def payment_fees(request):
         'payment_fee_rows': rows,
         'payment_fee_professional': rows.filter(category=FeeCategory.PROFESSIONAL),
         'payment_fee_misc': rows.filter(category=FeeCategory.MISC),
+    }
+
+
+def insurance_providers(request):
+    """Expose accepted insurance providers ordered for public pages."""
+
+    providers = InsuranceProvider.objects.filter(is_active=True).order_by('order', 'name', 'id')
+    return {
+        'insurance_providers': providers,
+    }
+
+
+def insurance_exclusions(request):
+    """Expose non-accepted insurance providers for public call-outs."""
+
+    exclusions = InsuranceExclusion.objects.filter(is_active=True).order_by('order', 'name', 'id')
+    return {
+        'insurance_exclusions': exclusions,
     }
 
 

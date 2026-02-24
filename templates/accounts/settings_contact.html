@@ -120,9 +120,33 @@
                   {{ contact_form.contact_title.errors }}
                 </div>
                 <div>
+                  <label class="block text-sm font-semibold mb-1">CTA URL</label>
+                  {{ contact_form.cta_url }}
+                  {{ contact_form.cta_url.errors }}
+                </div>
+              </div>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Phone label</label>
+                  {{ contact_form.phone_label }}
+                  {{ contact_form.phone_label.errors }}
+                </div>
+                <div>
                   <label class="block text-sm font-semibold mb-1">Phone number</label>
                   {{ contact_form.phone_number }}
                   {{ contact_form.phone_number.errors }}
+                </div>
+              </div>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Fax label</label>
+                  {{ contact_form.fax_label }}
+                  {{ contact_form.fax_label.errors }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Fax number</label>
+                  {{ contact_form.fax_number }}
+                  {{ contact_form.fax_number.errors }}
                 </div>
               </div>
               <div class="grid md:grid-cols-2 gap-4">
@@ -143,11 +167,7 @@
                   {{ contact_form.cta_label }}
                   {{ contact_form.cta_label.errors }}
                 </div>
-                <div>
-                  <label class="block text-sm font-semibold mb-1">CTA URL</label>
-                  {{ contact_form.cta_url }}
-                  {{ contact_form.cta_url.errors }}
-                </div>
+                <div aria-hidden="true"></div>
               </div>
               <button type="submit" class="btn-primary">Save contact section</button>
             </form>

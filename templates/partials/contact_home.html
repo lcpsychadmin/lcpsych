@@ -76,18 +76,18 @@
                                     <h3 class="elementor-icon-box-title">
                                         <span> Contact Us </span>
                                     </h3>
-                                    <p class="elementor-icon-box-description">
-                                        <b>Office:</b>
-                                        <a href="tel:8595254911">859-525-4911</a>
-                                        <br>
-                                        <b>Fax:</b>
-                                        <a href="tel:8595256446">859-525-6446</a>
-                                        <br>
-                                        {% if contact and contact.email_address %}
-                                        <b>Email:</b>
-                                        <a href="mailto:{{ contact.email_address }}">{{ contact.email_address }}</a>
-                                        {% endif %}
-                                    </p>
+                                    <div class="elementor-icon-box-description">
+                                        <div style="display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:8px;align-items:center;">
+                                            <div style="font-weight:700;white-space:nowrap;">Office:</div>
+                                            <div style="white-space:nowrap;"><a href="tel:8595254911">859-525-4911</a></div>
+                                            <div style="font-weight:700;white-space:nowrap;">Fax:</div>
+                                            <div style="white-space:nowrap;"><a href="tel:8595256446">859-525-6446</a></div>
+                                            {% if contact and contact.email_address %}
+                                            <div style="font-weight:700;white-space:nowrap;">Email:</div>
+                                            <div style="white-space:nowrap;"><a href="mailto:{{ contact.email_address }}">Email LCPsych</a></div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

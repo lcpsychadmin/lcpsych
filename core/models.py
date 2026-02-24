@@ -240,6 +240,54 @@ class PaymentFeeRow(Timestamped):
 		return self.name
 
 
+class InsuranceProvider(Timestamped):
+	"""Accepted insurance providers displayed on the site."""
+
+	name = models.CharField(max_length=255, unique=True)
+	order = models.PositiveIntegerField(default=0, help_text="Display ordering in the accepted list.")
+	is_active = models.BooleanField(default=True)
+	logo = models.ImageField(
+		upload_to="insurance/logos/",
+		blank=True,
+		null=True,
+		help_text="Optional uploaded logo shown on the insurance page."
+	)
+	logo_url = models.URLField(blank=True, help_text="Optional external logo URL if not uploading a file.")
+
+	class Meta:
+		ordering = ["order", "name", "id"]
+		verbose_name = "Insurance provider"
+		verbose_name_plural = "Insurance providers"
+
+	def __str__(self) -> str:
+		return self.name
+
+	@property
+	def logo_display_url(self) -> str:
+		if self.logo:
+			try:
+				return self.logo.url
+			except ValueError:
+				return ""
+		return self.logo_url or ""
+
+
+class InsuranceExclusion(Timestamped):
+	"""Specific insurance providers the practice does not accept."""
+
+	name = models.CharField(max_length=255, unique=True)
+	order = models.PositiveIntegerField(default=0, help_text="Display ordering in the non-accepted list.")
+	is_active = models.BooleanField(default=True)
+
+	class Meta:
+		ordering = ["order", "name", "id"]
+		verbose_name = "Insurance exclusion"
+		verbose_name_plural = "Insurance exclusions"
+
+	def __str__(self) -> str:
+		return self.name
+
+
 class AboutSection(Timestamped):
 	"""Configurable copy for the homepage About and Mission section."""
 

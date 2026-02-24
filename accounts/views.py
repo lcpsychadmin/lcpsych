@@ -28,6 +28,8 @@ from .forms import (
     InviteUserForm,
     ServiceForm,
     PaymentFeeRowForm,
+    InsuranceProviderForm,
+    InsuranceExclusionForm,
     FAQItemForm,
     WhatWeDoItemForm,
     WhatWeDoSectionForm,
@@ -43,6 +45,8 @@ from .models import EmailConfirmation
 from core.models import (
     Service,
     PaymentFeeRow,
+    InsuranceProvider,
+    InsuranceExclusion,
     FAQItem,
     WhatWeDoItem,
     WhatWeDoSection,
@@ -238,6 +242,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         debug_email: str = "",
         fee_form: PaymentFeeRowForm | None = None,
         editing_fee: PaymentFeeRow | None = None,
+        insurance_form: InsuranceProviderForm | None = None,
+        editing_insurance: InsuranceProvider | None = None,
+        insurance_exclusion_form: InsuranceExclusionForm | None = None,
+        editing_insurance_exclusion: InsuranceExclusion | None = None,
         faq_form: FAQItemForm | None = None,
         editing_faq: FAQItem | None = None,
         whatwedo_section_form: WhatWeDoSectionForm | None = None,
@@ -281,6 +289,8 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .distinct()
         )
         payment_fees = PaymentFeeRow.objects.order_by("category", "order", "id")
+        insurance_providers = InsuranceProvider.objects.order_by("order", "name", "id")
+        insurance_exclusions = InsuranceExclusion.objects.order_by("order", "name", "id")
         faq_items = FAQItem.objects.order_by("order", "id")
         whatwedo_section = WhatWeDoSection.objects.order_by("id").first()
         if not whatwedo_section:
@@ -327,6 +337,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "payment_fees": payment_fees,
             "payment_fee_form": fee_form or PaymentFeeRowForm(),
             "payment_fee_editing": editing_fee,
+            "insurance_providers": insurance_providers,
+            "insurance_provider_form": insurance_form or InsuranceProviderForm(),
+            "insurance_provider_editing": editing_insurance,
+            "insurance_exclusions": insurance_exclusions,
+            "insurance_exclusion_form": insurance_exclusion_form or InsuranceExclusionForm(),
+            "insurance_exclusion_editing": editing_insurance_exclusion,
             "faq_items": faq_items,
             "faq_form": faq_form or FAQItemForm(),
             "faq_editing": editing_faq,
@@ -351,10 +367,16 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         debug_activation_url = request.GET.get("activation_url", "") if settings.DEBUG else ""
         debug_email = request.GET.get("email", "") if settings.DEBUG else ""
         edit_fee_id = request.GET.get("edit_fee")
+        edit_insurance_id = request.GET.get("edit_insurance")
+        edit_insurance_exclusion_id = request.GET.get("edit_insurance_exclusion")
         edit_faq_id = request.GET.get("edit_faq")
         edit_whatwedo_item_id = request.GET.get("edit_whatwedo_item")
         editing_fee = None
         fee_form = None
+        editing_insurance = None
+        insurance_form = None
+        editing_insurance_exclusion = None
+        insurance_exclusion_form = None
         editing_faq = None
         faq_form = None
         editing_whatwedo_item = None
@@ -362,6 +384,12 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         if edit_fee_id:
             editing_fee = get_object_or_404(PaymentFeeRow, pk=edit_fee_id)
             fee_form = PaymentFeeRowForm(instance=editing_fee)
+        if edit_insurance_id:
+            editing_insurance = get_object_or_404(InsuranceProvider, pk=edit_insurance_id)
+            insurance_form = InsuranceProviderForm(instance=editing_insurance)
+        if edit_insurance_exclusion_id:
+            editing_insurance_exclusion = get_object_or_404(InsuranceExclusion, pk=edit_insurance_exclusion_id)
+            insurance_exclusion_form = InsuranceExclusionForm(instance=editing_insurance_exclusion)
         if edit_faq_id:
             editing_faq = get_object_or_404(FAQItem, pk=edit_faq_id)
             faq_form = FAQItemForm(instance=editing_faq)
@@ -374,6 +402,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             debug_email=debug_email,
             fee_form=fee_form,
             editing_fee=editing_fee,
+            insurance_form=insurance_form,
+            editing_insurance=editing_insurance,
+            insurance_exclusion_form=insurance_exclusion_form,
+            editing_insurance_exclusion=editing_insurance_exclusion,
             faq_form=faq_form,
             editing_faq=editing_faq,
             whatwedo_item_form=whatwedo_item_form,
@@ -516,6 +548,59 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             name = row.name
             row.delete()
             messages.success(request, f"Deleted fee row '{name}'.")
+            return self._redirect_to_self()
+
+        if action == "insurance_save":
+            object_id = request.POST.get("object_id")
+            editing_insurance = get_object_or_404(InsuranceProvider, pk=object_id) if object_id else None
+            # Include uploaded logo files so ImageField saves correctly
+            insurance_form = InsuranceProviderForm(request.POST, request.FILES, instance=editing_insurance)
+            if insurance_form.is_valid():
+                saved = insurance_form.save()
+                verb = "updated" if editing_insurance else "added"
+                messages.success(request, f"Insurance provider '{saved.name}' {verb}.")
+                return self._redirect_to_self()
+
+            ctx = self._build_context(
+                request,
+                insurance_form=insurance_form,
+                editing_insurance=editing_insurance,
+                active_page=active_page,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "insurance_delete":
+            object_id = request.POST.get("object_id")
+            row = get_object_or_404(InsuranceProvider, pk=object_id)
+            name = row.name
+            row.delete()
+            messages.success(request, f"Deleted insurance provider '{name}'.")
+            return self._redirect_to_self()
+
+        if action == "insurance_exclusion_save":
+            object_id = request.POST.get("object_id")
+            editing_insurance_exclusion = get_object_or_404(InsuranceExclusion, pk=object_id) if object_id else None
+            insurance_exclusion_form = InsuranceExclusionForm(request.POST, instance=editing_insurance_exclusion)
+            if insurance_exclusion_form.is_valid():
+                saved = insurance_exclusion_form.save()
+                verb = "updated" if editing_insurance_exclusion else "added"
+                messages.success(request, f"Non-accepted provider '{saved.name}' {verb}.")
+                return self._redirect_to_self()
+
+            ctx = self._build_context(
+                request,
+                insurance_exclusion_form=insurance_exclusion_form,
+                editing_insurance_exclusion=editing_insurance_exclusion,
+                active_page=active_page,
+            )
+            return render(request, self.template_name, ctx)
+
+        if action == "insurance_exclusion_delete":
+            object_id = request.POST.get("object_id")
+            row = get_object_or_404(InsuranceExclusion, pk=object_id)
+            name = row.name
+            row.delete()
+            messages.success(request, f"Deleted non-accepted provider '{name}'.")
             return self._redirect_to_self()
 
         if action == "faq_save":
@@ -1090,6 +1175,12 @@ class FAQSettingsView(ManageTherapistsView):
     template_name = "accounts/settings_faq.html"
     success_url_name = "accounts:settings_faq"
     section_slug = "faq"
+
+
+class InsuranceSettingsView(ManageTherapistsView):
+    template_name = "accounts/settings_insurance.html"
+    success_url_name = "accounts:settings_insurance"
+    section_slug = "insurance"
 
 
 class PaymentSettingsView(ManageTherapistsView):
