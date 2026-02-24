@@ -83,8 +83,11 @@
                                         <b>Fax:</b>
                                         <a href="tel:8595256446">859-525-6446</a>
                                         <br>
+                                        {% if contact and contact.email_address %}
                                         <b>Email:</b>
-                                        <a href="/cdn-cgi/l/email-protection#3375415c5d477c55555a5056737f70634a40505b1d505c5e">Front Office</a>                                                                           </p>
+                                        <a href="mailto:{{ contact.email_address }}">{{ contact.email_address }}</a>
+                                        {% endif %}
+                                    </p>
                                 </div>
                             </div>
                         </div>

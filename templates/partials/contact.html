@@ -37,14 +37,12 @@
 
       <div class="space-y-4">
         <div class="bg-white text-slate-900 rounded-2xl shadow-lg shadow-black/10 ring-1 ring-slate-200 p-5 md:p-6 space-y-3">
-          <h3 class="text-lg font-semibold text-[#0f3f46] m-0">Call or fax</h3>
+          <h3 class="text-lg font-semibold text-[#0f3f46] m-0">Call, fax, or email</h3>
           <div class="space-y-2 text-sm text-slate-800">
             <div><span class="font-semibold text-[#0f3f46]">{{ contact.phone_label|default:"Office" }}:</span> <a class="underline-offset-2 hover:underline" href="tel:{{ contact.phone_number|default:"8595254911" }}">{{ contact.phone_number|default:"859-525-4911" }}</a></div>
             <div><span class="font-semibold text-[#0f3f46]">{{ contact.fax_label|default:"Fax" }}:</span> <a class="underline-offset-2 hover:underline" href="tel:{{ contact.fax_number|default:"8595256446" }}">{{ contact.fax_number|default:"859-525-6446" }}</a></div>
             {% if contact and contact.email_address %}
               <div><span class="font-semibold text-[#0f3f46]">{{ contact.email_label|default:"Email" }}:</span> <a class="underline-offset-2 hover:underline" href="mailto:{{ contact.email_address }}">{{ contact.email_address }}</a></div>
-            {% else %}
-              <div><span class="font-semibold text-[#0f3f46]">{{ contact.email_label|default:"Email" }}:</span> <span>{{ contact.email_label|default:"Front Office" }}</span></div>
             {% endif %}
           </div>
         </div>
