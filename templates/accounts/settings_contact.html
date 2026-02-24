@@ -127,17 +127,22 @@
               </div>
               <div class="grid md:grid-cols-2 gap-4">
                 <div>
+                  <label class="block text-sm font-semibold mb-1">Email label</label>
+                  {{ contact_form.email_label }}
+                  {{ contact_form.email_label.errors }}
+                </div>
+                <div>
                   <label class="block text-sm font-semibold mb-1">Email address</label>
                   {{ contact_form.email_address }}
                   {{ contact_form.email_address.errors }}
                 </div>
+              </div>
+              <div class="grid md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-semibold mb-1">CTA label</label>
                   {{ contact_form.cta_label }}
                   {{ contact_form.cta_label.errors }}
                 </div>
-              </div>
-              <div class="grid md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-semibold mb-1">CTA URL</label>
                   {{ contact_form.cta_url }}

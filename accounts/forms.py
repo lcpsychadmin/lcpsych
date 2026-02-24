@@ -289,6 +289,7 @@ class ContactInfoForm(forms.ModelForm):
             base = field.widget.attrs.get("class", "").strip()
             field.widget.attrs["class"] = f"{base} input-basic".strip()
         self.fields["is_active"].label = "Show this section"
+        self.fields["email_label"].required = False
 
 
 class SocialProfileForm(forms.ModelForm):
