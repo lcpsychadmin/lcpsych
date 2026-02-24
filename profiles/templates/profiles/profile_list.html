@@ -113,11 +113,11 @@
       {% for p in profiles %}
         <a href="{% url 'profiles:profile_detail' slug=p.slug %}" class="group flex flex-col h-full rounded-2xl ring-1 ring-slate-200 hover:ring-slate-300 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
           {% if p.photo %}
-            <div class="w-full aspect-[4/5] overflow-hidden bg-slate-100">
+            <div class="w-full aspect-[4/5] min-h-[230px] max-h-[320px] overflow-hidden bg-slate-100">
               <img src="{{ p.photo.url }}" alt="{{ p.display_name }}" class="w-full h-full object-cover" loading="lazy" />
             </div>
           {% else %}
-            <div class="w-full aspect-[4/5] bg-gradient-to-br from-[#005F6B] to-[#92DCE5] flex items-center justify-center text-white">
+            <div class="w-full aspect-[4/5] min-h-[230px] max-h-[320px] bg-gradient-to-br from-[#005F6B] to-[#92DCE5] flex items-center justify-center text-white">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="Therapist silhouette" class="w-16 h-16 drop-shadow-md">
                 <circle cx="32" cy="22" r="12" fill="rgba(255,255,255,0.9)" />
                 <path d="M16 54c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="rgba(255,255,255,0.9)" />
