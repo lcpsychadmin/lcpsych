@@ -310,7 +310,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 ),
                 author="L+C Psychological Services",
             )
-        contact_section = ContactInfo.objects.order_by("id").first()
+        contact_section = (
+            ContactInfo.objects.filter(is_active=True).order_by("id").first()
+            or ContactInfo.objects.order_by("id").first()
+        )
         if not contact_section:
             contact_section = ContactInfo.objects.create()
         return {
@@ -610,7 +613,10 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             return render(request, self.template_name, ctx)
 
         if action == "contact_save":
-            section = ContactInfo.objects.order_by("id").first()
+            section = (
+                ContactInfo.objects.filter(is_active=True).order_by("id").first()
+                or ContactInfo.objects.order_by("id").first()
+            )
             if not section:
                 section = ContactInfo.objects.create()
             contact_form = ContactInfoForm(request.POST, instance=section)
@@ -1271,7 +1277,10 @@ class ManageSEOSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
     def _context(self, form: StaticPageSEOForm | None = None, editing: StaticPageSEO | None = None) -> dict:
         self._ensure_defaults()
         entries = StaticPageSEO.objects.order_by("page_name", "slug")
-        contact_info = ContactInfo.objects.order_by("id").first()
+        contact_info = (
+            ContactInfo.objects.filter(is_active=True).order_by("id").first()
+            or ContactInfo.objects.order_by("id").first()
+        )
         if not contact_info:
             contact_info = ContactInfo.objects.create()
         return {
@@ -1297,7 +1306,10 @@ class ManageSEOSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
         form_type = request.POST.get("form_type", "page_seo")
 
         if form_type == "local_seo":
-            contact_info = ContactInfo.objects.order_by("id").first()
+            contact_info = (
+                ContactInfo.objects.filter(is_active=True).order_by("id").first()
+                or ContactInfo.objects.order_by("id").first()
+            )
             if not contact_info:
                 contact_info = ContactInfo.objects.create()
             contact_form = ContactInfoForm(request.POST, instance=contact_info)
