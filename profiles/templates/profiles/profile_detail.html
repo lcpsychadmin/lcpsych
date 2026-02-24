@@ -51,7 +51,7 @@
             <div class="elementor-element elementor-element-25a9b4d elementor-widget elementor-widget-heading" data-id="25a9b4d" data-element_type="widget" data-widget_type="heading.default">
               <div class="elementor-widget-container">
                 <h1 class="elementor-heading-title elementor-size-default">
-                  {{ profile.display_name }}{% with primary_focus=profile.client_focuses.first %}{% if primary_focus %} | {{ primary_focus.name }}{% elif profile.license_type %} | {{ profile.license_type.name }}{% endif %}{% endwith %}
+                  {{ profile.display_name }}{% with primary_focus=profile.client_focuses.first %}{% if primary_focus %} | {{ primary_focus.name }}{% elif profile.license_type %} | {{ profile.license_type.description|default:profile.license_type.name }}{% endif %}{% endwith %}
                 </h1>
               </div>
             </div>
@@ -59,8 +59,8 @@
               <div class="elementor-element elementor-element-02c38e6 elementor-widget elementor-widget-heading" data-id="02c38e6" data-element_type="widget" data-widget_type="heading.default">
                 <div class="elementor-widget-container">
                   <h3 class="elementor-heading-title elementor-size-default">
-                    {% with license_name=profile.license_type.name|default_if_none:"Clinical Psychologist" %}
-                      {{ license_name }}
+                    {% with license_val=profile.license_type.description|default:profile.license_type.name|default_if_none:"Clinical Psychologist" %}
+                      {{ license_val }}
                     {% endwith %}
                   </h3>
                 </div>
