@@ -119,7 +119,8 @@ def _activation_url(request: HttpRequest, token: str) -> str:
 
 
 def _login_url(request: HttpRequest) -> str:
-    login_path = reverse("accounts:azure_login") if settings.AZURE_AD_ENABLED else reverse("accounts:login")
+    # Always point emails at the standard login page; it links to Azure SSO as needed.
+    login_path = reverse("accounts:login")
     base_url = getattr(settings, "BASE_URL", "").rstrip("/")
     if base_url:
         return f"{base_url}{login_path}"
