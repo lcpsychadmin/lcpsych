@@ -950,19 +950,19 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         rage_hotspots = list(
             rage_clicks_qs.values("label")
             .annotate(count=Count("id"))
-            .order_by("-count")[:10]
+            .order_by("-count")
         )
 
         dead_hotspots = list(
             dead_clicks_qs.values("label")
             .annotate(count=Count("id"))
-            .order_by("-count")[:10]
+            .order_by("-count")
         )
 
         hover_targets = list(
             hover_qs.values("label")
             .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
-            .order_by("-count")[:10]
+            .order_by("-count")
         )
         for row in hover_targets:
             row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
@@ -980,7 +980,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 sessions=Count("session_id", distinct=True),
                 avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
             )
-            .order_by("-count")[:10]
+            .order_by("-count")
         )
         for row in exit_by_path:
             row["avg_scroll_label"] = f"{round(row.get('avg_scroll') or 0):.0f}%"
@@ -993,7 +993,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 sessions=Count("session_id", distinct=True),
                 avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
             )
-            .order_by("-count")[:10]
+            .order_by("-count")
         )
         for row in click_paths:
             row["avg_scroll_label"] = f"{round(row.get('avg_scroll') or 0):.0f}%"
@@ -1048,7 +1048,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         top_pages = list(
             page_views.values("path")
             .annotate(count=Count("id"), avg_duration=Avg("duration_ms"))
-            .order_by("-count")[:10]
+            .order_by("-count")
         )
         for row in top_pages:
             row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
@@ -1057,7 +1057,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             events.filter(event_type=AnalyticsEventType.CLICK)
             .values("label")
             .annotate(count=Count("id"))
-            .order_by("-count")[:10]
+            .order_by("-count")
         )
 
         current_host = request.get_host()
@@ -1072,7 +1072,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 sessions=Count("session_id", distinct=True),
                 events=Count("id"),
             )
-            .order_by("-sessions")[:10]
+            .order_by("-sessions")
         )
 
         avg_scroll = (
@@ -1086,7 +1086,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             events.exclude(country_code="")
             .values("country_code", "region", "city", "timezone")
             .annotate(count=Count("id"), sessions=Count("session_id", distinct=True))
-            .order_by("-count")[:20]
+            .order_by("-count")
         )
 
         auth_successes = all_events.filter(event_type=AnalyticsEventType.AUTH_SUCCESS).count()
@@ -1094,7 +1094,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         recent_failures = list(
             all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED)
             .order_by("-created")
-            .values("created", "path", "referrer", "region", "city", "timezone", "user_agent", "ip_hash")[:20]
+            .values("created", "path", "referrer", "region", "city", "timezone", "user_agent", "ip_hash")
         )
 
         ctx = {
