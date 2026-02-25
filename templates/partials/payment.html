@@ -10,11 +10,14 @@
         <div class="grid lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8 items-start">
             <div class="bg-white rounded-2xl shadow-xl shadow-black/5 ring-1 ring-slate-200 overflow-hidden">
                 <div class="border-b border-slate-100 px-5 md:px-6 py-4 flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-[#0f3f46] m-0">Session Fees</h3>
+                    <div>
+                        <h3 class="text-xl font-semibold text-[#0f3f46] m-0">Session Fees</h3>
+                        <p class="mt-1 text-xs font-medium text-slate-600 md:hidden">Swipe to see all columns</p>
+                    </div>
                     <span class="text-sm font-semibold text-[#3C9C64]">Updated</span>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-slate-800 session-fees-table">
+                <div class="overflow-x-auto -mx-4 md:mx-0 hidden md:block">
+                    <table class="w-full min-w-[720px] text-sm text-left text-slate-800 session-fees-table">
                         <thead>
                             <tr class="bg-[#0f3f46] text-white uppercase text-xs tracking-wide">
                                 <th scope="col" class="px-4 py-3 font-semibold text-white bg-[#0f3f46]">Professional Service</th>
@@ -55,6 +58,53 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <div class="md:hidden space-y-3 px-4 pb-2">
+                    {% for row in payment_fee_professional %}
+                        <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
+                            <div class="text-sm font-semibold text-[#0f3f46]">{{ row.name }}</div>
+                            <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-800">
+                                <div class="space-y-0.5">
+                                    <dt class="text-xs font-semibold text-slate-500">Doctoral</dt>
+                                    <dd>{{ row.doctoral_fee|default:"—" }}</dd>
+                                </div>
+                                <div class="space-y-0.5">
+                                    <dt class="text-xs font-semibold text-slate-500">Master's</dt>
+                                    <dd>{{ row.masters_fee|default:"—" }}</dd>
+                                </div>
+                                <div class="space-y-0.5">
+                                    <dt class="text-xs font-semibold text-slate-500 col-span-2">Under supervision</dt>
+                                    <dd class="col-span-2">{{ row.supervised_fee|default:"—" }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    {% empty %}
+                        <div class="rounded-xl border border-dashed border-slate-300 bg-white/70 text-center text-sm text-slate-700 p-4">Payment data will appear here once added in the admin.</div>
+                    {% endfor %}
+
+                    <div class="pt-2 text-xs font-semibold uppercase tracking-wide text-[#0f3f46]">Miscellaneous Fees (not covered by insurance)</div>
+                    {% for row in payment_fee_misc %}
+                        <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
+                            <div class="text-sm font-semibold text-[#0f3f46]">{{ row.name }}</div>
+                            <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-800">
+                                <div class="space-y-0.5">
+                                    <dt class="text-xs font-semibold text-slate-500">Doctoral</dt>
+                                    <dd>{{ row.doctoral_fee|default:"—" }}</dd>
+                                </div>
+                                <div class="space-y-0.5">
+                                    <dt class="text-xs font-semibold text-slate-500">Master's</dt>
+                                    <dd>{{ row.masters_fee|default:"—" }}</dd>
+                                </div>
+                                <div class="space-y-0.5">
+                                    <dt class="text-xs font-semibold text-slate-500 col-span-2">Under supervision</dt>
+                                    <dd class="col-span-2">{{ row.supervised_fee|default:"—" }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    {% empty %}
+                        <div class="rounded-xl border border-dashed border-slate-300 bg-white/70 text-center text-sm text-slate-700 p-4">Add miscellaneous fees in the admin to show them here.</div>
+                    {% endfor %}
                 </div>
                 <style>
                 /* Ensure Session Fees header stays brand-colored even if other table styles load */
