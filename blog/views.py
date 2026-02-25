@@ -10,8 +10,9 @@ import os
 import requests
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote_plus
 import re
+from datetime import date
 
 from .forms import PostForm
 from .models import Post
@@ -222,7 +223,7 @@ class PostAIGenerateView(LoginRequiredMixin, View):
                                 "Use <p> and <h2>/<h3>/<ul> tags in body_html. "
                                 "Slug must be a lowercase-kebab value under 60 chars. "
                                 "seo_title should be under 60 chars; seo_description under 160 chars. "
-                                "image_url must be a safe, royalty-free URL (1200x630 if possible) or empty if unsure. "
+                                "image_url must be a safe, royalty-free URL (1200x630 if possible) that visually matches the post topic (no logos, no identifiable patients; favor calming, therapeutic, or contextual imagery). Leave blank if unsure. "
                                 "Focus on current, timely psychology/mental health trends and avoid duplicating any existing titles/slugs provided. "
                                 f"Existing titles: {existing_titles[:50]}. Existing slugs: {existing_slugs[:50]}. "
                                 "Limit body to about 500 words."
@@ -253,6 +254,8 @@ class PostAIGenerateView(LoginRequiredMixin, View):
         slug_val = ensure_unique_slug(slugify(parsed.get("slug") or title)[:60])
         seo_title = (parsed.get("seo_title") or title)[:160]
         image_url = (parsed.get("image_url") or "").strip()
+        if not image_url:
+            image_url = build_topic_image_url(title or seo_title or slug_val)
         if not image_url and slug_val:
             image_url = f"https://picsum.photos/seed/{slug_val}/1200/630"
 
@@ -273,6 +276,8 @@ class PostAITrendsView(LoginRequiredMixin, View):
 
     def get(self, request: HttpRequest) -> JsonResponse:
         limit = 6
+        keyword = (request.GET.get("q") or "").strip()
+        current_year = date.today().year
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
         if not api_key:
             return JsonResponse({"error": "OPENAI_API_KEY is not configured."}, status=400)
@@ -295,14 +300,22 @@ class PostAITrendsView(LoginRequiredMixin, View):
                             "role": "system",
                             "content": (
                                 "You suggest blog post ideas in psychology/mental health, timely and trend-focused. "
+                                "Draw inspiration from reputable psychology publications (e.g., Psychology Today, APA Monitor, Harvard Health). "
                                 "Return JSON array of short idea strings (max 140 chars each), no numbering or bullets. "
+                                "Avoid outdated topics (ignore news or studies before "
+                                f"{current_year - 1}). "
                                 "Do NOT duplicate any existing titles/slugs provided."
                                 f" Existing titles: {existing_titles[:60]}. Existing slugs: {existing_slugs[:60]}"
                             ),
                         },
                         {
                             "role": "user",
-                            "content": f"Generate {limit} unique idea strings that are current and distinct.",
+                            "content": (
+                                f"Generate {limit} unique idea strings that are current, distinct, and relevant to "
+                                f"{keyword or 'psychology and mental health'}. "
+                                f"Keep them tied to reputable psychology sources and the {current_year} timeframe. "
+                                "No numbering or bullets."
+                            ),
                         },
                     ],
                     "temperature": 0.7,
@@ -341,8 +354,6 @@ def attach_ai_image_if_needed(post: Post, url: str | None) -> None:
 
     filename = f"{slugify(post.slug or post.title or 'post')}.jpg"
     post.feature_image.save(filename, file_obj, save=True)
-
-
 def fetch_image_from_url(url: str) -> ContentFile | None:
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"}:
@@ -378,6 +389,13 @@ def build_fallback_image_url(post: Post) -> str:
     return f"https://picsum.photos/seed/{seed}/1200/630"
 
 
+def build_topic_image_url(topic: str) -> str:
+    """Return a topical placeholder image URL keyed to the topic/slug."""
+    topic = (topic or '').strip() or 'psychology'
+    keyword = quote_plus(slugify(topic) or topic)
+    return f"https://source.unsplash.com/1200x630/?{keyword}"
+
+
 def parse_ai_completion(raw: str) -> dict:
     text = (raw or '').strip()
     # Strip common code fences like ```json ... ```
@@ -388,6 +406,14 @@ def parse_ai_completion(raw: str) -> dict:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
+        pass
+
+    # Try to salvage embedded JSON within surrounding text
+    try:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+    except Exception:
         pass
 
     # Fallback: try to pull key/value pairs from a loosely formatted response
@@ -403,20 +429,20 @@ def parse_ai_completion(raw: str) -> dict:
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     for ln in lines:
         lower = ln.lower()
-        if lower.startswith('title:'):
-            fields["title"] = ln.split(':', 1)[1].strip()
+        if lower.startswith(('title:', 'title-', 'title —', 'title –', 'title=')):
+            fields["title"] = re.split(r"[:=\-\u2014\u2013]", ln, 1)[1].strip()
             continue
-        if lower.startswith('slug:'):
-            fields["slug"] = ln.split(':', 1)[1].strip()
+        if lower.startswith(('slug:', 'slug-', 'slug=', 'slug —', 'slug –')):
+            fields["slug"] = re.split(r"[:=\-\u2014\u2013]", ln, 1)[1].strip()
             continue
-        if lower.startswith('seo title:') or lower.startswith('seo_title:'):
-            fields["seo_title"] = ln.split(':', 1)[1].strip()
+        if lower.startswith(('seo title:', 'seo_title:', 'seo title -', 'seo_title -', 'seo title —', 'seo_title —', 'seo title –', 'seo_title –', 'seo title=', 'seo_title=')):
+            fields["seo_title"] = re.split(r"[:=\-\u2014\u2013]", ln, 1)[1].strip()
             continue
-        if lower.startswith('seo description:') or lower.startswith('seo_description:'):
-            fields["seo_description"] = ln.split(':', 1)[1].strip()
+        if lower.startswith(('seo description:', 'seo_description:', 'seo description -', 'seo_description -', 'seo description —', 'seo_description —', 'seo description –', 'seo_description –', 'seo description=', 'seo_description=')):
+            fields["seo_description"] = re.split(r"[:=\-\u2014\u2013]", ln, 1)[1].strip()
             continue
-        if lower.startswith('image url:') or lower.startswith('image_url:'):
-            fields["image_url"] = ln.split(':', 1)[1].strip()
+        if lower.startswith(('image url:', 'image_url:', 'image url -', 'image_url -', 'image url —', 'image_url —', 'image url –', 'image_url –', 'image url=', 'image_url=')):
+            fields["image_url"] = re.split(r"[:=\-\u2014\u2013]", ln, 1)[1].strip()
             continue
 
     # Whatever remains, treat as body if it looks like HTML or paragraphs

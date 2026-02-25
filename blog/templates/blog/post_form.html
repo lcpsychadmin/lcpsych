@@ -288,9 +288,15 @@
                     </div>
 
                     <div class="ai-panel hidden" data-panel="ideas">
-                      <div class="flex items-center justify-between mb-2">
-                        <p class="text-xs text-slate-600">Trend-based ideas (no duplicates)</p>
-                        <button type="button" id="refresh-ideas" class="text-[11px] font-semibold text-white bg-[#0f3f46] hover:bg-[#0c3339] rounded-lg px-3 py-1.5">Refresh</button>
+                      <div class="flex flex-col gap-2 mb-2">
+                        <div class="flex items-center justify-between">
+                          <p class="text-xs text-slate-600">Ideas from reputable psychology sources (no duplicates)</p>
+                          <button type="button" id="refresh-ideas" class="text-[11px] font-semibold text-white bg-[#0f3f46] hover:bg-[#0c3339] rounded-lg px-3 py-1.5">Refresh</button>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                          <input id="ai-ideas-keyword" type="text" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-deep/60" placeholder="Optional keyword (e.g., sleep, teens, anxiety)" />
+                          <button type="button" id="filter-ideas" class="text-[11px] font-semibold text-white bg-[#0f3f46] hover:bg-[#0c3339] rounded-lg px-3 py-2">Filter</button>
+                        </div>
                       </div>
                       <div id="ai-ideas-list" class="space-y-2"></div>
                       <p id="ai-ideas-status" class="text-[11px] text-slate-500"></p>
@@ -338,6 +344,8 @@
     const ideasList = document.getElementById('ai-ideas-list');
     const ideasStatus = document.getElementById('ai-ideas-status');
     const ideasRefresh = document.getElementById('refresh-ideas');
+    const ideasKeyword = document.getElementById('ai-ideas-keyword');
+    const ideasFilter = document.getElementById('filter-ideas');
     let ideasLoaded = false;
 
     function getCsrfToken() {
@@ -512,7 +520,9 @@
       ideasStatus.textContent = 'Fetching trend ideas...';
       ideasList.innerHTML = '';
       try {
-        const resp = await fetch('{% url "blog:ideas" %}');
+        const keyword = (ideasKeyword && ideasKeyword.value || '').trim();
+        const query = keyword ? `?q=${encodeURIComponent(keyword)}` : '';
+        const resp = await fetch('{% url "blog:ideas" %}' + query);
         const data = await resp.json();
         if (!resp.ok) {
           ideasStatus.textContent = data.error || 'Could not load ideas.';
@@ -538,7 +548,7 @@
           });
           ideasList.appendChild(btn);
         });
-        ideasStatus.textContent = 'Tap an idea to seed the prompt.';
+        ideasStatus.textContent = keyword ? 'Filtered by keyword.' : 'Tap an idea to seed the prompt.';
         ideasLoaded = true;
       } catch (err) {
         ideasStatus.textContent = 'Error loading ideas.';
@@ -560,6 +570,23 @@
       ideasRefresh.addEventListener('click', () => {
         ideasLoaded = false;
         loadIdeas();
+      });
+    }
+
+    if (ideasFilter) {
+      ideasFilter.addEventListener('click', () => {
+        ideasLoaded = false;
+        loadIdeas();
+      });
+    }
+
+    if (ideasKeyword) {
+      ideasKeyword.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          ideasLoaded = false;
+          loadIdeas();
+        }
       });
     }
 
