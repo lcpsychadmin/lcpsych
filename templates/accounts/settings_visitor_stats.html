@@ -663,6 +663,34 @@
 
           <div class="card-surface p-6">
             <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Devices & OS</h2>
+              <span class="badge-muted">Per person</span>
+            </div>
+            <div class="overflow-x-auto">
+              <div class="table-scroll">
+                <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>OS</th><th>Device</th><th>Sessions</th><th>Events</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in device_os_stats %}
+                    <tr>
+                      <td>{{ row.device_os }}</td>
+                      <td>{{ row.device_type }}</td>
+                      <td>{{ row.sessions }}</td>
+                      <td>{{ row.events }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-slate-500 py-2">No device data captured yet</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
               <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Recent failed logins</h2>
               <span class="badge-muted">Last 20</span>
             </div>
