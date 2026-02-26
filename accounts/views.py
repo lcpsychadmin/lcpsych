@@ -13,7 +13,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
 from django.core.cache import cache
-from django.db.models import Avg, Case, Count, FloatField, Q, Value, CharField
+from django.db.models import Avg, Case, Count, FloatField, Q, Value, CharField, When
 from django.db.models.functions import Cast, Concat, TruncDate
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
