@@ -1,0 +1,44 @@
+{# Shared therapist card for homepage + Our Team #}
+<a href="{% url 'profiles:profile_detail' slug=slug %}" class="therapist-card-shell group flex flex-col h-full rounded-2xl ring-1 ring-slate-200 hover:ring-slate-300 transition duration-300 ease-out overflow-hidden" style="box-shadow:0 14px 26px rgba(0,0,0,0.16) !important;">
+  {% if photo_url %}
+    <div class="w-full aspect-[4/5] min-h-[320px] max-h-[520px] overflow-hidden bg-slate-100">
+      <img src="{{ photo_url }}" alt="{{ name }}" class="therapist-card-img w-full h-full object-cover object-top block transition-transform duration-300 ease-out group-hover:scale-105" loading="lazy" />
+    </div>
+  {% else %}
+    <div class="w-full aspect-[4/5] min-h-[320px] max-h-[520px] bg-gradient-to-br from-[#005F6B] to-[#92DCE5] flex items-center justify-center text-white">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="Therapist silhouette" class="w-16 h-16 drop-shadow-md">
+        <circle cx="32" cy="22" r="12" fill="rgba(255,255,255,0.9)" />
+        <path d="M16 54c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="rgba(255,255,255,0.9)" />
+      </svg>
+    </div>
+  {% endif %}
+  <div class="p-5 flex flex-col grow gap-2 text-white leading-none" style="background-color:#005F6B;">
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-xl font-semibold text-white m-0">{{ name }}</h2>
+      {% if accepts_new_clients %}
+        <span class="chip" style="background:linear-gradient(135deg,#1e8e4a 0%,#2fb36a 100%);color:#f9fffb;box-shadow:0 6px 18px rgba(31,106,59,0.28);">Accepting</span>
+      {% else %}
+        <span class="chip bg-slate-100 text-slate-700">Waitlist</span>
+      {% endif %}
+    </div>
+    {% if license_text %}<p class="text-sm" style="color:rgba(255,255,255,0.9);">{{ license_text }}</p>{% endif %}
+
+    {% if services %}
+      <div class="flex flex-wrap gap-2 mt-1">
+        {% for s in services|slice:":3" %}
+          <span class="chip" style="background-color:#bdeffc;color:#024b59;border:1px solid rgba(2,75,89,0.2);box-shadow:0 4px 12px rgba(0,0,0,0.08);">{{ s }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if client_focuses %}
+      <div class="text-sm line-clamp-2" style="color:rgba(255,255,255,0.9);">
+        {{ client_focuses|join:", " }}
+      </div>
+    {% endif %}
+
+    <div class="mt-auto pt-4">
+      <span class="inline-flex items-center rounded-md bg-[#3C9C64] px-3 py-1.5 text-sm font-medium text-white transition-colors group-hover:bg-[#92DCE5] group-hover:text-[#005F6B]">View profile</span>
+    </div>
+  </div>
+</a>

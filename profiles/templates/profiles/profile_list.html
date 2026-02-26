@@ -43,6 +43,25 @@
   font-size: 0.78rem;
   font-weight: 700;
 }
+
+/* Shared card hover & image zoom (Our Team) */
+.therapist-card-shell {
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16) !important;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.therapist-card-shell:hover {
+  box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24) !important;
+  transform: none;
+}
+
+.therapist-card-shell .therapist-card-img {
+  transition: transform 220ms ease;
+}
+
+.therapist-card-shell:hover .therapist-card-img {
+  transform: scale(1.04);
+}
 </style>
 {% endblock %}
 
@@ -111,57 +130,15 @@
     </div>
     <div class="container mx-auto px-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {% for p in profiles %}
-        <a href="{% url 'profiles:profile_detail' slug=p.slug %}" class="group flex flex-col h-full rounded-2xl ring-1 ring-slate-200 hover:ring-slate-300 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
+        {% with top=p.top_services.all services_all=p.services.all %}
           {% if p.photo %}
-            <div class="w-full aspect-[4/5] min-h-[230px] max-h-[320px] overflow-hidden bg-slate-100">
-              <img src="{{ p.photo.url }}" alt="{{ p.display_name }}" class="w-full h-full object-cover" loading="lazy" />
-            </div>
-          {% else %}
-            <div class="w-full aspect-[4/5] min-h-[230px] max-h-[320px] bg-gradient-to-br from-[#005F6B] to-[#92DCE5] flex items-center justify-center text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-label="Therapist silhouette" class="w-16 h-16 drop-shadow-md">
-                <circle cx="32" cy="22" r="12" fill="rgba(255,255,255,0.9)" />
-                <path d="M16 54c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="rgba(255,255,255,0.9)" />
-              </svg>
-            </div>
-          {% endif %}
-          <div class="p-5 flex flex-col grow gap-2">
-            <div class="flex items-center justify-between gap-3">
-              <h2 class="text-xl font-semibold text-[#005F6B] m-0">{{ p.display_name }}</h2>
-              {% if p.accepts_new_clients %}
-                <span class="chip bg-[#E9F8EB] text-[#165d2a]">Accepting</span>
-              {% else %}
-                <span class="chip bg-slate-100 text-slate-700">Waitlist</span>
-              {% endif %}
-            </div>
-            {% if p.license_type %}<p class="text-sm text-slate-600">{{ p.license_type.description|default:p.license_type.name }}</p>{% endif %}
-
-            {% with top=p.top_services.all services_all=p.services.all %}
-              {% if top %}
-                <div class="flex flex-wrap gap-2 mt-1">
-                  {% for s in top|slice:":3" %}
-                    <span class="chip">{{ s.title }}</span>
-                  {% endfor %}
-                </div>
-              {% elif services_all %}
-                <div class="flex flex-wrap gap-2 mt-1">
-                  {% for s in services_all|slice:":3" %}
-                    <span class="chip">{{ s.title }}</span>
-                  {% endfor %}
-                </div>
-              {% endif %}
+            {% with pu=p.photo.url %}
+              {% include "partials/therapist_card_shared.html" with slug=p.slug photo_url=pu name=p.display_name accepts_new_clients=p.accepts_new_clients license_text=p.license_type.description|default:p.license_type.name services=top|default:services_all client_focuses=p.client_focuses.all %}
             {% endwith %}
-
-            {% if p.client_focuses.all %}
-              <div class="text-sm text-slate-700 line-clamp-2">
-                {{ p.client_focuses.all|join:", " }}
-              </div>
-            {% endif %}
-
-            <div class="mt-auto pt-4">
-              <span class="inline-flex items-center rounded-md bg-[#3C9C64] px-3 py-1.5 text-sm font-medium text-white transition-colors group-hover:bg-[#92DCE5] group-hover:text-[#005F6B]">View profile</span>
-            </div>
-          </div>
-        </a>
+          {% else %}
+              {% include "partials/therapist_card_shared.html" with slug=p.slug photo_url=None name=p.display_name accepts_new_clients=p.accepts_new_clients license_text=p.license_type.description|default:p.license_type.name services=top|default:services_all client_focuses=p.client_focuses.all %}
+          {% endif %}
+        {% endwith %}
       {% empty %}
         <p class="text-slate-600">No therapists match that search yet. Try a different keyword or clear the filters.</p>
       {% endfor %}

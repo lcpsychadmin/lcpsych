@@ -1,4 +1,5 @@
 from django.urls import path, re_path
+from django.views.generic import RedirectView
 from . import views
 from .feeds import LatestPostsFeed
 
@@ -6,6 +7,7 @@ app_name = "core"
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('contact/', RedirectView.as_view(pattern_name='core:contact_us', permanent=True)),
     path('_preview/', views.import_preview, name='import_preview'),
     path('api/analytics/', views.analytics_event, name='analytics_event'),
     path('blog/', views.post_list, name='post_list'),
