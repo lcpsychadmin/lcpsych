@@ -2,7 +2,8 @@
   'use strict';
 
   var ENDPOINT = '/api/analytics/';
-  var SESSION_KEY = 'lcpsych_session_id';
+  var SESSION_KEY = 'lcpsid';
+  var LEGACY_SESSION_KEY = 'lcpsych_session_id';
   var CLICK_PATH_LIMIT = 5;
   var HOVER_THRESHOLD_MS = 700;
   var RAGE_WINDOW_MS = 1200;
@@ -23,10 +24,20 @@
 
   function sessionId() {
     try {
-      var existing = sessionStorage.getItem(SESSION_KEY);
+      var store = window.localStorage || window.sessionStorage;
+      if (!store) throw new Error('no storage');
+
+      var legacy = store.getItem(LEGACY_SESSION_KEY);
+      if (legacy) {
+        store.setItem(SESSION_KEY, legacy);
+        return legacy;
+      }
+
+      var existing = store.getItem(SESSION_KEY);
       if (existing) return existing;
+
       var id = uuid();
-      sessionStorage.setItem(SESSION_KEY, id);
+      store.setItem(SESSION_KEY, id);
       return id;
     } catch (_) {
       return uuid();
