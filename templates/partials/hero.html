@@ -1,4 +1,22 @@
 <style>
+/* Hero layout tweaks for tablet sizing */
+.hero-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    align-items: center;
+}
+@media (min-width: 1024px) {
+    .hero-wrap {
+        grid-template-columns: 1.05fr 0.95fr;
+        column-gap: 2rem;
+    }
+}
+.hero-text {
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+}
 /* Hero button theming */
 .hero-btn-base {
     display: inline-flex;
@@ -66,8 +84,8 @@ a.hero-btn-base.hero-btn-secondary:hover {
 }
 </style>
 
-<div data-dce-background-color="#04606B" class="elementor-element elementor-element-23eff22 e-con-full e-flex e-con e-parent" data-id="23eff22" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
-    <div class="elementor-element elementor-element-23b0a35 e-con-full e-flex e-con e-child" data-id="23b0a35" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
+<div data-dce-background-color="#04606B" class="elementor-element elementor-element-23eff22 e-con-full e-flex e-con e-parent hero-wrap" data-id="23eff22" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
+    <div class="elementor-element elementor-element-23b0a35 e-con-full e-flex e-con e-child hero-text" data-id="23b0a35" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
         <div class="elementor-element elementor-element-25a9b4d elementor-widget elementor-widget-heading" data-id="25a9b4d" data-element_type="widget" data-widget_type="heading.default">
             <div class="elementor-widget-container">
                 <h1 class="elementor-heading-title elementor-size-default">L+C Psychological Services</h1>
@@ -113,7 +131,7 @@ a.hero-btn-base.hero-btn-secondary:hover {
         </div>
     </div>
 
-    <div data-dce-background-color="#04606B" class="elementor-element elementor-element-32a6d5b e-con-full elementor-hidden-tablet elementor-hidden-mobile e-flex e-con e-child" data-id="32a6d5b" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}" style="position: relative;">
+    <div data-dce-background-color="#04606B" class="elementor-element elementor-element-32a6d5b e-con-full elementor-hidden-mobile e-flex e-con e-child" data-id="32a6d5b" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}" style="position: relative;">
         <div class="elementor-element elementor-element-42489d8 dce_masking-none elementor-widget elementor-widget-image" data-id="42489d8" data-element_type="widget" data-widget_type="image.default">
             <div class="elementor-widget-container">
                 <img loading="lazy" decoding="async" width="1152" height="768" src="/static/media/hero-family.png" class="attachment-medium_large size-medium_large wp-image-2155" alt="Family meeting with an L+C Psychological Services therapist" sizes="(max-width: 1152px) 100vw, 768px"/>
