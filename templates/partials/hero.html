@@ -6,7 +6,7 @@
     gap: 1.75rem;
     align-items: center;
 }
-@media (min-width: 1024px) {
+@media (min-width: 1100px) {
     .hero-wrap {
         grid-template-columns: 1.05fr 0.95fr;
         column-gap: 2rem;
@@ -16,6 +16,20 @@
     max-width: 960px;
     width: 100%;
     margin: 0 auto;
+}
+.hero-visual {
+    display: none;
+}
+@media (min-width: 1100px) {
+    .hero-visual {
+        display: block;
+    }
+    .hero-visual img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        display: block;
+    }
 }
 /* Hero button theming */
 .hero-btn-base {
@@ -131,7 +145,7 @@ a.hero-btn-base.hero-btn-secondary:hover {
         </div>
     </div>
 
-    <div data-dce-background-color="#04606B" class="elementor-element elementor-element-32a6d5b e-con-full elementor-hidden-mobile e-flex e-con e-child" data-id="32a6d5b" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}" style="position: relative;">
+    <div data-dce-background-color="#04606B" class="elementor-element elementor-element-32a6d5b e-con-full elementor-hidden-mobile e-flex e-con e-child hero-visual" data-id="32a6d5b" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}" style="position: relative;">
         <div class="elementor-element elementor-element-42489d8 dce_masking-none elementor-widget elementor-widget-image" data-id="42489d8" data-element_type="widget" data-widget_type="image.default">
             <div class="elementor-widget-container">
                 <img loading="lazy" decoding="async" width="1152" height="768" src="/static/media/hero-family.png" class="attachment-medium_large size-medium_large wp-image-2155" alt="Family meeting with an L+C Psychological Services therapist" sizes="(max-width: 1152px) 100vw, 768px"/>
