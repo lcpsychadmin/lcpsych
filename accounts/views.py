@@ -13,8 +13,8 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
 from django.core.cache import cache
-from django.db.models import Avg, Count, FloatField, Q
-from django.db.models.functions import Cast, TruncDate
+from django.db.models import Avg, Case, Count, FloatField, Q, Value, CharField
+from django.db.models.functions import Cast, Concat, TruncDate
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -932,11 +932,19 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         all_events = AnalyticsEvent.objects.filter(created__gte=start_dt, created__lt=end_dt)
         events = all_events.filter(is_authenticated=False)
 
+        person_expr = Case(
+            When(~Q(ip_hash="") & ~Q(user_agent=""), then=Concat("ip_hash", Value("|"), "user_agent")),
+            When(~Q(ip_hash=""), then="ip_hash"),
+            default="session_id",
+            output_field=CharField(),
+        )
+        events = events.annotate(person_key=person_expr)
+
         page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
         total_page_views = page_views.count()
         avg_time_ms = page_views.aggregate(avg=Avg("duration_ms"))['avg'] or 0
         avg_time_label = self._format_ms(avg_time_ms)
-        unique_sessions = events.values("session_id").distinct().count()
+        unique_sessions = events.values("person_key").distinct().count()
 
         rage_clicks_qs = events.filter(event_type=AnalyticsEventType.RAGE_CLICK)
         dead_clicks_qs = events.filter(event_type=AnalyticsEventType.DEAD_CLICK)
@@ -970,14 +978,14 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         avg_hover_ms = hover_qs.aggregate(avg=Avg("duration_ms"))["avg"] or 0
         avg_hover_label = self._format_ms(avg_hover_ms)
 
-        exit_sessions = exit_qs.values("session_id").distinct().count()
+        exit_sessions = exit_qs.values("person_key").distinct().count()
         exit_rate = round((exit_sessions / unique_sessions) * 100, 1) if unique_sessions else 0
 
         exit_by_path = list(
             exit_qs.values("path")
             .annotate(
                 count=Count("id"),
-                sessions=Count("session_id", distinct=True),
+                sessions=Count("person_key", distinct=True),
                 avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
             )
             .order_by("-count")
@@ -990,7 +998,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .values("metadata__click_path")
             .annotate(
                 count=Count("id"),
-                sessions=Count("session_id", distinct=True),
+                sessions=Count("person_key", distinct=True),
                 avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
             )
             .order_by("-count")
@@ -1008,7 +1016,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         sessions_by_day = list(
             events.annotate(day=TruncDate("created"))
             .values("day")
-            .annotate(sessions=Count("session_id", distinct=True))
+            .annotate(sessions=Count("person_key", distinct=True))
             .order_by("day")
         )
 
@@ -1069,7 +1077,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             )
             .values("metadata__landing_referrer")
             .annotate(
-                sessions=Count("session_id", distinct=True),
+                sessions=Count("person_key", distinct=True),
                 events=Count("id"),
             )
             .order_by("-sessions")
@@ -1085,7 +1093,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         locations = list(
             events.exclude(country_code="")
             .values("country_code", "region", "city", "timezone")
-            .annotate(count=Count("id"), sessions=Count("session_id", distinct=True))
+            .annotate(count=Count("id"), sessions=Count("person_key", distinct=True))
             .order_by("-count")
         )
 
