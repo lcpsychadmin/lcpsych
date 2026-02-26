@@ -155,14 +155,14 @@
       <div class="contact-card">
         <h4><span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 5.5 9 8c.4.4.5 1 .3 1.5l-.8 1.8a10.8 10.8 0 0 0 4.2 4.2l1.8-.8c.5-.2 1.1-.1 1.5.3l2.5 2.5c.4.4.5 1 .2 1.5-.5.8-1.4 1.3-2.3 1.3A13 13 0 0 1 5 6.8c0-.9.5-1.8 1.3-2.3.5-.3 1.1-.2 1.5.2Z"></path></svg></span>Contact Us</h4>
         <div class="contact-links">
-          <strong>Office:</strong><a href="tel:8595254911">859-525-4911</a>
+          <strong>Office:</strong><a href="tel:8595254911" data-analytics-label="cta_call_contact_home">859-525-4911</a>
           <strong>Fax:</strong><a href="tel:8595256446">859-525-6446</a>
           {% if contact and contact.email_address %}
-          <strong>Email:</strong><a href="mailto:{{ contact.email_address }}">{{ contact.email_address }}</a>
+          <strong>Email:</strong><a href="mailto:{{ contact.email_address }}" data-analytics-label="cta_email_contact_home">{{ contact.email_address }}</a>
           {% endif %}
         </div>
         <div class="contact-actions" style="margin-top:1rem;">
-          <a class="contact-btn" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" data-schedule-trigger>Schedule Online</a>
+          <a class="contact-btn" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" data-schedule-trigger data-analytics-label="cta_schedule_contact_home">Schedule Online</a>
         </div>
       </div>
     </div>

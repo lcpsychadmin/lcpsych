@@ -966,6 +966,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         events = events.annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
 
+        click_events = events.filter(event_type=AnalyticsEventType.CLICK)
         page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
         total_page_views = page_views.count()
         avg_time_ms = page_views.aggregate(avg=Avg("duration_ms"))['avg'] or 0
@@ -976,6 +977,52 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         dead_clicks_qs = events.filter(event_type=AnalyticsEventType.DEAD_CLICK)
         hover_qs = events.filter(event_type=AnalyticsEventType.HOVER_INTENT)
         exit_qs = events.filter(event_type=AnalyticsEventType.SESSION_EXIT)
+
+        schedule_open_qs = click_events.filter(label="schedule_modal_open")
+        schedule_existing_qs = click_events.filter(label="schedule_existing_select")
+        schedule_new_qs = click_events.filter(label="schedule_new_select")
+        schedule_no_selection_qs = click_events.filter(label="schedule_no_selection")
+
+        schedule_sources = list(
+            schedule_open_qs.values("metadata__source")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        def _label_counts(qs):
+            return list(qs.values("label").annotate(count=Count("id")).order_by("-count"))
+
+        schedule_cta_labels = [
+            "cta_schedule_header",
+            "cta_schedule_hero",
+            "cta_schedule_contact_home",
+            "cta_schedule_contact_section",
+        ]
+        call_cta_labels = [
+            "cta_call_header",
+            "cta_call_hero",
+            "cta_call_contact_home",
+            "cta_call_contact_section_primary",
+            "cta_call_contact_section_office",
+        ]
+        email_cta_labels = [
+            "cta_email_contact_home",
+            "cta_email_contact_section_primary",
+            "cta_email_contact_section_office",
+        ]
+
+        schedule_cta_clicks = _label_counts(click_events.filter(label__in=schedule_cta_labels))
+        call_cta_clicks = _label_counts(click_events.filter(label__in=call_cta_labels))
+        email_cta_clicks = _label_counts(click_events.filter(label__in=email_cta_labels))
+
+        cta_clicks_combined = [
+            {"category": "Schedule", **row} for row in schedule_cta_clicks
+        ] + [
+            {"category": "Call", **row} for row in call_cta_clicks
+        ] + [
+            {"category": "Email", **row} for row in email_cta_clicks
+        ]
+        cta_clicks_combined.sort(key=lambda r: r.get("count", 0), reverse=True)
 
         rage_click_count = rage_clicks_qs.count()
         dead_click_count = dead_clicks_qs.count()
@@ -1172,6 +1219,15 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "dead_click_count": dead_click_count,
             "exit_event_count": exit_event_count,
             "active_timezone": tz_name,
+            "schedule_modal_open_count": schedule_open_qs.count(),
+            "schedule_existing_select_count": schedule_existing_qs.count(),
+            "schedule_new_select_count": schedule_new_qs.count(),
+            "schedule_no_selection_count": schedule_no_selection_qs.count(),
+            "schedule_sources": schedule_sources,
+            "cta_clicks": cta_clicks_combined,
+            "schedule_cta_total": sum(row.get("count", 0) for row in schedule_cta_clicks),
+            "call_cta_total": sum(row.get("count", 0) for row in call_cta_clicks),
+            "email_cta_total": sum(row.get("count", 0) for row in email_cta_clicks),
         }
         return render(request, self.template_name, ctx)
 

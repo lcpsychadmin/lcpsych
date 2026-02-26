@@ -8,12 +8,12 @@
       <p class="text-lg text-white/85 m-0">Call, email, or visit us in Florence. We’ll help you schedule or verify benefits and match you with the right clinician.</p>
       <div class="flex flex-wrap gap-3">
         {% if contact and contact.phone_number %}
-          <a href="tel:{{ contact.phone_number|cut:"-"|cut:" "|cut:"("|cut:")" }}" class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-4 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white">{{ contact.phone_number }}</a>
+          <a href="tel:{{ contact.phone_number|cut:"-"|cut:" "|cut:"("|cut:")" }}" class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-4 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white" data-analytics-label="cta_call_contact_section_primary">{{ contact.phone_number }}</a>
         {% else %}
-          <a href="tel:+18595254911" class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-4 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white">859-525-4911</a>
+          <a href="tel:+18595254911" class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-4 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white" data-analytics-label="cta_call_contact_section_primary">859-525-4911</a>
         {% endif %}
         {% if contact and contact.cta_url %}
-          <a href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" class="inline-flex items-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46] hover:border-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70" data-schedule-trigger>{{ contact.cta_label|default:"Schedule online" }}</a>
+          <a href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" class="inline-flex items-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46] hover:border-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70" data-schedule-trigger data-analytics-label="cta_schedule_contact_section">{{ contact.cta_label|default:"Schedule online" }}</a>
         {% endif %}
       </div>
     </div>
@@ -29,7 +29,7 @@
           <div class="flex flex-wrap gap-2">
             <a class="inline-flex items-center gap-2 rounded-lg bg-[#3C9C64] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46]" href="{{ contact.directions_url|default:'https://maps.google.com/maps/dir//6900+Houston+Rd+Florence,+KY+41042/@39.0086253,-84.647614,15z/data=!4m5!4m4!1m0!1m2!1m1!1s0x8841c7da6f65d4c7:0xa64ac61629ef897f' }}" target="_blank" rel="noopener">Get directions</a>
             {% if contact and contact.email_address %}
-              <a class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-[#0f3f46] transition-colors hover:border-[#92DCE5] hover:bg-[#E8F6F8]" href="mailto:{{ contact.email_address }}">Email us</a>
+              <a class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-[#0f3f46] transition-colors hover:border-[#92DCE5] hover:bg-[#E8F6F8]" href="mailto:{{ contact.email_address }}" data-analytics-label="cta_email_contact_section_primary">Email us</a>
             {% endif %}
           </div>
         </div>
@@ -40,12 +40,12 @@
           <h3 class="text-lg font-semibold text-[#0f3f46] m-0">Call, fax, or email</h3>
           <div class="text-sm text-slate-800" style="display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:8px;align-items:center;">
             <div class="font-semibold text-[#0f3f46] text-left sm:text-right" style="white-space:nowrap;">{{ contact.phone_label|default:"Office" }}:</div>
-            <div style="white-space:nowrap;"><a class="underline-offset-2 hover:underline" href="tel:{{ contact.phone_number|default:"8595254911" }}">{{ contact.phone_number|default:"859-525-4911" }}</a></div>
+            <div style="white-space:nowrap;"><a class="underline-offset-2 hover:underline" href="tel:{{ contact.phone_number|default:"8595254911" }}" data-analytics-label="cta_call_contact_section_office">{{ contact.phone_number|default:"859-525-4911" }}</a></div>
             <div class="font-semibold text-[#0f3f46] text-left sm:text-right" style="white-space:nowrap;">{{ contact.fax_label|default:"Fax" }}:</div>
             <div style="white-space:nowrap;"><a class="underline-offset-2 hover:underline" href="tel:{{ contact.fax_number|default:"8595256446" }}">{{ contact.fax_number|default:"859-525-6446" }}</a></div>
             {% if contact and contact.email_address %}
               <div class="font-semibold text-[#0f3f46] text-left sm:text-right" style="white-space:nowrap;">{{ contact.email_label|default:"Email" }}:</div>
-              <div style="white-space:nowrap;"><a class="underline-offset-2 hover:underline" href="mailto:{{ contact.email_address }}">Email LCPsych</a></div>
+              <div style="white-space:nowrap;"><a class="underline-offset-2 hover:underline" href="mailto:{{ contact.email_address }}" data-analytics-label="cta_email_contact_section_office">Email LCPsych</a></div>
             {% endif %}
           </div>
         </div>

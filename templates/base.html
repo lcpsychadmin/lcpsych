@@ -238,15 +238,41 @@ gtag('config', 'G-93EEDX0TQR');</script>
 	  (function() {
 	    const modal = document.getElementById('schedule-modal');
 	    if (!modal) return;
-	    const openers = document.querySelectorAll('[data-schedule-trigger]');
+		const openers = document.querySelectorAll('[data-schedule-trigger]');
 	    const btnExisting = modal.querySelector('[data-schedule-existing]');
 	    const btnNew = modal.querySelector('[data-schedule-new]');
 	    const btnClose = modal.querySelector('[data-schedule-close]');
 		const existingUrl = "{{ portal_base_url|default:'https://www.therapyportal.com/p/lcpsych41042/login/' }}";
 		const newUrl = "https://www.therapyportal.com/p/lcpsych41042/appointments/availability/";
 
+		const track = (label, metadata = {}) => {
+			try {
+				const endpoint = '/api/analytics/';
+				const sessionKey = 'lcpsid';
+				let sessionId = localStorage.getItem(sessionKey);
+				if (!sessionId) {
+					sessionId = crypto.randomUUID ? crypto.randomUUID() : 'sid-' + Math.random().toString(16).slice(2) + '-' + Date.now();
+					localStorage.setItem(sessionKey, sessionId);
+				}
+				const body = JSON.stringify({
+					event_type: 'click',
+					session_id: sessionId,
+					path: (location.pathname + location.search).slice(0, 500),
+					referrer: (document.referrer || '').slice(0, 500),
+					label: label,
+					metadata: metadata,
+				});
+				navigator.sendBeacon ? navigator.sendBeacon(endpoint, new Blob([body], { type: 'application/json' })) : fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true });
+			} catch (_) {}
+		};
+
+		let selectionMade = false;
+
 	    const open = (evt) => {
 	      evt && evt.preventDefault();
+			selectionMade = false;
+			const source = evt && evt.currentTarget && evt.currentTarget.dataset && evt.currentTarget.dataset.analyticsLabel;
+			track('schedule_modal_open', { source: source || 'schedule_trigger' });
 	      modal.style.display = 'flex';
 	      modal.removeAttribute('aria-hidden');
 	      document.body.classList.add('modal-p-on');
@@ -254,6 +280,9 @@ gtag('config', 'G-93EEDX0TQR');</script>
 
 	    const close = (evt) => {
 	      evt && evt.preventDefault();
+			if (!selectionMade) {
+				track('schedule_no_selection', {});
+			}
 	      modal.style.display = 'none';
 	      modal.setAttribute('aria-hidden', 'true');
 	      document.body.classList.remove('modal-p-on');
@@ -270,8 +299,16 @@ gtag('config', 'G-93EEDX0TQR');</script>
 		};
 
 	    openers.forEach((el) => el.addEventListener('click', open));
-		btnExisting && btnExisting.addEventListener('click', () => go(existingUrl, { newTab: true, closeFirst: true }));
-		btnNew && btnNew.addEventListener('click', () => go(newUrl, { newTab: true, closeFirst: true }));
+		btnExisting && btnExisting.addEventListener('click', () => {
+			selectionMade = true;
+			track('schedule_existing_select', {});
+			go(existingUrl, { newTab: true, closeFirst: true });
+		});
+		btnNew && btnNew.addEventListener('click', () => {
+			selectionMade = true;
+			track('schedule_new_select', {});
+			go(newUrl, { newTab: true, closeFirst: true });
+		});
 	    btnClose && btnClose.addEventListener('click', close);
 	    modal.addEventListener('click', (evt) => {
 	      if (evt.target === modal) close();

@@ -349,6 +349,84 @@
 
           <div class="grid gap-4 md:grid-cols-4">
             <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Schedule modal opens</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ schedule_modal_open_count }}</div>
+              <div class="text-xs text-slate-500">Includes all triggers</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">New client selects</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ schedule_new_select_count }}</div>
+              <div class="text-xs text-slate-500">Clicks to new client booking</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">Existing client selects</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ schedule_existing_select_count }}</div>
+              <div class="text-xs text-slate-500">Clicks to existing client login</div>
+            </div>
+            <div class="card-surface p-5">
+              <div class="text-sm text-slate-600">No-selection closes</div>
+              <div class="text-3xl font-semibold text-[#0f3f46]">{{ schedule_no_selection_count }}</div>
+              <div class="text-xs text-slate-500">Closed without choosing</div>
+            </div>
+          </div>
+
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Schedule modal sources</h2>
+                <span class="badge-muted">Opens by trigger</span>
+              </div>
+              <div class="overflow-x-auto">
+                <div class="table-scroll">
+                  <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Source label</th><th>Opens</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in schedule_sources %}
+                    <tr>
+                      <td>{{ row.metadata__source|default:"(unknown)" }}</td>
+                      <td>{{ row.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="text-slate-500 py-2">No opens recorded</td></tr>
+                    {% endfor %}
+                  </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-surface p-6">
+              <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">CTA clicks</h2>
+                <span class="badge-muted">Schedule {{ schedule_cta_total }} • Call {{ call_cta_total }} • Email {{ email_cta_total }}</span>
+              </div>
+              <div class="overflow-x-auto">
+                <div class="table-scroll">
+                  <table class="table-basic text-sm w-full">
+                  <thead class="text-[#0f3f46]">
+                    <tr><th>Category</th><th>Label</th><th>Clicks</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for row in cta_clicks %}
+                    <tr>
+                      <td>{{ row.category }}</td>
+                      <td>{{ row.label }}</td>
+                      <td>{{ row.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-slate-500 py-2">No CTA clicks recorded</td></tr>
+                    {% endfor %}
+                  </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-4">
+            <div class="card-surface p-5">
               <div class="text-sm text-slate-600">Rage clicks</div>
               <div class="text-3xl font-semibold text-[#0f3f46]">{{ rage_click_count }}</div>
               <div class="text-xs text-slate-500">Rapid repeated clicks</div>
