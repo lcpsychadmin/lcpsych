@@ -938,7 +938,33 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             default="session_id",
             output_field=CharField(),
         )
-        events = events.annotate(person_key=person_expr)
+
+        device_os_expr = Case(
+            When(user_agent__icontains="android", then=Value("Android")),
+            When(user_agent__icontains="iphone", then=Value("iOS")),
+            When(user_agent__icontains="ipad", then=Value("iPadOS")),
+            When(user_agent__icontains="mac os", then=Value("macOS")),
+            When(user_agent__icontains="macintosh", then=Value("macOS")),
+            When(user_agent__icontains="windows", then=Value("Windows")),
+            When(user_agent__icontains="linux", then=Value("Linux")),
+            When(user_agent__icontains="cros", then=Value("ChromeOS")),
+            default=Value("Other"),
+            output_field=CharField(),
+        )
+
+        device_type_expr = Case(
+            When(Q(user_agent__icontains="ipad") | Q(user_agent__icontains="tablet"), then=Value("Tablet")),
+            When(
+                Q(user_agent__icontains="mobile")
+                | Q(user_agent__icontains="iphone")
+                | Q(user_agent__icontains="android"),
+                then=Value("Mobile"),
+            ),
+            default=Value("Desktop"),
+            output_field=CharField(),
+        )
+
+        events = events.annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
 
         page_views = events.filter(event_type=AnalyticsEventType.PAGE_VIEW)
         total_page_views = page_views.count()
@@ -1097,6 +1123,12 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by("-count")
         )
 
+        device_os_stats = list(
+            events.values("device_os", "device_type")
+            .annotate(sessions=Count("person_key", distinct=True), events=Count("id"))
+            .order_by("-sessions", "device_os", "device_type")
+        )
+
         auth_successes = all_events.filter(event_type=AnalyticsEventType.AUTH_SUCCESS).count()
         auth_failures = all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED).count()
         recent_failures = list(
@@ -1122,6 +1154,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "landing_referrers": landing_referrers,
             "avg_scroll": int(avg_scroll),
             "locations": locations,
+            "device_os_stats": device_os_stats,
             "auth_successes": auth_successes,
             "auth_failures": auth_failures,
             "recent_failures": recent_failures,
