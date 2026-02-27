@@ -1088,19 +1088,28 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         weekday_events = (
             events.annotate(weekday=ExtractWeekDay("created"))
             .values("weekday")
-            .annotate(
-                sessions=Count("person_key", distinct=True),
-                events_count=Count("id"),
-            )
+            .annotate(sessions=Count("person_key", distinct=True))
         )
         for row in weekday_events:
             weekday = int(row.get("weekday") or 0)
             entry = weekday_map.setdefault(
                 weekday,
-                {"weekday": weekday, "weekday_label": "", "sessions": 0, "events": 0, "cta_clicks": 0},
+                {"weekday": weekday, "weekday_label": "", "sessions": 0, "page_views": 0, "cta_clicks": 0},
             )
             entry["sessions"] = row.get("sessions", 0) or 0
-            entry["events"] = row.get("events_count", 0) or 0
+
+        weekday_page_views = (
+            page_views.annotate(weekday=ExtractWeekDay("created"))
+            .values("weekday")
+            .annotate(page_views=Count("id"))
+        )
+        for row in weekday_page_views:
+            weekday = int(row.get("weekday") or 0)
+            entry = weekday_map.setdefault(
+                weekday,
+                {"weekday": weekday, "weekday_label": "", "sessions": 0, "page_views": 0, "cta_clicks": 0},
+            )
+            entry["page_views"] = row.get("page_views", 0) or 0
 
         weekday_cta = (
             click_events.filter(label__in=all_cta_labels)
@@ -1112,7 +1121,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             weekday = int(row.get("weekday") or 0)
             entry = weekday_map.setdefault(
                 weekday,
-                {"weekday": weekday, "weekday_label": "", "sessions": 0, "events": 0, "cta_clicks": 0},
+                {"weekday": weekday, "weekday_label": "", "sessions": 0, "page_views": 0, "cta_clicks": 0},
             )
             entry["cta_clicks"] = row.get("cta_clicks", 0) or 0
 
@@ -1121,7 +1130,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         for weekday in range(1, 8):
             entry = weekday_map.get(
                 weekday,
-                {"weekday": weekday, "weekday_label": "", "sessions": 0, "events": 0, "cta_clicks": 0},
+                {"weekday": weekday, "weekday_label": "", "sessions": 0, "page_views": 0, "cta_clicks": 0},
             )
             entry["weekday_label"] = weekday_labels.get(weekday, str(weekday))
             by_weekday.append(entry)

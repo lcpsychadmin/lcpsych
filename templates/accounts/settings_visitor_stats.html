@@ -486,27 +486,71 @@
               <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Weekday sessions & CTA clicks</h2>
               <span class="badge-muted">Sun–Sat</span>
             </div>
-            <div class="overflow-x-auto">
-              <div class="table-scroll">
-                <table class="table-basic text-sm w-full">
-                <thead class="text-[#0f3f46]">
-                  <tr><th>Weekday</th><th>Sessions</th><th>Events</th><th>CTA clicks</th></tr>
-                </thead>
-                <tbody>
-                  {% for row in by_weekday %}
-                  <tr>
-                    <td>{{ row.weekday_label }}</td>
-                    <td>{{ row.sessions }}</td>
-                    <td>{{ row.events }}</td>
-                    <td>{{ row.cta_clicks }}</td>
-                  </tr>
-                  {% empty %}
-                  <tr><td colspan="4" class="text-slate-500 py-2">No data yet</td></tr>
-                  {% endfor %}
-                </tbody>
-                </table>
+            <div id="weekday-chart" class="w-full overflow-x-auto">
+              {{ by_weekday|json_script:"by-weekday-data" }}
+              <div class="min-w-[640px]">
+                <div class="flex items-center gap-4 text-[13px] mb-2">
+                  <span class="inline-flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-[#0f3f46]"></span> Sessions</span>
+                  <span class="inline-flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-[#3C9C64]"></span> Page views</span>
+                  <span class="inline-flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-sm bg-[#d97706]"></span> CTA clicks</span>
+                </div>
+                <svg id="weekday-chart-svg" class="w-full h-[240px]"></svg>
               </div>
             </div>
+            <script>
+              (function() {
+                const el = document.getElementById('by-weekday-data');
+                if (!el) return;
+                const data = JSON.parse(el.textContent || '[]');
+                const series = [
+                  { key: 'sessions', color: '#0f3f46' },
+                  { key: 'page_views', color: '#3C9C64' },
+                  { key: 'cta_clicks', color: '#d97706' },
+                ];
+                const maxVal = Math.max(1, ...data.map(d => Math.max(d.sessions || 0, d.page_views || 0, d.cta_clicks || 0)));
+                const barWidth = 18;
+                const seriesGap = 6;
+                const groupGap = 16;
+                const height = 200;
+                const paddingTop = 10;
+                const paddingBottom = 24;
+                const paddingLeft = 24;
+                const paddingRight = 12;
+                const groupWidth = series.length * barWidth + (series.length - 1) * seriesGap;
+                const width = paddingLeft + paddingRight + data.length * groupWidth + Math.max(0, data.length - 1) * groupGap;
+                const svg = document.getElementById('weekday-chart-svg');
+                if (!svg) return;
+                svg.setAttribute('viewBox', `0 0 ${width} ${height + paddingTop + paddingBottom}`);
+                const ns = 'http://www.w3.org/2000/svg';
+
+                data.forEach((d, i) => {
+                  const baseX = paddingLeft + i * (groupWidth + groupGap);
+                  series.forEach((s, idx) => {
+                    const val = d[s.key] || 0;
+                    const barH = maxVal ? (val / maxVal) * height : 0;
+                    const x = baseX + idx * (barWidth + seriesGap);
+                    const y = paddingTop + (height - barH);
+                    const rect = document.createElementNS(ns, 'rect');
+                    rect.setAttribute('x', x);
+                    rect.setAttribute('y', y);
+                    rect.setAttribute('width', barWidth);
+                    rect.setAttribute('height', barH);
+                    rect.setAttribute('rx', 2);
+                    rect.setAttribute('fill', s.color);
+                    svg.appendChild(rect);
+                  });
+
+                  const label = document.createElementNS(ns, 'text');
+                  label.textContent = d.weekday_label || '';
+                  label.setAttribute('x', baseX + groupWidth / 2);
+                  label.setAttribute('y', paddingTop + height + 14);
+                  label.setAttribute('text-anchor', 'middle');
+                  label.setAttribute('fill', '#0f3f46');
+                  label.setAttribute('font-size', '12');
+                  svg.appendChild(label);
+                });
+              })();
+            </script>
           </div>
 
           <div class="grid gap-5 md:grid-cols-2">
