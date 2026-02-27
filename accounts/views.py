@@ -983,6 +983,59 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         schedule_new_qs = click_events.filter(label="schedule_new_select")
         schedule_no_selection_qs = click_events.filter(label="schedule_no_selection")
 
+        schedule_clicks_by_day = (
+            click_events.filter(
+                label__in=[
+                    "schedule_modal_open",
+                    "schedule_new_select",
+                    "schedule_existing_select",
+                ]
+            )
+            .annotate(day=TruncDate("created"))
+            .values("day", "label")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        schedule_daily_map: dict[date, dict[str, int | str]] = {}
+        for row in schedule_clicks_by_day:
+            day_key = row["day"]
+            entry = schedule_daily_map.setdefault(
+                day_key,
+                {
+                    "day": day_key,
+                    "opens": 0,
+                    "new": 0,
+                    "existing": 0,
+                },
+            )
+            label = row["label"]
+            if label == "schedule_modal_open":
+                entry["opens"] = row["count"]
+            elif label == "schedule_new_select":
+                entry["new"] = row["count"]
+            elif label == "schedule_existing_select":
+                entry["existing"] = row["count"]
+
+        def _fmt_day(day_val: date) -> str:
+            try:
+                return day_val.strftime("%a, %b %d")
+            except Exception:
+                return str(day_val)
+
+        schedule_daily = []
+        for day_key in sorted(schedule_daily_map.keys()):
+            entry = schedule_daily_map[day_key]
+            schedule_daily.append(
+                {
+                    "day": day_key,
+                    "day_label": _fmt_day(day_key),
+                    "opens": entry.get("opens", 0),
+                    "new": entry.get("new", 0),
+                    "existing": entry.get("existing", 0),
+                }
+            )
+
         schedule_sources = list(
             schedule_open_qs.values("metadata__source")
             .annotate(count=Count("id"))
@@ -990,7 +1043,11 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         def _label_counts(qs):
-            return list(qs.values("label").annotate(count=Count("id")).order_by("-count"))
+            return list(
+                qs.values("path", "label")
+                .annotate(count=Count("id"))
+                .order_by("-count")
+            )
 
         schedule_cta_labels = [
             "cta_schedule_header",
@@ -1228,6 +1285,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "schedule_cta_total": sum(row.get("count", 0) for row in schedule_cta_clicks),
             "call_cta_total": sum(row.get("count", 0) for row in call_cta_clicks),
             "email_cta_total": sum(row.get("count", 0) for row in email_cta_clicks),
+            "schedule_daily": schedule_daily,
         }
         return render(request, self.template_name, ctx)
 

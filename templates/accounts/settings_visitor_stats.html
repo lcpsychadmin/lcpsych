@@ -370,26 +370,28 @@
             </div>
           </div>
 
-          <div class="grid gap-5 md:grid-cols-2">
+            <div class="grid gap-5 md:grid-cols-2">
             <div class="card-surface p-6">
               <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
-                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Schedule modal sources</h2>
-                <span class="badge-muted">Opens by trigger</span>
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Schedule clicks by day</h2>
+                <span class="badge-muted">Includes weekday</span>
               </div>
               <div class="overflow-x-auto">
                 <div class="table-scroll">
                   <table class="table-basic text-sm w-full">
                   <thead class="text-[#0f3f46]">
-                    <tr><th>Source label</th><th>Opens</th></tr>
+                    <tr><th>Date</th><th>Opens</th><th>New</th><th>Existing</th></tr>
                   </thead>
                   <tbody>
-                    {% for row in schedule_sources %}
+                    {% for row in schedule_daily %}
                     <tr>
-                      <td>{{ row.metadata__source|default:"(unknown)" }}</td>
-                      <td>{{ row.count }}</td>
+                      <td>{{ row.day_label }}</td>
+                      <td>{{ row.opens }}</td>
+                      <td>{{ row.new }}</td>
+                      <td>{{ row.existing }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="2" class="text-slate-500 py-2">No opens recorded</td></tr>
+                    <tr><td colspan="4" class="text-slate-500 py-2">No schedule clicks recorded</td></tr>
                     {% endfor %}
                   </tbody>
                   </table>
@@ -406,13 +408,16 @@
                 <div class="table-scroll">
                   <table class="table-basic text-sm w-full">
                   <thead class="text-[#0f3f46]">
-                    <tr><th>Category</th><th>Label</th><th>Clicks</th></tr>
+                    <tr><th>Category</th><th>Page</th><th>Clicks</th></tr>
                   </thead>
                   <tbody>
                     {% for row in cta_clicks %}
                     <tr>
                       <td>{{ row.category }}</td>
-                      <td>{{ row.label }}</td>
+                      <td>
+                        <div>{{ row.path|default:"(no path)" }}</div>
+                        <div class="text-[12px] text-slate-500">{{ row.label|default:"(no label)" }}</div>
+                      </td>
                       <td>{{ row.count }}</td>
                     </tr>
                     {% empty %}
