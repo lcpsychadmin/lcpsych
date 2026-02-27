@@ -1049,6 +1049,9 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 .order_by("-count")
             )
 
+        cta_excluded_labels = ["schedule_new_select", "schedule_existing_select"]
+        cta_events = click_events.exclude(label__in=cta_excluded_labels)
+
         schedule_cta_labels = [
             "cta_schedule_header",
             "cta_schedule_hero",
@@ -1071,9 +1074,9 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         all_cta_labels = schedule_cta_labels + call_cta_labels + email_cta_labels
 
-        schedule_cta_clicks = _label_counts(click_events.filter(label__in=schedule_cta_labels))
-        call_cta_clicks = _label_counts(click_events.filter(label__in=call_cta_labels))
-        email_cta_clicks = _label_counts(click_events.filter(label__in=email_cta_labels))
+        schedule_cta_clicks = _label_counts(cta_events.filter(label__in=schedule_cta_labels))
+        call_cta_clicks = _label_counts(cta_events.filter(label__in=call_cta_labels))
+        email_cta_clicks = _label_counts(cta_events.filter(label__in=email_cta_labels))
 
         cta_clicks_combined = [
             {"category": "Schedule", **row} for row in schedule_cta_clicks
@@ -1113,7 +1116,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             entry["page_views"] = row.get("page_views", 0) or 0
 
         weekday_cta = (
-            click_events.filter(label__in=all_cta_labels)
+            cta_events.filter(label__in=all_cta_labels)
             .annotate(weekday=ExtractWeekDay("created"))
             .values("weekday")
             .annotate(cta_clicks=Count("id"))
@@ -1261,7 +1264,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         cta_clicks_by_day = list(
-            click_events.filter(label__in=all_cta_labels)
+            cta_events.filter(label__in=all_cta_labels)
             .annotate(day=TruncDate("created"))
             .values("day")
             .annotate(cta_clicks=Count("id"))
