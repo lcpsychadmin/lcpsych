@@ -1052,11 +1052,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         cta_excluded_labels = ["schedule_new_select", "schedule_existing_select"]
         cta_events = click_events.exclude(label__in=cta_excluded_labels)
 
+        # Use modal opens as the single schedule CTA event to avoid double-counting alongside the per-button click labels.
         schedule_cta_labels = [
-            "cta_schedule_header",
-            "cta_schedule_hero",
-            "cta_schedule_contact_home",
-            "cta_schedule_contact_section",
             "schedule_modal_open",
         ]
         call_cta_labels = [
