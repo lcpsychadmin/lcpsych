@@ -1251,7 +1251,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         cta_clicks_by_day = list(
-            click_events.annotate(day=TruncDate("created"))
+            click_events.filter(label__in=all_cta_labels)
+            .annotate(day=TruncDate("created"))
             .values("day")
             .annotate(cta_clicks=Count("id"))
             .order_by("day")

@@ -462,14 +462,14 @@
               <div class="table-scroll">
                 <table class="table-basic text-sm w-full">
                 <thead class="text-[#0f3f46]">
-                  <tr><th>Date</th><th>Views</th><th>Unique sessions</th><th>CTA clicks</th></tr>
+                  <tr><th>Date</th><th>Unique sessions</th><th>Views</th><th>CTA clicks</th></tr>
                 </thead>
                 <tbody>
                   {% for row in by_day %}
                   <tr>
                     <td>{{ row.day_label|default:row.day }}</td>
-                    <td>{{ row.page_views }}</td>
                     <td>{{ row.sessions }}</td>
+                    <td>{{ row.page_views }}</td>
                     <td>{{ row.cta_clicks }}</td>
                   </tr>
                   {% empty %}
