@@ -80,10 +80,30 @@
     } catch (_) {}
   }
 
-  function recordClickPath(label) {
-    if (!label) return;
-    clickPath.push(label);
-    if (clickPath.length > CLICK_PATH_LIMIT) clickPath.shift();
+  function loadPagePathSeq() {
+    try {
+      var raw = localStorage.getItem('lcps_click_path_' + sessionId());
+      var parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.slice(-CLICK_PATH_LIMIT);
+    } catch (_) {
+      return clickPath.slice(-CLICK_PATH_LIMIT);
+    }
+  }
+
+  function persistPagePathSeq(seq) {
+    try {
+      localStorage.setItem('lcps_click_path_' + sessionId(), JSON.stringify(seq));
+    } catch (_) {}
+  }
+
+  function recordPagePath(pathVal) {
+    var path = (pathVal || location.pathname || '').split('?')[0];
+    var seq = loadPagePathSeq();
+    seq.push(path);
+    if (seq.length > CLICK_PATH_LIMIT) seq = seq.slice(seq.length - CLICK_PATH_LIMIT);
+    clickPath = seq;
+    persistPagePathSeq(seq);
   }
 
   function currentScrollPercent() {
@@ -147,7 +167,6 @@
       var target = evt.target && evt.target.closest('a, button, [role="button"], [data-analytics-label]');
       if (!target) return;
       var label = safeLabel(target) || elementKey(target);
-      recordClickPath(label);
       send({
         event_type: 'click',
         label: label,
@@ -209,6 +228,8 @@
   }
 
   if (typeof window === 'undefined' || !window.addEventListener) return;
+  clickPath = loadPagePathSeq();
+  recordPagePath();
   bindClicks();
   bindHoverIntent();
   bindExit();

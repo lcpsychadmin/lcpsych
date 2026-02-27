@@ -14,7 +14,7 @@ from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.db.models import Avg, Case, Count, FloatField, Q, Value, CharField, When
-from django.db.models.functions import Cast, Concat, TruncDate
+from django.db.models.functions import Cast, Concat, TruncDate, ExtractWeekDay
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -1068,6 +1068,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "cta_email_contact_section_office",
         ]
 
+        all_cta_labels = schedule_cta_labels + call_cta_labels + email_cta_labels
+
         schedule_cta_clicks = _label_counts(click_events.filter(label__in=schedule_cta_labels))
         call_cta_clicks = _label_counts(click_events.filter(label__in=call_cta_labels))
         email_cta_clicks = _label_counts(click_events.filter(label__in=email_cta_labels))
@@ -1081,9 +1083,81 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         ]
         cta_clicks_combined.sort(key=lambda r: r.get("count", 0), reverse=True)
 
+        weekday_map: dict[int, dict[str, int | str]] = {}
+
+        weekday_events = (
+            events.annotate(weekday=ExtractWeekDay("created"))
+            .values("weekday")
+            .annotate(
+                sessions=Count("person_key", distinct=True),
+                events_count=Count("id"),
+            )
+        )
+        for row in weekday_events:
+            weekday = int(row.get("weekday") or 0)
+            entry = weekday_map.setdefault(
+                weekday,
+                {"weekday": weekday, "weekday_label": "", "sessions": 0, "events": 0, "cta_clicks": 0},
+            )
+            entry["sessions"] = row.get("sessions", 0) or 0
+            entry["events"] = row.get("events_count", 0) or 0
+
+        weekday_cta = (
+            click_events.filter(label__in=all_cta_labels)
+            .annotate(weekday=ExtractWeekDay("created"))
+            .values("weekday")
+            .annotate(cta_clicks=Count("id"))
+        )
+        for row in weekday_cta:
+            weekday = int(row.get("weekday") or 0)
+            entry = weekday_map.setdefault(
+                weekday,
+                {"weekday": weekday, "weekday_label": "", "sessions": 0, "events": 0, "cta_clicks": 0},
+            )
+            entry["cta_clicks"] = row.get("cta_clicks", 0) or 0
+
+        weekday_labels = {1: "Sun", 2: "Mon", 3: "Tue", 4: "Wed", 5: "Thu", 6: "Fri", 7: "Sat"}
+        by_weekday = []
+        for weekday in range(1, 8):
+            entry = weekday_map.get(
+                weekday,
+                {"weekday": weekday, "weekday_label": "", "sessions": 0, "events": 0, "cta_clicks": 0},
+            )
+            entry["weekday_label"] = weekday_labels.get(weekday, str(weekday))
+            by_weekday.append(entry)
+
         rage_click_count = rage_clicks_qs.count()
         dead_click_count = dead_clicks_qs.count()
-        exit_event_count = exit_qs.count()
+
+        exit_events_raw = list(
+            exit_qs.order_by("person_key", "-created", "-id")
+            .values(
+                "person_key",
+                "path",
+                "metadata__exit_scroll",
+                "metadata__click_path",
+                "created",
+            )
+        )
+
+        # Keep only the last exit event per session so exits represent the final page seen.
+        latest_exit_by_session: dict[str, dict] = {}
+        for row in exit_events_raw:
+            session_key = row.get("person_key") or ""
+            created = row.get("created")
+            existing = latest_exit_by_session.get(session_key)
+            if not existing:
+                latest_exit_by_session[session_key] = row
+                continue
+
+            existing_created = existing.get("created")
+            if created and not existing_created:
+                latest_exit_by_session[session_key] = row
+            elif created and existing_created and created > existing_created:
+                latest_exit_by_session[session_key] = row
+
+        exit_events_dedup: list[dict] = list(latest_exit_by_session.values())
+        exit_event_count = len(exit_events_dedup)
 
         rage_hotspots = list(
             rage_clicks_qs.values("label")
@@ -1108,38 +1182,78 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         avg_hover_ms = hover_qs.aggregate(avg=Avg("duration_ms"))["avg"] or 0
         avg_hover_label = self._format_ms(avg_hover_ms)
 
-        exit_sessions = exit_qs.values("person_key").distinct().count()
+        exit_sessions = len(latest_exit_by_session)
         exit_rate = round((exit_sessions / unique_sessions) * 100, 1) if unique_sessions else 0
 
-        exit_by_path = list(
-            exit_qs.values("path")
-            .annotate(
-                count=Count("id"),
-                sessions=Count("person_key", distinct=True),
-                avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
-            )
-            .order_by("-count")
-        )
-        for row in exit_by_path:
-            row["avg_scroll_label"] = f"{round(row.get('avg_scroll') or 0):.0f}%"
+        path_map: dict[str, dict[str, float | int | set[str]]] = {}
+        click_path_map: dict[str, dict[str, float | int | set[str]]] = {}
+        exit_scroll_values: list[float] = []
 
-        click_paths = list(
-            exit_qs.exclude(metadata__click_path="")
-            .values("metadata__click_path")
-            .annotate(
-                count=Count("id"),
-                sessions=Count("person_key", distinct=True),
-                avg_scroll=Avg(Cast("metadata__exit_scroll", FloatField())),
+        for row in exit_events_dedup:
+            path = row.get("path") or ""
+            scroll_val = row.get("metadata__exit_scroll") or 0
+            try:
+                scroll_num = float(scroll_val)
+            except Exception:
+                scroll_num = 0.0
+            exit_scroll_values.append(scroll_num)
+
+            entry = path_map.setdefault(path, {"count": 0, "sessions": set(), "scroll_total": 0.0, "scroll_count": 0})
+            entry["count"] = int(entry["count"]) + 1
+            entry["sessions"].add(row.get("person_key") or "")
+            entry["scroll_total"] = float(entry["scroll_total"]) + scroll_num
+            entry["scroll_count"] = int(entry["scroll_count"]) + 1
+
+            click_path = row.get("metadata__click_path") or ""
+            if click_path:
+                c_entry = click_path_map.setdefault(
+                    click_path,
+                    {"count": 0, "sessions": set(), "scroll_total": 0.0, "scroll_count": 0},
+                )
+                c_entry["count"] = int(c_entry["count"]) + 1
+                c_entry["sessions"].add(row.get("person_key") or "")
+                c_entry["scroll_total"] = float(c_entry["scroll_total"]) + scroll_num
+                c_entry["scroll_count"] = int(c_entry["scroll_count"]) + 1
+
+        exit_by_path = []
+        for path, entry in path_map.items():
+            avg_scroll = (entry["scroll_total"] / entry["scroll_count"]) if entry["scroll_count"] else 0
+            exit_by_path.append(
+                {
+                    "path": path,
+                    "count": entry["count"],
+                    "sessions": len(entry["sessions"]),
+                    "avg_scroll": avg_scroll,
+                    "avg_scroll_label": f"{round(avg_scroll):.0f}%",
+                }
             )
-            .order_by("-count")
-        )
-        for row in click_paths:
-            row["avg_scroll_label"] = f"{round(row.get('avg_scroll') or 0):.0f}%"
+        exit_by_path.sort(key=lambda r: r.get("count", 0), reverse=True)
+
+        click_paths = []
+        for cp, entry in click_path_map.items():
+            avg_scroll = (entry["scroll_total"] / entry["scroll_count"]) if entry["scroll_count"] else 0
+            click_paths.append(
+                {
+                    "metadata__click_path": cp,
+                    "count": entry["count"],
+                    "sessions": len(entry["sessions"]),
+                    "avg_scroll": avg_scroll,
+                    "avg_scroll_label": f"{round(avg_scroll):.0f}%",
+                }
+            )
+        click_paths.sort(key=lambda r: r.get("count", 0), reverse=True)
 
         page_views_by_day = list(
             page_views.annotate(day=TruncDate("created"))
             .values("day")
             .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        cta_clicks_by_day = list(
+            click_events.annotate(day=TruncDate("created"))
+            .values("day")
+            .annotate(cta_clicks=Count("id"))
             .order_by("day")
         )
 
@@ -1152,10 +1266,13 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         daily_map: dict[date, dict[str, int]] = {}
         for row in page_views_by_day:
-            daily_map[row["day"]] = {"page_views": row["count"], "sessions": 0}
+            daily_map[row["day"]] = {"page_views": row["count"], "sessions": 0, "cta_clicks": 0}
         for row in sessions_by_day:
-            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0})
+            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0, "cta_clicks": 0})
             existing["sessions"] = row["sessions"]
+        for row in cta_clicks_by_day:
+            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0, "cta_clicks": 0})
+            existing["cta_clicks"] = row["cta_clicks"]
 
         chart_by_day = []
         max_value = 0
@@ -1177,8 +1294,10 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         table_by_day = [
             {
                 "day": entry["day"],
+                "day_label": _fmt_day(entry["day"]),
                 "page_views": entry["page_views"],
                 "sessions": entry["sessions"],
+                "cta_clicks": daily_map.get(entry["day"], {}).get("cta_clicks", 0),
             }
             for entry in chart_by_day
         ]
@@ -1191,8 +1310,17 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         for row in top_pages:
             row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
 
+        top_clicks_exclude = [
+            "menu_toggle",
+            "mobile_nav_toggle",
+            "nav_toggle",
+            "menu-toggle",
+            "mobile-menu-toggle",
+            "",
+        ]
         top_clicks = list(
             events.filter(event_type=AnalyticsEventType.CLICK)
+            .exclude(label__in=top_clicks_exclude)
             .values("label")
             .annotate(count=Count("id"))
             .order_by("-count")
@@ -1224,21 +1352,13 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             events.exclude(country_code="")
             .values("country_code", "region", "city", "timezone")
             .annotate(count=Count("id"), sessions=Count("person_key", distinct=True))
-            .order_by("-count")
+            .order_by("-sessions", "-count")
         )
 
         device_os_stats = list(
             events.values("device_os", "device_type")
             .annotate(sessions=Count("person_key", distinct=True), events=Count("id"))
             .order_by("-sessions", "device_os", "device_type")
-        )
-
-        auth_successes = all_events.filter(event_type=AnalyticsEventType.AUTH_SUCCESS).count()
-        auth_failures = all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED).count()
-        recent_failures = list(
-            all_events.filter(event_type=AnalyticsEventType.AUTH_FAILED)
-            .order_by("-created")
-            .values("created", "path", "referrer", "region", "city", "timezone", "user_agent", "ip_hash")
         )
 
         ctx = {
@@ -1252,6 +1372,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "avg_time_label": avg_time_label,
             "unique_sessions": unique_sessions,
             "by_day": table_by_day,
+            "by_weekday": by_weekday,
             "chart_by_day": chart_by_day,
             "top_pages": top_pages,
             "top_clicks": top_clicks,
@@ -1259,9 +1380,6 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "avg_scroll": int(avg_scroll),
             "locations": locations,
             "device_os_stats": device_os_stats,
-            "auth_successes": auth_successes,
-            "auth_failures": auth_failures,
-            "recent_failures": recent_failures,
             "rage_hotspots": rage_hotspots,
             "dead_hotspots": dead_hotspots,
             "hover_targets": hover_targets,
