@@ -1054,6 +1054,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "cta_schedule_hero",
             "cta_schedule_contact_home",
             "cta_schedule_contact_section",
+            "schedule_modal_open",
         ]
         call_cta_labels = [
             "cta_call_header",
