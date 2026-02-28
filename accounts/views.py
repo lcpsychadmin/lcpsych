@@ -1211,7 +1211,6 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             exit_by_path.append(
                 {
                     "path": path,
-                    "page_title": _path_to_title(path),
                     "count": entry["count"],
                 }
             )
@@ -1266,6 +1265,9 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if not norm:
                 return "Home"
             return page_title_map.get(norm, path_val or "(unknown)")
+
+        for row in exit_by_path:
+            row["page_title"] = _path_to_title(row.get("path") or "")
 
         session_pages: dict[str, list[str]] = {}
         for row in page_views.order_by("person_key", "created", "id").values("person_key", "path"):
