@@ -131,7 +131,7 @@
               </div>
               <div class="flex items-center gap-2 text-sm text-slate-700">
                 <span class="badge-muted" id="live-count-badge">0 active</span>
-                <button id="refresh-live" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Refresh now</button>
+                <button id="refresh-live" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#0f3f46] hover:bg-[#EAF7F1] transition-colors">Refresh now</button>
               </div>
             </div>
             <div class="table-scroll">
@@ -1243,7 +1243,7 @@
         <td>${fmtDevice(s)}</td>
         <td>${currentPage}</td>
         <td>${fmtAgo(s.last_seen)}</td>
-        <td><button type="button" class="px-3 py-1 rounded-md border border-slate-300 text-[#0f3f46] hover:border-[#3C9C64] hover:text-[#3C9C64]" data-session="${s.session_key}">View</button></td>
+        <td><button type="button" class="px-3 py-1 rounded-md border border-slate-300 text-[#0f3f46] hover:border-[#3C9C64] hover:text-[#0f3f46] hover:bg-[#EAF7F1] transition-colors" data-session="${s.session_key}">View</button></td>
       `;
       const btn = tr.querySelector('button[data-session]');
       if (btn) {
