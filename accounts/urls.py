@@ -26,6 +26,11 @@ urlpatterns = [
         views.ActiveSessionDetailApiView.as_view(),
         name="settings_visitor_active_detail",
     ),
+    path(
+        "settings/visitor-stats/location-sessions.json",
+        views.LocationSessionsApiView.as_view(),
+        name="settings_visitor_location_sessions",
+    ),
     path("settings/visitor-stats/", views.VisitorStatsView.as_view(), name="settings_visitor_stats"),
     path("settings/published/", views.PublishedSettingsView.as_view(), name="settings_published"),
     path("services/", views.ManageServicesView.as_view(), name="services"),

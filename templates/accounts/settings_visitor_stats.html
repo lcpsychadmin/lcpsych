@@ -902,20 +902,36 @@
               <div class="table-scroll">
                 <table class="table-basic text-sm w-full">
                 <thead class="text-[#0f3f46]">
-                  <tr><th>Country</th><th>Region/State</th><th>City</th><th>Timezone</th><th>Sessions</th><th>Events</th></tr>
+                  <tr><th>Country</th><th>Region/State</th><th>City</th><th>Timezone</th><th>Sessions</th><th>Events</th><th></th></tr>
                 </thead>
                 <tbody>
                   {% for row in locations %}
-                  <tr>
+                  <tr class="location-row" data-location-id="loc-{{ forloop.counter }}">
                     <td>{{ row.country_code|upper }}</td>
                     <td>{{ row.region }}</td>
                     <td>{{ row.city }}</td>
                     <td>{{ row.timezone }}</td>
-                    <td>{{ row.sessions }}</td>
+                    <td class="font-semibold text-[#0f3f46]">{{ row.sessions }}</td>
                     <td>{{ row.count }}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="location-toggle px-3 py-1 rounded-md border border-slate-300 text-[#0f3f46] hover:border-[#3C9C64] hover:text-[#0f3f46] hover:bg-[#EAF7F1] transition-colors text-xs font-semibold"
+                        data-country="{{ row.country_code }}"
+                        data-region="{{ row.region }}"
+                        data-city="{{ row.city }}"
+                        data-timezone="{{ row.timezone }}"
+                        data-target="loc-{{ forloop.counter }}"
+                      >View sessions</button>
+                    </td>
+                  </tr>
+                  <tr class="location-sessions-row hidden" data-panel-id="loc-{{ forloop.counter }}">
+                    <td colspan="7">
+                      <div class="location-sessions-panel border border-slate-200 rounded-lg p-3 text-sm text-slate-700 bg-slate-50">Click “View sessions” to load unique sessions for this location.</div>
+                    </td>
                   </tr>
                   {% empty %}
-                  <tr><td colspan="6" class="text-slate-500 py-2">No location data captured yet</td></tr>
+                  <tr><td colspan="7" class="text-slate-500 py-2">No location data captured yet</td></tr>
                   {% endfor %}
                 </tbody>
                 </table>
@@ -1266,6 +1282,104 @@
   btnRefresh && btnRefresh.addEventListener('click', (evt) => {
     evt.preventDefault();
     fetchLive();
+  });
+
+  const startInput = document.getElementById('start');
+  const endInput = document.getElementById('end');
+
+  const renderLocationSessions = (panel, sessions = [], truncated = false) => {
+    if (!panel) return;
+    if (!sessions.length) {
+      panel.innerHTML = '<div class="text-slate-600">No sessions found for this location in the selected range.</div>';
+      return;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'space-y-2';
+
+    sessions.forEach((s) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2';
+
+      const meta = document.createElement('div');
+      meta.className = 'text-sm text-slate-700';
+      meta.innerHTML = `
+        <div class="font-semibold text-[#0f3f46]">${s.session_key || s.session_id || 'Session'}</div>
+        <div class="text-xs text-slate-500">${s.current_page_title || s.current_path || 'Unknown page'}</div>
+        <div class="text-xs text-slate-500">${s.device_type || ''} ${s.device_os ? '• ' + s.device_os : ''}</div>
+      `;
+
+      const actions = document.createElement('div');
+      actions.className = 'flex items-center gap-2 text-xs text-slate-600';
+
+      const lastSeen = document.createElement('span');
+      lastSeen.textContent = fmtAgo(s.last_seen);
+      actions.appendChild(lastSeen);
+
+      const viewBtn = document.createElement('button');
+      viewBtn.type = 'button';
+      viewBtn.className = 'location-session-view px-3 py-1 rounded-md border border-slate-300 text-[#0f3f46] hover:border-[#3C9C64] hover:text-[#0f3f46] hover:bg-[#EAF7F1] transition-colors font-semibold';
+      viewBtn.dataset.sessionKey = s.session_key || s.session_id || '';
+      viewBtn.textContent = 'View';
+      viewBtn.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        const key = viewBtn.dataset.sessionKey || '';
+        if (key) openModal(key);
+      });
+
+      actions.appendChild(viewBtn);
+
+      row.appendChild(meta);
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+
+    if (truncated) {
+      const note = document.createElement('div');
+      note.className = 'text-xs text-slate-500';
+      note.textContent = 'Showing the most recent sessions for this location.';
+      list.appendChild(note);
+    }
+
+    panel.innerHTML = '';
+    panel.appendChild(list);
+  };
+
+  const fetchLocationSessions = (btn, panel, rowEl) => {
+    if (!btn || !panel) return;
+    const params = new URLSearchParams();
+    if (btn.dataset.country) params.append('country_code', btn.dataset.country);
+    if (btn.dataset.region) params.append('region', btn.dataset.region);
+    if (btn.dataset.city) params.append('city', btn.dataset.city);
+    if (btn.dataset.timezone) params.append('timezone', btn.dataset.timezone);
+    if (startInput && startInput.value) params.append('start', startInput.value);
+    if (endInput && endInput.value) params.append('end', endInput.value);
+
+    fetch(`/accounts/settings/visitor-stats/location-sessions.json?${params.toString()}`)
+      .then((resp) => (resp.ok ? resp.json() : Promise.reject()))
+      .then((data) => {
+        renderLocationSessions(panel, data.sessions || [], data.truncated);
+        if (rowEl) rowEl.dataset.loaded = 'true';
+      })
+      .catch(() => {
+        panel.innerHTML = '<div class="text-slate-600">Could not load sessions for this location.</div>';
+        if (rowEl) rowEl.dataset.loaded = 'error';
+      });
+  };
+
+  document.querySelectorAll('.location-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.getAttribute('data-target') || '';
+      const row = document.querySelector(`[data-panel-id="${target}"]`);
+      if (!row) return;
+      row.classList.toggle('hidden');
+      const panel = row.querySelector('.location-sessions-panel');
+      if (!panel) return;
+      if (row.dataset.loaded === 'true') return;
+      panel.textContent = 'Loading sessions...';
+      row.dataset.loaded = 'loading';
+      fetchLocationSessions(btn, panel, row);
+    });
   });
 
   fetchLive();

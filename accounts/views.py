@@ -1064,14 +1064,14 @@ class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
     """Return recent events for a single session."""
 
-    detail_window_minutes = 120
+    detail_window_days = 365
 
     def test_func(self):
         return is_admin(self.request.user)
 
     def get(self, request: HttpRequest, session_key: str) -> JsonResponse:
         now = timezone.now()
-        cutoff = now - timedelta(minutes=self.detail_window_minutes)
+        cutoff = now - timedelta(days=self.detail_window_days)
 
         person_expr = Case(
             When(~Q(ip_hash="") & ~Q(user_agent=""), then=Concat("ip_hash", Value("|"), "user_agent")),
@@ -1106,8 +1106,9 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         events_qs = (
-            AnalyticsEvent.objects.filter(is_authenticated=False, session_id=session_key, created__gte=cutoff)
+            AnalyticsEvent.objects.filter(is_authenticated=False, created__gte=cutoff)
             .annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
+            .filter(Q(session_id=session_key) | Q(person_key=session_key))
             .order_by("created", "id")
         )
 
@@ -1202,6 +1203,181 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
                 "region": region,
                 "city": city,
                 "pages": pages,
+            },
+            json_dumps_params={"indent": 0},
+        )
+
+
+class LocationSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Return sessions for a specific location over the selected date range."""
+
+    max_span_days = 365
+    max_sessions = 100
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def _parse_date(self, val: str | None, fallback: date) -> date:
+        if not val:
+            return fallback
+        try:
+            return datetime.strptime(val, "%Y-%m-%d").date()
+        except ValueError:
+            return fallback
+
+    def get(self, request: HttpRequest) -> JsonResponse:
+        tz_name = "America/New_York"
+        profile = getattr(request.user, "therapist_profile", None)
+        if profile and getattr(profile, "timezone", ""):
+            tz_name = profile.timezone
+
+        try:
+            tzinfo = ZoneInfo(tz_name)
+        except Exception:
+            tzinfo = timezone.get_default_timezone()
+            tz_name = timezone.get_default_timezone_name()
+
+        today = timezone.localtime(timezone.now(), timezone=tzinfo).date()
+        default_end = today
+        default_start = default_end - timedelta(days=29)
+
+        start_date = self._parse_date(request.GET.get("start"), default_start)
+        end_date = self._parse_date(request.GET.get("end"), default_end)
+        if end_date < start_date:
+            end_date = start_date
+
+        if (end_date - start_date).days > self.max_span_days:
+            start_date = end_date - timedelta(days=self.max_span_days)
+
+        start_dt = timezone.make_aware(datetime.combine(start_date, time.min), timezone=tzinfo)
+        end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), timezone=tzinfo)
+
+        country_code = (request.GET.get("country_code") or "").upper()
+        region = request.GET.get("region") or ""
+        city = request.GET.get("city") or ""
+        tz_filter = request.GET.get("timezone") or ""
+
+        events = AnalyticsEvent.objects.filter(is_authenticated=False, created__gte=start_dt, created__lt=end_dt)
+        if country_code:
+            events = events.filter(country_code=country_code)
+        if region:
+            events = events.filter(region=region)
+        if city:
+            events = events.filter(city=city)
+        if tz_filter:
+            events = events.filter(timezone=tz_filter)
+
+        person_expr = Case(
+            When(~Q(ip_hash="") & ~Q(user_agent=""), then=Concat("ip_hash", Value("|"), "user_agent")),
+            When(~Q(ip_hash=""), then="ip_hash"),
+            default="session_id",
+            output_field=CharField(),
+        )
+
+        device_os_expr = Case(
+            When(user_agent__icontains="android", then=Value("Android")),
+            When(user_agent__icontains="iphone", then=Value("iOS")),
+            When(user_agent__icontains="ipad", then=Value("iPadOS")),
+            When(user_agent__icontains="mac os", then=Value("macOS")),
+            When(user_agent__icontains="macintosh", then=Value("macOS")),
+            When(user_agent__icontains="windows", then=Value("Windows")),
+            When(user_agent__icontains="linux", then=Value("Linux")),
+            When(user_agent__icontains="cros", then=Value("ChromeOS")),
+            default=Value("Other"),
+            output_field=CharField(),
+        )
+
+        device_type_expr = Case(
+            When(Q(user_agent__icontains="ipad") | Q(user_agent__icontains="tablet"), then=Value("Tablet")),
+            When(
+                Q(user_agent__icontains="mobile")
+                | Q(user_agent__icontains="iphone")
+                | Q(user_agent__icontains="android"),
+                then=Value("Mobile"),
+            ),
+            default=Value("Desktop"),
+            output_field=CharField(),
+        )
+
+        title_map = _build_page_title_map()
+        session_map: dict[str, dict[str, Any]] = {}
+
+        for row in (
+            events.annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
+            .order_by("session_id", "-created")
+            .values(
+                "session_id",
+                "person_key",
+                "created",
+                "path",
+                "label",
+                "country_code",
+                "region",
+                "city",
+                "device_os",
+                "device_type",
+            )
+        ):
+            session_key = row.get("session_id") or row.get("person_key") or ""
+            if not session_key:
+                continue
+
+            created = row.get("created")
+            session = session_map.get(session_key)
+            if not session:
+                session = {
+                    "session_key": session_key,
+                    "session_id": row.get("session_id") or "",
+                    "person_key": row.get("person_key") or "",
+                    "first_seen": created,
+                    "last_seen": created,
+                    "current_path": row.get("path") or "",
+                    "current_page_title": _path_to_title(row.get("path") or "", title_map),
+                    "country_code": row.get("country_code") or "",
+                    "region": row.get("region") or "",
+                    "city": row.get("city") or "",
+                    "device_os": row.get("device_os") or "Other",
+                    "device_type": row.get("device_type") or "Desktop",
+                    "event_count": 0,
+                }
+                session_map[session_key] = session
+
+            session["event_count"] = int(session.get("event_count", 0)) + 1
+
+            if created and session.get("last_seen") and created > session["last_seen"]:
+                session["last_seen"] = created
+                session["current_path"] = row.get("path") or session.get("current_path") or ""
+                session["current_page_title"] = _path_to_title(row.get("path") or "", title_map)
+                session["country_code"] = row.get("country_code") or session.get("country_code") or ""
+                session["region"] = row.get("region") or session.get("region") or ""
+                session["city"] = row.get("city") or session.get("city") or ""
+                session["device_os"] = row.get("device_os") or session.get("device_os") or "Other"
+                session["device_type"] = row.get("device_type") or session.get("device_type") or "Desktop"
+
+            if created and (not session.get("first_seen") or created < session.get("first_seen")):
+                session["first_seen"] = created
+
+        sessions: list[dict[str, Any]] = []
+        for session in session_map.values():
+            first_seen_dt = session.get("first_seen") or timezone.now()
+            last_seen_dt = session.get("last_seen") or timezone.now()
+            session["first_seen"] = timezone.localtime(first_seen_dt, timezone=tzinfo).isoformat()
+            session["last_seen"] = timezone.localtime(last_seen_dt, timezone=tzinfo).isoformat()
+            sessions.append(session)
+
+        sessions.sort(key=lambda s: s.get("last_seen", ""), reverse=True)
+
+        total_sessions = len(sessions)
+        truncated = total_sessions > self.max_sessions
+        if truncated:
+            sessions = sessions[: self.max_sessions]
+
+        return JsonResponse(
+            {
+                "sessions": sessions,
+                "count": total_sessions,
+                "truncated": truncated,
+                "range_label": f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}",
             },
             json_dumps_params={"indent": 0},
         )
