@@ -65,6 +65,7 @@ from core.models import (
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
+from blog.models import Post
 
 
 logger = logging.getLogger(__name__)
@@ -1215,10 +1216,33 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         click_path_map: dict[str, dict[str, int]] = {}
 
-        page_title_map = {
-            (p.get("path") or "").strip("/"): p.get("title") or ""
-            for p in Page.objects.all().values("path", "title")
-        }
+        page_title_map: dict[str, str] = {}
+
+        def _add_title(path_val: str, title_val: str) -> None:
+            norm = (path_val or "").strip("/")
+            if norm in page_title_map:
+                return
+            page_title_map[norm] = title_val
+
+        for p in Page.objects.all().values("path", "title"):
+            _add_title(p.get("path") or "", p.get("title") or "")
+
+        for entry in StaticPageSEO.objects.all().values("slug", "page_name"):
+            _add_title(entry.get("slug") or "", entry.get("page_name") or "")
+
+        for t in TherapistProfile.objects.filter(is_published=True).values("slug", "salutation", "first_name", "last_name"):
+            slug = t.get("slug") or ""
+            salutation = (t.get("salutation") or "").strip()
+            first = (t.get("first_name") or "").strip()
+            last = (t.get("last_name") or "").strip()
+            name_parts = [p for p in [first, last] if p]
+            name = " ".join(name_parts) or slug or "Therapist"
+            if salutation:
+                name = f"{salutation} {name}".strip()
+            _add_title(f"therapists/{slug}", name)
+
+        for post in Post.objects.filter(status=Post.STATUS_PUBLISHED).values("slug", "title"):
+            _add_title(f"blog/{post.get('slug') or ''}", post.get("title") or "")
 
         def _path_to_title(path_val: str) -> str:
             norm = (path_val or "").strip("/")
