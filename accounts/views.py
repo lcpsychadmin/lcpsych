@@ -1155,9 +1155,7 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             city = evt.city or city or ""
 
             path_val = evt.path or ""
-            if evt.event_type == AnalyticsEventType.PAGE_VIEW or current_visit is None:
-                current_visit = _start_visit(path_val, evt.created)
-            elif current_visit and path_val and path_val != current_visit.get("path"):
+            if current_visit is None or (path_val and path_val != current_visit.get("path")):
                 current_visit = _start_visit(path_val, evt.created)
 
             if current_visit:
