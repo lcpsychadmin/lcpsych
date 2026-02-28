@@ -1196,7 +1196,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         exit_rate = round((exit_sessions / unique_sessions) * 100, 1) if unique_sessions else 0
 
         path_map: dict[str, dict[str, int]] = {}
-        click_path_map: dict[str, dict[str, float | int | set[str]]] = {}
+        exit_scroll_by_session: dict[str, float] = {}
 
         for row in exit_events_dedup:
             path = row.get("path") or ""
@@ -1205,19 +1205,11 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 scroll_num = float(scroll_val)
             except Exception:
                 scroll_num = 0.0
+            session_key = row.get("person_key") or ""
+            exit_scroll_by_session[session_key] = scroll_num
+
             entry = path_map.setdefault(path, {"count": 0})
             entry["count"] = int(entry["count"]) + 1
-
-            click_path = row.get("metadata__click_path") or ""
-            if click_path:
-                c_entry = click_path_map.setdefault(
-                    click_path,
-                    {"count": 0, "sessions": set(), "scroll_total": 0.0, "scroll_count": 0},
-                )
-                c_entry["count"] = int(c_entry["count"]) + 1
-                c_entry["sessions"].add(row.get("person_key") or "")
-                c_entry["scroll_total"] = float(c_entry["scroll_total"]) + scroll_num
-                c_entry["scroll_count"] = int(c_entry["scroll_count"]) + 1
 
         exit_by_path = []
         for path, entry in path_map.items():
@@ -1229,12 +1221,44 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             )
         exit_by_path.sort(key=lambda r: r.get("count", 0), reverse=True)
 
+        click_path_map: dict[str, dict[str, float | int | set[str]]] = {}
+
+        session_pages: dict[str, list[str]] = {}
+        for row in page_views.order_by("person_key", "created", "id").values("person_key", "path"):
+            session_key = row.get("person_key") or ""
+            path = row.get("path") or ""
+            session_pages.setdefault(session_key, []).append(path)
+
+        for session_key, paths in session_pages.items():
+            # Build a simple navigation sequence of page paths, ignoring clicks/buttons.
+            deduped_paths: list[str] = []
+            for p in paths:
+                if not p:
+                    continue
+                if not deduped_paths or deduped_paths[-1] != p:
+                    deduped_paths.append(p)
+
+            if not deduped_paths:
+                continue
+
+            sequence = " > ".join(deduped_paths)
+            entry = click_path_map.setdefault(
+                sequence,
+                {"count": 0, "sessions": set(), "scroll_total": 0.0, "scroll_count": 0},
+            )
+            entry["count"] = int(entry["count"]) + 1
+            entry["sessions"].add(session_key)
+
+            if session_key in exit_scroll_by_session:
+                entry["scroll_total"] = float(entry["scroll_total"]) + float(exit_scroll_by_session[session_key])
+                entry["scroll_count"] = int(entry["scroll_count"]) + 1
+
         click_paths = []
-        for cp, entry in click_path_map.items():
+        for sequence, entry in click_path_map.items():
             avg_scroll = (entry["scroll_total"] / entry["scroll_count"]) if entry["scroll_count"] else 0
             click_paths.append(
                 {
-                    "metadata__click_path": cp,
+                    "metadata__click_path": sequence,
                     "count": entry["count"],
                     "sessions": len(entry["sessions"]),
                     "avg_scroll": avg_scroll,
