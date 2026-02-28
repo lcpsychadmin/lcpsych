@@ -1214,7 +1214,21 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             )
         exit_by_path.sort(key=lambda r: r.get("count", 0), reverse=True)
 
-        click_path_map: dict[str, dict[str, int]] = {}
+        click_path_map: dict[str, dict[str, int | set[str]]] = {}
+
+        # Track CTA categories clicked per session (Schedule/Call/Email).
+        cta_label_map = {lbl: "Schedule" for lbl in schedule_cta_labels}
+        cta_label_map.update({lbl: "Call" for lbl in call_cta_labels})
+        cta_label_map.update({lbl: "Email" for lbl in email_cta_labels})
+
+        session_cta_types: dict[str, set[str]] = {}
+        for row in cta_events.filter(label__in=all_cta_labels).values("person_key", "label"):
+            session_key = row.get("person_key") or ""
+            category = cta_label_map.get(row.get("label") or "")
+            if not category:
+                continue
+            entry = session_cta_types.setdefault(session_key, set())
+            entry.add(category)
 
         page_title_map: dict[str, str] = {}
 
@@ -1269,8 +1283,10 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 continue
 
             title_sequence = " > ".join([_path_to_title(p) for p in deduped_paths])
-            entry = click_path_map.setdefault(title_sequence, {"count": 0})
+            entry = click_path_map.setdefault(title_sequence, {"count": 0, "cta_types": set()})
             entry["count"] = int(entry["count"]) + 1
+            if session_key in session_cta_types:
+                entry["cta_types"].update(session_cta_types.get(session_key, set()))
 
         click_paths = []
         for sequence, entry in click_path_map.items():
@@ -1278,6 +1294,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 {
                     "metadata__click_path": sequence,
                     "count": entry["count"],
+                    "cta_labels": sorted(entry.get("cta_types", set())),
                 }
             )
         click_paths.sort(key=lambda r: r.get("count", 0), reverse=True)
