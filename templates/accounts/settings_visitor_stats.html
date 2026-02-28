@@ -957,7 +957,10 @@
         <h3 id="session-modal-title" class="text-xl font-semibold text-[#0f3f46] m-0">Session details</h3>
         <p id="session-modal-subtitle" class="text-sm text-slate-600 m-0"></p>
       </div>
-      <button id="session-modal-close" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Close</button>
+      <div class="flex items-center gap-2">
+        <button id="session-modal-refresh" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Refresh</button>
+        <button id="session-modal-close" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Close</button>
+      </div>
     </div>
     <div id="session-modal-body" class="mt-4 space-y-2 text-sm text-slate-700">Loading...</div>
   </div>
@@ -975,6 +978,7 @@
   const modalSubtitle = document.getElementById('session-modal-subtitle');
   const modalBody = document.getElementById('session-modal-body');
   const modalClose = document.getElementById('session-modal-close');
+  const modalRefresh = document.getElementById('session-modal-refresh');
 
   const fmtLocation = (obj = {}) => {
     const parts = [obj.city, obj.region, obj.country_code].filter(Boolean);
@@ -1013,6 +1017,8 @@
 
   let sessionTimer = null;
   let pageTimer = null;
+  let detailRefreshTimer = null;
+  let currentSessionKey = null;
 
   const clearTimers = () => {
     if (sessionTimer) {
@@ -1025,166 +1031,193 @@
     }
   };
 
+  const clearAutoRefresh = () => {
+    if (detailRefreshTimer) {
+      clearInterval(detailRefreshTimer);
+      detailRefreshTimer = null;
+    }
+  };
+
   const closeModal = () => {
     if (!modal) return;
     modal.classList.add('hidden');
     clearTimers();
+    clearAutoRefresh();
+    currentSessionKey = null;
   };
 
-  const openModal = (sessionKey) => {
-    if (!modal) return;
-    modal.classList.remove('hidden');
-    modalBody.textContent = 'Loading...';
-    modalTitle.textContent = 'Session details';
-    modalSubtitle.textContent = '';
-    clearTimers();
+  const renderModal = (data, sessionKey) => {
+    modalTitle.textContent = `Session ${truncate(data.session_key || sessionKey, 12)}`;
+    modalSubtitle.textContent = `${fmtDevice(data)} • ${fmtLocation(data)}`;
 
+    const pages = data.pages || [];
+    if (!pages.length) {
+      modalBody.textContent = 'No events in the last 30 minutes.';
+      return;
+    }
+
+    const frag = document.createElement('div');
+
+    const sessionMeta = document.createElement('div');
+    sessionMeta.className = 'flex items-center justify-between gap-3 mb-3';
+    sessionMeta.innerHTML = `
+      <div class="text-slate-700 text-sm">Current page: ${data.current_page_title || data.current_path || 'unknown'}</div>
+      <div class="text-sm text-[#0f3f46] font-semibold">Session duration: <span id="session-duration-value">${fmtDuration(data.session_duration_ms || 0)}</span></div>
+    `;
+    frag.appendChild(sessionMeta);
+
+    const list = document.createElement('div');
+    list.className = 'space-y-3 text-sm';
+
+    pages.forEach((page, idx) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = `border border-[#0f3f46]/15 rounded-xl shadow-sm overflow-hidden ${page.is_current ? 'bg-[#92DCE5]/30' : 'bg-white'}`;
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'w-full flex items-center justify-between gap-3 px-4 py-3';
+
+      const left = document.createElement('div');
+      left.className = 'text-left';
+      left.innerHTML = `
+        <div class="font-semibold text-[#0f3f46] flex items-center gap-2">
+          <span>${page.page_title || page.path || 'Unknown page'}</span>
+          ${page.is_current ? '<span class="text-xs px-2 py-[2px] rounded-full bg-[#3C9C64] text-white">Current</span>' : ''}
+        </div>
+        <div class="text-xs text-slate-500">${page.path || '/'}</div>
+      `;
+
+      const right = document.createElement('div');
+      right.className = 'flex items-center gap-2';
+      const chevron = document.createElement('span');
+      chevron.textContent = '▸';
+      chevron.className = 'text-slate-500 text-sm page-chevron';
+      const duration = document.createElement('span');
+      duration.className = 'text-sm font-semibold text-[#0f3f46] page-duration';
+      duration.dataset.baseMs = String(page.duration_ms || 0);
+      duration.dataset.isCurrent = page.is_current ? '1' : '0';
+      duration.dataset.generatedAt = data.generated_at || '';
+      duration.textContent = fmtDuration(page.duration_ms || 0) + (page.is_current ? ' (current)' : '');
+      right.appendChild(duration);
+      right.appendChild(chevron);
+
+      toggleBtn.appendChild(left);
+      toggleBtn.appendChild(right);
+
+      const body = document.createElement('div');
+      body.className = 'px-4 pb-4 space-y-2 hidden page-events-body';
+      const events = page.events || [];
+      if (!events.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-slate-500 text-sm';
+        empty.textContent = 'No activity yet on this page.';
+        body.appendChild(empty);
+      } else {
+        events.slice().reverse().forEach((evt) => {
+          const row = document.createElement('div');
+          row.className = 'p-2 rounded-lg bg-slate-50 border border-slate-200';
+          row.innerHTML = `
+            <div class="font-semibold text-[#0f3f46]">${evt.event_type} • ${fmtAgo(evt.created)}</div>
+            ${evt.label ? `<div class="text-slate-600">${evt.label}</div>` : ''}
+            ${evt.page_title || evt.path ? `<div class="text-xs text-slate-500">${evt.page_title || evt.path}</div>` : ''}
+          `;
+          body.appendChild(row);
+        });
+      }
+
+      toggleBtn.addEventListener('click', () => {
+        const isHidden = body.classList.contains('hidden');
+        document.querySelectorAll('.page-events-body').forEach((el) => el.classList.add('hidden'));
+        document.querySelectorAll('.page-chevron').forEach((el) => { if (el) el.textContent = '▸'; });
+        if (isHidden) {
+          body.classList.remove('hidden');
+          chevron.textContent = '▾';
+        } else {
+          body.classList.add('hidden');
+          chevron.textContent = '▸';
+        }
+      });
+
+      wrapper.appendChild(toggleBtn);
+      wrapper.appendChild(body);
+      if (idx === 0) {
+        body.classList.remove('hidden');
+        chevron.textContent = '▾';
+      }
+
+      list.appendChild(wrapper);
+    });
+
+    frag.appendChild(list);
+
+    modalBody.innerHTML = '';
+    modalBody.appendChild(frag);
+
+    const generatedAt = data.generated_at || new Date().toISOString();
+    const sessionDurationEl = document.getElementById('session-duration-value');
+    const startSessionTimer = (baseMs) => {
+      if (!sessionDurationEl) return;
+      const base = Math.max(0, baseMs || 0);
+      const startedAt = Date.parse(generatedAt) || Date.now();
+      const tick = () => {
+        const elapsed = Math.max(0, Date.now() - startedAt);
+        sessionDurationEl.textContent = fmtDuration(base + elapsed);
+      };
+      tick();
+      sessionTimer = setInterval(tick, 1000);
+    };
+
+    const startPageTimer = () => {
+      const startedAt = Date.parse(generatedAt) || Date.now();
+      const tick = () => {
+        document.querySelectorAll('.page-duration').forEach((el) => {
+          const base = parseInt(el.dataset.baseMs || '0', 10);
+          const isCurrent = el.dataset.isCurrent === '1';
+          const val = isCurrent ? base + Math.max(0, Date.now() - startedAt) : base;
+          el.textContent = fmtDuration(val) + (isCurrent ? ' (current)' : '');
+        });
+      };
+      tick();
+      pageTimer = setInterval(tick, 1000);
+    };
+
+    startSessionTimer(data.session_duration_ms || 0);
+    startPageTimer();
+  };
+
+  const fetchDetail = (sessionKey) => {
+    currentSessionKey = sessionKey;
+    clearTimers();
+    modalBody.textContent = 'Loading...';
     fetch(`/accounts/settings/visitor-stats/active/${encodeURIComponent(sessionKey)}.json`)
       .then((resp) => (resp.ok ? resp.json() : Promise.reject()))
       .then((data) => {
-        modalTitle.textContent = `Session ${truncate(data.session_key || sessionKey, 12)}`;
-        modalSubtitle.textContent = `${fmtDevice(data)} • ${fmtLocation(data)}`;
-
-        const pages = data.pages || [];
-        if (!pages.length) {
-          modalBody.textContent = 'No events in the last 30 minutes.';
-          return;
-        }
-
-        const frag = document.createElement('div');
-
-        const sessionMeta = document.createElement('div');
-        sessionMeta.className = 'flex items-center justify-between gap-3 mb-3';
-        sessionMeta.innerHTML = `
-          <div class="text-slate-700 text-sm">Current page: ${data.current_page_title || data.current_path || 'unknown'}</div>
-          <div class="text-sm text-[#0f3f46] font-semibold">Session duration: <span id="session-duration-value">${fmtDuration(data.session_duration_ms || 0)}</span></div>
-        `;
-        frag.appendChild(sessionMeta);
-
-        const list = document.createElement('div');
-        list.className = 'space-y-2 text-sm';
-
-        pages.forEach((page, idx) => {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'border border-slate-200 rounded-lg bg-white shadow-sm';
-
-          const toggleBtn = document.createElement('button');
-          toggleBtn.type = 'button';
-          toggleBtn.className = 'w-full flex items-center justify-between gap-3 px-3 py-2';
-
-          const left = document.createElement('div');
-          left.className = 'text-left';
-          left.innerHTML = `
-            <div class="font-semibold text-[#0f3f46] flex items-center gap-2">
-              <span>${page.page_title || page.path || 'Unknown page'}</span>
-              ${page.is_current ? '<span class="text-xs px-2 py-[2px] rounded-full bg-[#92DCE5] text-[#0f3f46]">Current</span>' : ''}
-            </div>
-            <div class="text-xs text-slate-500">${page.path || '/'}</div>
-          `;
-
-          const right = document.createElement('div');
-          right.className = 'flex items-center gap-2';
-          const chevron = document.createElement('span');
-          chevron.textContent = '▸';
-          chevron.className = 'text-slate-500 text-sm';
-          const duration = document.createElement('span');
-          duration.className = 'text-sm font-semibold text-[#0f3f46] page-duration';
-          duration.dataset.baseMs = String(page.duration_ms || 0);
-          duration.dataset.isCurrent = page.is_current ? '1' : '0';
-          duration.dataset.generatedAt = data.generated_at || '';
-          duration.textContent = fmtDuration(page.duration_ms || 0) + (page.is_current ? ' (current)' : '');
-          right.appendChild(duration);
-          right.appendChild(chevron);
-
-          toggleBtn.appendChild(left);
-          toggleBtn.appendChild(right);
-
-          const body = document.createElement('div');
-          body.className = 'px-3 pb-3 space-y-2 hidden';
-          const events = page.events || [];
-          if (!events.length) {
-            const empty = document.createElement('div');
-            empty.className = 'text-slate-500 text-sm';
-            empty.textContent = 'No activity yet on this page.';
-            body.appendChild(empty);
-          } else {
-            events.slice().reverse().forEach((evt) => {
-              const row = document.createElement('div');
-              row.className = 'p-2 rounded-lg bg-slate-50 border border-slate-200';
-              row.innerHTML = `
-                <div class="font-semibold text-[#0f3f46]">${evt.event_type} • ${fmtAgo(evt.created)}</div>
-                ${evt.label ? `<div class="text-slate-600">${evt.label}</div>` : ''}
-                ${evt.page_title || evt.path ? `<div class="text-xs text-slate-500">${evt.page_title || evt.path}</div>` : ''}
-              `;
-              body.appendChild(row);
-            });
-          }
-
-          toggleBtn.addEventListener('click', () => {
-            const isHidden = body.classList.contains('hidden');
-            document.querySelectorAll('.page-events-body').forEach((el) => el.classList.add('hidden'));
-            document.querySelectorAll('.page-chevron').forEach((el) => { if (el) el.textContent = '▸'; });
-            if (isHidden) {
-              body.classList.remove('hidden');
-              chevron.textContent = '▾';
-            } else {
-              body.classList.add('hidden');
-              chevron.textContent = '▸';
-            }
-          });
-
-          body.classList.add('page-events-body');
-          chevron.classList.add('page-chevron');
-          wrapper.appendChild(toggleBtn);
-          wrapper.appendChild(body);
-          if (idx === 0) {
-            body.classList.remove('hidden');
-            chevron.textContent = '▾';
-          }
-
-          list.appendChild(wrapper);
-        });
-
-        frag.appendChild(list);
-
-        modalBody.innerHTML = '';
-        modalBody.appendChild(frag);
-
-        const generatedAt = data.generated_at || new Date().toISOString();
-        const sessionDurationEl = document.getElementById('session-duration-value');
-        const startSessionTimer = (baseMs) => {
-          if (!sessionDurationEl) return;
-          const base = Math.max(0, baseMs || 0);
-          const startedAt = Date.parse(generatedAt) || Date.now();
-          const tick = () => {
-            const elapsed = Math.max(0, Date.now() - startedAt);
-            sessionDurationEl.textContent = fmtDuration(base + elapsed);
-          };
-          tick();
-          sessionTimer = setInterval(tick, 1000);
-        };
-
-        const startPageTimer = () => {
-          const startedAt = Date.parse(generatedAt) || Date.now();
-          const tick = () => {
-            document.querySelectorAll('.page-duration').forEach((el) => {
-              const base = parseInt(el.dataset.baseMs || '0', 10);
-              const isCurrent = el.dataset.isCurrent === '1';
-              const val = isCurrent ? base + Math.max(0, Date.now() - startedAt) : base;
-              el.textContent = fmtDuration(val) + (isCurrent ? ' (current)' : '');
-            });
-          };
-          tick();
-          pageTimer = setInterval(tick, 1000);
-        };
-
-        startSessionTimer(data.session_duration_ms || 0);
-        startPageTimer();
+        modalTitle.textContent = 'Session details';
+        renderModal(data, sessionKey);
       })
       .catch(() => {
         modalBody.textContent = 'Could not load session details.';
       });
   };
+
+  const openModal = (sessionKey) => {
+    if (!modal) return;
+    clearAutoRefresh();
+    modal.classList.remove('hidden');
+    modalBody.textContent = 'Loading...';
+    modalTitle.textContent = 'Session details';
+    modalSubtitle.textContent = '';
+    fetchDetail(sessionKey);
+    detailRefreshTimer = setInterval(() => {
+      if (currentSessionKey) fetchDetail(currentSessionKey);
+    }, 10000);
+  };
+
+  if (modalRefresh) {
+    modalRefresh.addEventListener('click', () => {
+      if (currentSessionKey) fetchDetail(currentSessionKey);
+    });
+  }
 
   modalClose && modalClose.addEventListener('click', closeModal);
   modal && modal.addEventListener('click', (evt) => {
