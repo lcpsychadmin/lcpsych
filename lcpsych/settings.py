@@ -173,7 +173,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Default to US Eastern; allow override via env for deployments in other regions.
+TIME_ZONE = env('TIME_ZONE', default='America/New_York')
 
 USE_I18N = True
 
