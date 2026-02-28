@@ -395,6 +395,12 @@ gtag('config', 'G-93EEDX0TQR');</script>
 		      send({ event_type: 'page_view', duration_ms: duration, scroll_percent: maxScroll }, { beacon: true });
 		    };
 
+		    const sendHeartbeat = () => {
+		      if (document.visibilityState === 'hidden') return;
+		      const duration = Math.max(0, Math.round(performance.now() - started));
+		      send({ event_type: 'heartbeat', duration_ms: duration, scroll_percent: maxScroll }, { beacon: true });
+		    };
+
 		    const thresholds = [25, 50, 75, 90];
 		    const updateScroll = () => {
 		      const doc = document.documentElement;
@@ -458,7 +464,13 @@ gtag('config', 'G-93EEDX0TQR');</script>
 		      }
 		    };
 		    document.addEventListener('visibilitychange', visibilityHandler);
-		    window.addEventListener('pagehide', sendPageView);
+		    window.addEventListener('pagehide', () => {
+		      sendPageView();
+		      clearInterval(heartbeatInterval);
+		    });
+
+		    const heartbeatInterval = setInterval(sendHeartbeat, 15000);
+		    setTimeout(sendHeartbeat, 5000);
 
 		    updateScroll();
 		  } catch (e) {

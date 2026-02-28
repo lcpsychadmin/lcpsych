@@ -20,6 +20,12 @@ urlpatterns = [
     path("settings/insurance/", views.InsuranceSettingsView.as_view(), name="settings_insurance"),
     path("settings/payment/", views.PaymentSettingsView.as_view(), name="settings_payment"),
     path("settings/social-posting/", views.SocialPostingSettingsView.as_view(), name="settings_social_posting"),
+    path("settings/visitor-stats/active.json", views.ActiveSessionsApiView.as_view(), name="settings_visitor_active"),
+    path(
+        "settings/visitor-stats/active/<str:session_key>.json",
+        views.ActiveSessionDetailApiView.as_view(),
+        name="settings_visitor_active_detail",
+    ),
     path("settings/visitor-stats/", views.VisitorStatsView.as_view(), name="settings_visitor_stats"),
     path("settings/published/", views.PublishedSettingsView.as_view(), name="settings_published"),
     path("services/", views.ManageServicesView.as_view(), name="services"),

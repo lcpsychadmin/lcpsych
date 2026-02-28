@@ -518,6 +518,7 @@ class SocialProfile(Timestamped):
 class AnalyticsEventType(models.TextChoices):
 	PAGE_VIEW = "page_view", "Page view"
 	CLICK = "click", "Click"
+	HEARTBEAT = "heartbeat", "Heartbeat"
 	SCROLL = "scroll", "Scroll depth"
 	FORM_SUBMIT = "form_submit", "Form submit"
 	FORM_ERROR = "form_error", "Form error"

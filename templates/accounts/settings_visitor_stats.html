@@ -111,6 +111,35 @@
 
           <div class="card-surface p-6">
             <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <div>
+                <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Live visitors (last 5 minutes)</h2>
+                <p class="text-sm text-slate-600 m-0">Heartbeats every 15s; refreshes every 10s.</p>
+              </div>
+              <div class="flex items-center gap-2 text-sm text-slate-700">
+                <span class="badge-muted" id="live-count-badge">0 active</span>
+                <button id="refresh-live" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Refresh now</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table class="table-basic text-sm">
+                <thead>
+                  <tr class="text-left text-[#0f3f46] font-semibold">
+                    <th>Session</th>
+                    <th>Location</th>
+                    <th>Device</th>
+                    <th>Current page</th>
+                    <th>Last activity</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="live-sessions-body"></tbody>
+              </table>
+              <div id="live-sessions-empty" class="text-slate-600 text-sm py-2">No active visitors right now.</div>
+            </div>
+          </div>
+
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
               <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Sessions vs page views</h2>
               <div class="chart-legend">
                 <span class="legend-chip"><span class="legend-dot sessions"></span>Sessions</span>
@@ -920,6 +949,163 @@
     </div>
   </section>
 </main>
+
+<div id="session-modal" class="fixed inset-0 bg-black/50 z-50 hidden px-4 py-8 overflow-auto">
+  <div class="bg-white max-w-4xl mx-auto rounded-2xl shadow-2xl border border-slate-200 p-5">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 id="session-modal-title" class="text-xl font-semibold text-[#0f3f46] m-0">Session details</h3>
+        <p id="session-modal-subtitle" class="text-sm text-slate-600 m-0"></p>
+      </div>
+      <button id="session-modal-close" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Close</button>
+    </div>
+    <div id="session-modal-body" class="mt-4 space-y-2 text-sm text-slate-700">Loading...</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const tbody = document.getElementById('live-sessions-body');
+  if (!tbody) return;
+  const emptyEl = document.getElementById('live-sessions-empty');
+  const badge = document.getElementById('live-count-badge');
+  const btnRefresh = document.getElementById('refresh-live');
+  const modal = document.getElementById('session-modal');
+  const modalTitle = document.getElementById('session-modal-title');
+  const modalSubtitle = document.getElementById('session-modal-subtitle');
+  const modalBody = document.getElementById('session-modal-body');
+  const modalClose = document.getElementById('session-modal-close');
+
+  const fmtLocation = (obj = {}) => {
+    const parts = [obj.city, obj.region, obj.country_code].filter(Boolean);
+    return parts.join(', ') || '—';
+  };
+
+  const fmtDevice = (obj = {}) => {
+    const type = obj.device_type || 'Device';
+    const os = obj.device_os || '';
+    return os ? `${type} / ${os}` : type;
+  };
+
+  const fmtAgo = (iso) => {
+    try {
+      const dt = new Date(iso);
+      const diffSec = Math.max(0, Math.round((Date.now() - dt.getTime()) / 1000));
+      if (diffSec < 60) return `${diffSec}s ago`;
+      const mins = Math.floor(diffSec / 60);
+      const secs = diffSec % 60;
+      return `${mins}m ${secs}s ago`;
+    } catch (_) {
+      return iso || '';
+    }
+  };
+
+  const truncate = (val = '', len = 10) => val.slice(0, len);
+
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.add('hidden');
+  };
+
+  const openModal = (sessionKey) => {
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modalBody.textContent = 'Loading...';
+    modalTitle.textContent = 'Session details';
+    modalSubtitle.textContent = '';
+
+    fetch(`/accounts/settings/visitor-stats/active/${encodeURIComponent(sessionKey)}.json`)
+      .then((resp) => (resp.ok ? resp.json() : Promise.reject()))
+      .then((data) => {
+        modalTitle.textContent = `Session ${truncate(data.session_key || sessionKey, 12)}`;
+        modalSubtitle.textContent = `${fmtDevice(data)} • ${fmtLocation(data)}`;
+
+        const events = data.events || [];
+        if (!events.length) {
+          modalBody.textContent = 'No events in the last 30 minutes.';
+          return;
+        }
+
+        const frag = document.createElement('div');
+        const meta = document.createElement('div');
+        meta.className = 'text-slate-700 text-sm mb-2';
+        meta.textContent = `Current page: ${data.current_page_title || data.current_path || 'unknown'}`;
+        frag.appendChild(meta);
+
+        const list = document.createElement('div');
+        list.className = 'space-y-2 text-sm';
+        events.slice().reverse().forEach((evt) => {
+          const row = document.createElement('div');
+          row.className = 'p-2 rounded-lg bg-slate-50 border border-slate-200';
+          row.innerHTML = `
+            <div class="font-semibold text-[#0f3f46]">${evt.event_type} • ${fmtAgo(evt.created)}</div>
+            <div>${evt.page_title || evt.path || 'No path'}</div>
+            ${evt.label ? `<div class="text-slate-600">Label: ${evt.label}</div>` : ''}
+          `;
+          list.appendChild(row);
+        });
+        frag.appendChild(list);
+
+        modalBody.innerHTML = '';
+        modalBody.appendChild(frag);
+      })
+      .catch(() => {
+        modalBody.textContent = 'Could not load session details.';
+      });
+  };
+
+  modalClose && modalClose.addEventListener('click', closeModal);
+  modal && modal.addEventListener('click', (evt) => {
+    if (evt.target === modal) closeModal();
+  });
+
+  const render = (sessions = []) => {
+    tbody.innerHTML = '';
+    if (badge) badge.textContent = `${sessions.length} active`;
+    if (!sessions.length) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    sessions.forEach((s) => {
+      const tr = document.createElement('tr');
+      const currentPage = s.current_page_title || s.current_path || '—';
+      tr.innerHTML = `
+        <td class="font-semibold text-[#0f3f46]">${truncate(s.session_key || '', 10)}</td>
+        <td>${fmtLocation(s)}</td>
+        <td>${fmtDevice(s)}</td>
+        <td>${currentPage}</td>
+        <td>${fmtAgo(s.last_seen)}</td>
+        <td><button type="button" class="px-3 py-1 rounded-md border border-slate-300 text-[#0f3f46] hover:border-[#3C9C64] hover:text-[#3C9C64]" data-session="${s.session_key}">View</button></td>
+      `;
+      const btn = tr.querySelector('button[data-session]');
+      if (btn) {
+        btn.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          openModal(s.session_key);
+        });
+      }
+      tbody.appendChild(tr);
+    });
+  };
+
+  const fetchLive = () => {
+    fetch('/accounts/settings/visitor-stats/active.json')
+      .then((resp) => (resp.ok ? resp.json() : Promise.reject()))
+      .then((data) => render(data.sessions || []))
+      .catch(() => {});
+  };
+
+  btnRefresh && btnRefresh.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    fetchLive();
+  });
+
+  fetchLive();
+  setInterval(fetchLive, 10000);
+})();
+</script>
 {% endblock %}
 
 {% block before_footer %}

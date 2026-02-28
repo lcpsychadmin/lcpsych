@@ -15,7 +15,7 @@ from django.core.mail import send_mail
 from django.core.cache import cache
 from django.db.models import Avg, Case, Count, FloatField, Q, Value, CharField, When
 from django.db.models.functions import Cast, Concat, TruncDate, ExtractWeekDay
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -78,6 +78,47 @@ def is_admin(user: Any) -> bool:
 
 def is_office_manager(user: Any) -> bool:
     return bool(getattr(user, "groups", None) and user.groups.filter(name="office_manager").exists())
+
+
+def _build_page_title_map() -> dict[str, str]:
+    """Return a path->title mapping for known pages/posts/profiles."""
+    page_title_map: dict[str, str] = {}
+
+    def _add_title(path_val: str, title_val: str) -> None:
+        norm = (path_val or "").strip("/")
+        if not norm or norm in page_title_map:
+            return
+        page_title_map[norm] = title_val
+
+    for p in Page.objects.all().values("path", "title"):
+        _add_title(p.get("path") or "", p.get("title") or "")
+
+    for entry in StaticPageSEO.objects.all().values("slug", "page_name"):
+        _add_title(entry.get("slug") or "", entry.get("page_name") or "")
+
+    for t in TherapistProfile.objects.filter(is_published=True).values("slug", "salutation", "first_name", "last_name"):
+        slug = t.get("slug") or ""
+        salutation = (t.get("salutation") or "").strip()
+        first = (t.get("first_name") or "").strip()
+        last = (t.get("last_name") or "").strip()
+        name_parts = [p for p in [first, last] if p]
+        name = " ".join(name_parts) or slug or "Therapist"
+        if salutation:
+            name = f"{salutation} {name}".strip()
+        _add_title(f"therapists/{slug}", name)
+
+    for post in Post.objects.filter(status=Post.STATUS_PUBLISHED).values("slug", "title"):
+        _add_title(f"blog/{post.get('slug') or ''}", post.get("title") or "")
+
+    return page_title_map
+
+
+def _path_to_title(path_val: str, title_map: dict[str, str] | None = None) -> str:
+    title_map = title_map or _build_page_title_map()
+    norm = (path_val or "").strip("/")
+    if not norm:
+        return "Home"
+    return title_map.get(norm, path_val or "(unknown)")
 
 
 def _create_user_invitation(
@@ -878,6 +919,255 @@ class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
         }
         return render(request, self.template_name, ctx)
 
+
+class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Return live anonymous sessions active in the last few minutes."""
+
+    active_window_minutes = 5
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get(self, request: HttpRequest) -> JsonResponse:
+        now = timezone.now()
+        cutoff = now - timedelta(minutes=self.active_window_minutes)
+
+        person_expr = Case(
+            When(~Q(ip_hash="") & ~Q(user_agent=""), then=Concat("ip_hash", Value("|"), "user_agent")),
+            When(~Q(ip_hash=""), then="ip_hash"),
+            default="session_id",
+            output_field=CharField(),
+        )
+
+        device_os_expr = Case(
+            When(user_agent__icontains="android", then=Value("Android")),
+            When(user_agent__icontains="iphone", then=Value("iOS")),
+            When(user_agent__icontains="ipad", then=Value("iPadOS")),
+            When(user_agent__icontains="mac os", then=Value("macOS")),
+            When(user_agent__icontains="macintosh", then=Value("macOS")),
+            When(user_agent__icontains="windows", then=Value("Windows")),
+            When(user_agent__icontains="linux", then=Value("Linux")),
+            When(user_agent__icontains="cros", then=Value("ChromeOS")),
+            default=Value("Other"),
+            output_field=CharField(),
+        )
+
+        device_type_expr = Case(
+            When(Q(user_agent__icontains="ipad") | Q(user_agent__icontains="tablet"), then=Value("Tablet")),
+            When(
+                Q(user_agent__icontains="mobile")
+                | Q(user_agent__icontains="iphone")
+                | Q(user_agent__icontains="android"),
+                then=Value("Mobile"),
+            ),
+            default=Value("Desktop"),
+            output_field=CharField(),
+        )
+
+        events = (
+            AnalyticsEvent.objects.filter(is_authenticated=False, created__gte=cutoff)
+            .annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
+            .order_by("session_id", "-created")
+            .values(
+                "session_id",
+                "person_key",
+                "event_type",
+                "path",
+                "label",
+                "created",
+                "country_code",
+                "region",
+                "city",
+                "device_os",
+                "device_type",
+                "duration_ms",
+                "scroll_percent",
+            )
+        )
+
+        title_map = _build_page_title_map()
+        session_map: dict[str, dict] = {}
+
+        for row in events:
+            session_key = row.get("session_id") or row.get("person_key") or ""
+            if not session_key:
+                continue
+
+            created = row.get("created")
+            event_type = row.get("event_type") or ""
+
+            session = session_map.get(session_key)
+            if not session:
+                session = {
+                    "session_key": session_key,
+                    "session_id": row.get("session_id") or "",
+                    "first_seen": created,
+                    "last_seen": created,
+                    "last_event_type": event_type,
+                    "current_path": row.get("path") or "",
+                    "current_page_title": _path_to_title(row.get("path") or "", title_map),
+                    "current_label": row.get("label") or "",
+                    "country_code": row.get("country_code") or "",
+                    "region": row.get("region") or "",
+                    "city": row.get("city") or "",
+                    "device_os": row.get("device_os") or "Other",
+                    "device_type": row.get("device_type") or "Desktop",
+                    "page_views": 0,
+                    "clicks": 0,
+                    "time_on_page_ms": row.get("duration_ms") or 0,
+                }
+                session_map[session_key] = session
+
+            if created and session.get("last_seen") and created > session["last_seen"]:
+                session["last_seen"] = created
+                session["last_event_type"] = event_type
+                session["current_path"] = row.get("path") or ""
+                session["current_page_title"] = _path_to_title(row.get("path") or "", title_map)
+                session["current_label"] = row.get("label") or ""
+                session["country_code"] = row.get("country_code") or session.get("country_code") or ""
+                session["region"] = row.get("region") or session.get("region") or ""
+                session["city"] = row.get("city") or session.get("city") or ""
+                session["device_os"] = row.get("device_os") or session.get("device_os") or "Other"
+                session["device_type"] = row.get("device_type") or session.get("device_type") or "Desktop"
+
+            if event_type == AnalyticsEventType.PAGE_VIEW:
+                session["page_views"] = int(session.get("page_views", 0)) + 1
+            if event_type == AnalyticsEventType.CLICK:
+                session["clicks"] = int(session.get("clicks", 0)) + 1
+            if event_type in {AnalyticsEventType.PAGE_VIEW, AnalyticsEventType.HEARTBEAT}:
+                session["time_on_page_ms"] = row.get("duration_ms") or session.get("time_on_page_ms") or 0
+
+            if created and (not session.get("first_seen") or created < session["first_seen"]):
+                session["first_seen"] = created
+
+        sessions = []
+        for session in session_map.values():
+            last_seen_dt = session.get("last_seen") or now
+            first_seen_dt = session.get("first_seen") or now
+            session["last_seen"] = timezone.localtime(last_seen_dt).isoformat()
+            session["first_seen"] = timezone.localtime(first_seen_dt).isoformat()
+            session["active_seconds_ago"] = max(0, int((now - last_seen_dt).total_seconds()))
+            sessions.append(session)
+
+        sessions.sort(key=lambda s: s.get("last_seen", ""), reverse=True)
+
+        return JsonResponse(
+            {
+                "active_window_minutes": self.active_window_minutes,
+                "generated_at": timezone.localtime(now).isoformat(),
+                "sessions": sessions,
+            },
+            json_dumps_params={"indent": 0},
+        )
+
+
+class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Return recent events for a single session."""
+
+    detail_window_minutes = 30
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get(self, request: HttpRequest, session_key: str) -> JsonResponse:
+        now = timezone.now()
+        cutoff = now - timedelta(minutes=self.detail_window_minutes)
+
+        person_expr = Case(
+            When(~Q(ip_hash="") & ~Q(user_agent=""), then=Concat("ip_hash", Value("|"), "user_agent")),
+            When(~Q(ip_hash=""), then="ip_hash"),
+            default="session_id",
+            output_field=CharField(),
+        )
+
+        device_os_expr = Case(
+            When(user_agent__icontains="android", then=Value("Android")),
+            When(user_agent__icontains="iphone", then=Value("iOS")),
+            When(user_agent__icontains="ipad", then=Value("iPadOS")),
+            When(user_agent__icontains="mac os", then=Value("macOS")),
+            When(user_agent__icontains="macintosh", then=Value("macOS")),
+            When(user_agent__icontains="windows", then=Value("Windows")),
+            When(user_agent__icontains="linux", then=Value("Linux")),
+            When(user_agent__icontains="cros", then=Value("ChromeOS")),
+            default=Value("Other"),
+            output_field=CharField(),
+        )
+
+        device_type_expr = Case(
+            When(Q(user_agent__icontains="ipad") | Q(user_agent__icontains="tablet"), then=Value("Tablet")),
+            When(
+                Q(user_agent__icontains="mobile")
+                | Q(user_agent__icontains="iphone")
+                | Q(user_agent__icontains="android"),
+                then=Value("Mobile"),
+            ),
+            default=Value("Desktop"),
+            output_field=CharField(),
+        )
+
+        events_qs = (
+            AnalyticsEvent.objects.filter(is_authenticated=False, session_id=session_key, created__gte=cutoff)
+            .annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
+            .order_by("created", "id")
+        )
+
+        if not events_qs.exists():
+            return JsonResponse({"error": "session not found"}, status=404)
+
+        title_map = _build_page_title_map()
+        events = []
+        first_seen = None
+        last_seen = None
+        last_path = ""
+        current_title = ""
+        device_os = ""
+        device_type = ""
+        country_code = ""
+        region = ""
+        city = ""
+
+        for evt in events_qs:
+            created_local = timezone.localtime(evt.created)
+            if first_seen is None or evt.created < first_seen:
+                first_seen = evt.created
+            last_seen = evt.created
+            last_path = evt.path or last_path
+            current_title = _path_to_title(evt.path or "", title_map)
+            device_os = evt.device_os or device_os or "Other"
+            device_type = evt.device_type or device_type or "Desktop"
+            country_code = evt.country_code or country_code or ""
+            region = evt.region or region or ""
+            city = evt.city or city or ""
+
+            events.append(
+                {
+                    "event_type": evt.event_type,
+                    "path": evt.path,
+                    "page_title": _path_to_title(evt.path or "", title_map),
+                    "label": evt.label,
+                    "created": created_local.isoformat(),
+                    "scroll_percent": evt.scroll_percent,
+                    "duration_ms": evt.duration_ms,
+                    "metadata": evt.metadata,
+                }
+            )
+
+        return JsonResponse(
+            {
+                "session_key": session_key,
+                "first_seen": timezone.localtime(first_seen or now).isoformat(),
+                "last_seen": timezone.localtime(last_seen or now).isoformat(),
+                "current_path": last_path,
+                "current_page_title": current_title,
+                "device_os": device_os or "Other",
+                "device_type": device_type or "Desktop",
+                "country_code": country_code,
+                "region": region,
+                "city": city,
+                "events": events,
+            },
+            json_dumps_params={"indent": 0},
+        )
 
 class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "accounts/settings_visitor_stats.html"
