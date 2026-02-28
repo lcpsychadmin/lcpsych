@@ -1115,7 +1115,6 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             return JsonResponse({"error": "session not found"}, status=404)
 
         title_map = _build_page_title_map()
-        events = []
         first_seen = None
         last_seen = None
         last_path = ""
@@ -1125,6 +1124,25 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         country_code = ""
         region = ""
         city = ""
+
+        page_map: dict[str, dict[str, Any]] = {}
+
+        def _page_record(path_val: str) -> dict[str, Any]:
+            path_norm = path_val or ""
+            record = page_map.get(path_norm)
+            if record:
+                return record
+            record = {
+                "path": path_norm,
+                "page_title": _path_to_title(path_norm, title_map),
+                "first_seen": None,
+                "last_seen": None,
+                "duration_ms": 0,
+                "events": [],
+                "is_current": False,
+            }
+            page_map[path_norm] = record
+            return record
 
         for evt in events_qs:
             created_local = timezone.localtime(evt.created)
@@ -1139,24 +1157,44 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             region = evt.region or region or ""
             city = evt.city or city or ""
 
-            events.append(
-                {
-                    "event_type": evt.event_type,
-                    "path": evt.path,
-                    "page_title": _path_to_title(evt.path or "", title_map),
-                    "label": evt.label,
-                    "created": created_local.isoformat(),
-                    "scroll_percent": evt.scroll_percent,
-                    "duration_ms": evt.duration_ms,
-                    "metadata": evt.metadata,
-                }
-            )
+            page_rec = _page_record(evt.path or "")
+            if page_rec["first_seen"] is None or evt.created < page_rec["first_seen"]:
+                page_rec["first_seen"] = evt.created
+            page_rec["last_seen"] = evt.created
+
+            if evt.event_type in {AnalyticsEventType.HEARTBEAT, AnalyticsEventType.PAGE_VIEW}:
+                page_rec["duration_ms"] = max(page_rec.get("duration_ms", 0) or 0, evt.duration_ms or 0)
+
+            if evt.event_type != AnalyticsEventType.HEARTBEAT:
+                page_rec["events"].append(
+                    {
+                        "event_type": evt.event_type,
+                        "path": evt.path,
+                        "page_title": _path_to_title(evt.path or "", title_map),
+                        "label": evt.label,
+                        "created": created_local.isoformat(),
+                        "scroll_percent": evt.scroll_percent,
+                        "duration_ms": evt.duration_ms,
+                        "metadata": evt.metadata,
+                    }
+                )
+
+        for path_val, rec in page_map.items():
+            rec["is_current"] = bool(path_val == last_path)
+            rec["last_seen"] = timezone.localtime(rec.get("last_seen") or now).isoformat() if rec.get("last_seen") else None
+            rec["first_seen"] = timezone.localtime(rec.get("first_seen") or now).isoformat() if rec.get("first_seen") else None
+
+        session_duration_ms = max(0, int((now - (first_seen or now)).total_seconds() * 1000))
+
+        pages = sorted(page_map.values(), key=lambda r: r.get("last_seen") or "", reverse=True)
 
         return JsonResponse(
             {
                 "session_key": session_key,
                 "first_seen": timezone.localtime(first_seen or now).isoformat(),
                 "last_seen": timezone.localtime(last_seen or now).isoformat(),
+                "generated_at": timezone.localtime(now).isoformat(),
+                "session_duration_ms": session_duration_ms,
                 "current_path": last_path,
                 "current_page_title": current_title,
                 "device_os": device_os or "Other",
@@ -1164,7 +1202,7 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
                 "country_code": country_code,
                 "region": region,
                 "city": city,
-                "events": events,
+                "pages": pages,
             },
             json_dumps_params={"indent": 0},
         )
