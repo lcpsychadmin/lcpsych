@@ -1125,24 +1125,21 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         region = ""
         city = ""
 
-        page_map: dict[str, dict[str, Any]] = {}
+        visits: list[dict[str, Any]] = []
+        current_visit: dict[str, Any] | None = None
 
-        def _page_record(path_val: str) -> dict[str, Any]:
-            path_norm = path_val or ""
-            record = page_map.get(path_norm)
-            if record:
-                return record
-            record = {
-                "path": path_norm,
-                "page_title": _path_to_title(path_norm, title_map),
-                "first_seen": None,
-                "last_seen": None,
+        def _start_visit(path_val: str, created_dt: datetime) -> dict[str, Any]:
+            visit = {
+                "path": path_val,
+                "page_title": _path_to_title(path_val, title_map),
+                "first_seen": created_dt,
+                "last_seen": created_dt,
                 "duration_ms": 0,
                 "events": [],
                 "is_current": False,
             }
-            page_map[path_norm] = record
-            return record
+            visits.append(visit)
+            return visit
 
         for evt in events_qs:
             created_local = timezone.localtime(evt.created)
@@ -1157,36 +1154,40 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             region = evt.region or region or ""
             city = evt.city or city or ""
 
-            page_rec = _page_record(evt.path or "")
-            if page_rec["first_seen"] is None or evt.created < page_rec["first_seen"]:
-                page_rec["first_seen"] = evt.created
-            page_rec["last_seen"] = evt.created
+            path_val = evt.path or ""
+            if evt.event_type == AnalyticsEventType.PAGE_VIEW or current_visit is None:
+                current_visit = _start_visit(path_val, evt.created)
+            elif current_visit and path_val and path_val != current_visit.get("path"):
+                current_visit = _start_visit(path_val, evt.created)
 
-            if evt.event_type in {AnalyticsEventType.HEARTBEAT, AnalyticsEventType.PAGE_VIEW}:
-                page_rec["duration_ms"] = max(page_rec.get("duration_ms", 0) or 0, evt.duration_ms or 0)
+            if current_visit:
+                if current_visit.get("first_seen") is None or evt.created < current_visit["first_seen"]:
+                    current_visit["first_seen"] = evt.created
+                current_visit["last_seen"] = evt.created
+                if evt.event_type in {AnalyticsEventType.HEARTBEAT, AnalyticsEventType.PAGE_VIEW}:
+                    current_visit["duration_ms"] = max(current_visit.get("duration_ms", 0) or 0, evt.duration_ms or 0)
+                if evt.event_type != AnalyticsEventType.HEARTBEAT:
+                    current_visit["events"].append(
+                        {
+                            "event_type": evt.event_type,
+                            "path": evt.path,
+                            "page_title": _path_to_title(evt.path or "", title_map),
+                            "label": evt.label,
+                            "created": created_local.isoformat(),
+                            "scroll_percent": evt.scroll_percent,
+                            "duration_ms": evt.duration_ms,
+                            "metadata": evt.metadata,
+                        }
+                    )
 
-            if evt.event_type != AnalyticsEventType.HEARTBEAT:
-                page_rec["events"].append(
-                    {
-                        "event_type": evt.event_type,
-                        "path": evt.path,
-                        "page_title": _path_to_title(evt.path or "", title_map),
-                        "label": evt.label,
-                        "created": created_local.isoformat(),
-                        "scroll_percent": evt.scroll_percent,
-                        "duration_ms": evt.duration_ms,
-                        "metadata": evt.metadata,
-                    }
-                )
-
-        for path_val, rec in page_map.items():
-            rec["is_current"] = bool(path_val == last_path)
+        for idx, rec in enumerate(visits):
+            rec["is_current"] = bool(idx == len(visits) - 1)
             rec["last_seen"] = timezone.localtime(rec.get("last_seen") or now).isoformat() if rec.get("last_seen") else None
             rec["first_seen"] = timezone.localtime(rec.get("first_seen") or now).isoformat() if rec.get("first_seen") else None
 
         session_duration_ms = max(0, int((now - (first_seen or now)).total_seconds() * 1000))
 
-        pages = sorted(page_map.values(), key=lambda r: r.get("last_seen") or "", reverse=True)
+        pages = sorted(visits, key=lambda r: r.get("last_seen") or "", reverse=True)
 
         return JsonResponse(
             {
