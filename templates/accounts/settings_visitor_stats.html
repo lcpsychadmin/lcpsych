@@ -32,7 +32,7 @@
 .session-page-card:hover { border-color: rgba(15, 63, 70, 0.3); box-shadow: 0 14px 34px rgba(0, 48, 57, 0.12); }
 .session-toggle-btn:focus { outline: none; }
 .session-toggle-btn:focus-visible { outline: 2px solid #92DCE5; outline-offset: 2px; }
-.session-toggle-btn { background: transparent; border: none; padding: 0; }
+.session-toggle-btn { background: transparent; border: none; padding: 32px 36px 32px 64px; width: 100%; display: flex; align-items: center; justify-content: space-between; column-gap: 16px; box-sizing: border-box; text-align: left; }
 .session-toggle-btn:hover, .session-toggle-btn:active { background: transparent; }
 .session-modal-btn { background: #fff; color: #0f3f46; border: 1px solid #d1d5db; transition: all 120ms ease; }
 .session-modal-btn:hover { background: #ecf8f3; color: #3C9C64; border-color: #3C9C64; }
@@ -40,6 +40,9 @@
 .page-events-body { padding-top: 16px; }
 
 .stats-page { overflow-x: hidden; }
+
+.session-row-left { display: flex; flex-direction: column; row-gap: 12px; text-align: left; flex: 1 1 auto; }
+.session-row-right { display: flex; align-items: center; column-gap: 8px; }
 
 @media (max-width: 768px) {
   .table-basic { table-layout: fixed; font-size: 0.9rem; }
@@ -1077,10 +1080,10 @@
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
-      toggleBtn.className = 'session-toggle-btn w-full flex items-center justify-between gap-4 pl-16 pr-9 py-8';
+      toggleBtn.className = 'session-toggle-btn';
 
       const left = document.createElement('div');
-      left.className = 'text-left space-y-3';
+      left.className = 'session-row-left';
       left.innerHTML = `
         <div class="font-semibold text-[#0f3f46] flex items-center gap-2">
           <span>${page.page_title || page.path || 'Unknown page'}</span>
@@ -1090,7 +1093,7 @@
       `;
 
       const right = document.createElement('div');
-      right.className = 'flex items-center gap-2';
+      right.className = 'session-row-right';
       const chevron = document.createElement('span');
       chevron.textContent = '▸';
       chevron.className = 'text-slate-500 text-sm page-chevron';
