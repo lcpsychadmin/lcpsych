@@ -769,18 +769,16 @@
                 <div class="table-scroll">
                   <table class="table-basic text-sm w-full">
                   <thead class="text-[#0f3f46]">
-                    <tr><th>Path</th><th>Exits</th><th>Sessions</th><th>Avg scroll</th></tr>
+                    <tr><th>Path</th><th>Exits</th></tr>
                   </thead>
                   <tbody>
                     {% for row in exit_by_path %}
                     <tr>
                       <td>{{ row.path }}</td>
                       <td>{{ row.count }}</td>
-                      <td>{{ row.sessions }}</td>
-                      <td>{{ row.avg_scroll_label }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4" class="text-slate-500 py-2">No exits tracked yet</td></tr>
+                    <tr><td colspan="2" class="text-slate-500 py-2">No exits tracked yet</td></tr>
                     {% endfor %}
                   </tbody>
                   </table>

@@ -1195,9 +1195,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         exit_sessions = len(latest_exit_by_session)
         exit_rate = round((exit_sessions / unique_sessions) * 100, 1) if unique_sessions else 0
 
-        path_map: dict[str, dict[str, float | int | set[str]]] = {}
+        path_map: dict[str, dict[str, int]] = {}
         click_path_map: dict[str, dict[str, float | int | set[str]]] = {}
-        exit_scroll_values: list[float] = []
 
         for row in exit_events_dedup:
             path = row.get("path") or ""
@@ -1206,13 +1205,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 scroll_num = float(scroll_val)
             except Exception:
                 scroll_num = 0.0
-            exit_scroll_values.append(scroll_num)
-
-            entry = path_map.setdefault(path, {"count": 0, "sessions": set(), "scroll_total": 0.0, "scroll_count": 0})
+            entry = path_map.setdefault(path, {"count": 0})
             entry["count"] = int(entry["count"]) + 1
-            entry["sessions"].add(row.get("person_key") or "")
-            entry["scroll_total"] = float(entry["scroll_total"]) + scroll_num
-            entry["scroll_count"] = int(entry["scroll_count"]) + 1
 
             click_path = row.get("metadata__click_path") or ""
             if click_path:
@@ -1227,14 +1221,10 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         exit_by_path = []
         for path, entry in path_map.items():
-            avg_scroll = (entry["scroll_total"] / entry["scroll_count"]) if entry["scroll_count"] else 0
             exit_by_path.append(
                 {
                     "path": path,
                     "count": entry["count"],
-                    "sessions": len(entry["sessions"]),
-                    "avg_scroll": avg_scroll,
-                    "avg_scroll_label": f"{round(avg_scroll):.0f}%",
                 }
             )
         exit_by_path.sort(key=lambda r: r.get("count", 0), reverse=True)
