@@ -1054,6 +1054,40 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         cta_excluded_labels = ["schedule_new_select", "schedule_existing_select"]
         cta_events = click_events.exclude(label__in=cta_excluded_labels)
 
+        page_title_map: dict[str, str] = {}
+
+        def _add_title(path_val: str, title_val: str) -> None:
+            norm = (path_val or "").strip("/")
+            if norm in page_title_map:
+                return
+            page_title_map[norm] = title_val
+
+        for p in Page.objects.all().values("path", "title"):
+            _add_title(p.get("path") or "", p.get("title") or "")
+
+        for entry in StaticPageSEO.objects.all().values("slug", "page_name"):
+            _add_title(entry.get("slug") or "", entry.get("page_name") or "")
+
+        for t in TherapistProfile.objects.filter(is_published=True).values("slug", "salutation", "first_name", "last_name"):
+            slug = t.get("slug") or ""
+            salutation = (t.get("salutation") or "").strip()
+            first = (t.get("first_name") or "").strip()
+            last = (t.get("last_name") or "").strip()
+            name_parts = [p for p in [first, last] if p]
+            name = " ".join(name_parts) or slug or "Therapist"
+            if salutation:
+                name = f"{salutation} {name}".strip()
+            _add_title(f"therapists/{slug}", name)
+
+        for post in Post.objects.filter(status=Post.STATUS_PUBLISHED).values("slug", "title"):
+            _add_title(f"blog/{post.get('slug') or ''}", post.get("title") or "")
+
+        def _path_to_title(path_val: str) -> str:
+            norm = (path_val or "").strip("/")
+            if not norm:
+                return "Home"
+            return page_title_map.get(norm, path_val or "(unknown)")
+
         # Use modal opens as the single schedule CTA event to avoid double-counting alongside the per-button click labels.
         schedule_cta_labels = [
             "schedule_modal_open",
@@ -1231,40 +1265,6 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 continue
             entry = session_cta_types.setdefault(session_key, set())
             entry.add(category)
-
-        page_title_map: dict[str, str] = {}
-
-        def _add_title(path_val: str, title_val: str) -> None:
-            norm = (path_val or "").strip("/")
-            if norm in page_title_map:
-                return
-            page_title_map[norm] = title_val
-
-        for p in Page.objects.all().values("path", "title"):
-            _add_title(p.get("path") or "", p.get("title") or "")
-
-        for entry in StaticPageSEO.objects.all().values("slug", "page_name"):
-            _add_title(entry.get("slug") or "", entry.get("page_name") or "")
-
-        for t in TherapistProfile.objects.filter(is_published=True).values("slug", "salutation", "first_name", "last_name"):
-            slug = t.get("slug") or ""
-            salutation = (t.get("salutation") or "").strip()
-            first = (t.get("first_name") or "").strip()
-            last = (t.get("last_name") or "").strip()
-            name_parts = [p for p in [first, last] if p]
-            name = " ".join(name_parts) or slug or "Therapist"
-            if salutation:
-                name = f"{salutation} {name}".strip()
-            _add_title(f"therapists/{slug}", name)
-
-        for post in Post.objects.filter(status=Post.STATUS_PUBLISHED).values("slug", "title"):
-            _add_title(f"blog/{post.get('slug') or ''}", post.get("title") or "")
-
-        def _path_to_title(path_val: str) -> str:
-            norm = (path_val or "").strip("/")
-            if not norm:
-                return "Home"
-            return page_title_map.get(norm, path_val or "(unknown)")
 
         for row in exit_by_path:
             row["page_title"] = _path_to_title(row.get("path") or "")
