@@ -1211,6 +1211,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             exit_by_path.append(
                 {
                     "path": path,
+                    "page_title": _path_to_title(path),
                     "count": entry["count"],
                 }
             )

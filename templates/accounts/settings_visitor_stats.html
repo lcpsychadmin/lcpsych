@@ -768,12 +768,12 @@
                 <div class="table-scroll">
                   <table class="table-basic text-sm w-full">
                   <thead class="text-[#0f3f46]">
-                    <tr><th>Path</th><th>Exits</th></tr>
+                    <tr><th>Page</th><th>Exits</th></tr>
                   </thead>
                   <tbody>
                     {% for row in exit_by_path %}
                     <tr>
-                      <td>{{ row.path }}</td>
+                      <td>{{ row.page_title }}</td>
                       <td>{{ row.count }}</td>
                     </tr>
                     {% empty %}
