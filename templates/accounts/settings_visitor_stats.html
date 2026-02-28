@@ -27,10 +27,13 @@
 .table-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .table-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 999px; }
 .table-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 999px; }
-.session-page-card { border: 1px solid rgba(15, 63, 70, 0.15); box-shadow: 0 10px 28px rgba(0, 48, 57, 0.08); transition: border-color 120ms ease, box-shadow 120ms ease; }
+.session-page-card { background: #fff; border: 1px solid rgba(15, 63, 70, 0.15); box-shadow: 0 10px 28px rgba(0, 48, 57, 0.08); transition: border-color 120ms ease, box-shadow 120ms ease; }
+.session-page-card.is-current { background: #e8f7fa; }
 .session-page-card:hover { border-color: rgba(15, 63, 70, 0.3); box-shadow: 0 14px 34px rgba(0, 48, 57, 0.12); }
 .session-toggle-btn:focus { outline: none; }
 .session-toggle-btn:focus-visible { outline: 2px solid #92DCE5; outline-offset: 2px; }
+.session-toggle-btn { background: transparent; border: none; padding: 0; }
+.session-toggle-btn:hover, .session-toggle-btn:active { background: transparent; }
 
 .stats-page { overflow-x: hidden; }
 
@@ -1066,7 +1069,7 @@
 
     pages.forEach((page, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = `session-page-card rounded-xl overflow-hidden ${page.is_current ? 'bg-[#92DCE5]/30' : 'bg-white'}`;
+      wrapper.className = `session-page-card rounded-xl overflow-hidden ${page.is_current ? 'is-current' : ''}`;
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
