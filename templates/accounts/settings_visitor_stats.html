@@ -1065,7 +1065,7 @@
     frag.appendChild(sessionMeta);
 
     const list = document.createElement('div');
-    list.className = 'space-y-3 text-sm';
+    list.className = 'space-y-4 text-sm';
 
     pages.forEach((page, idx) => {
       const wrapper = document.createElement('div');
@@ -1073,7 +1073,7 @@
 
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
-      toggleBtn.className = 'session-toggle-btn w-full flex items-center justify-between gap-3 px-4 py-3';
+      toggleBtn.className = 'session-toggle-btn w-full flex items-center justify-between gap-3 px-5 py-4';
 
       const left = document.createElement('div');
       left.className = 'text-left';
@@ -1103,7 +1103,7 @@
       toggleBtn.appendChild(right);
 
       const body = document.createElement('div');
-      body.className = 'px-4 pb-4 space-y-2 hidden page-events-body';
+      body.className = 'px-5 pb-5 space-y-3 hidden page-events-body';
       const events = (page.events || []).filter((evt) => evt.event_type !== 'session_exit');
       if (!events.length) {
         const empty = document.createElement('div');

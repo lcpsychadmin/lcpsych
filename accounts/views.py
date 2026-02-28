@@ -1064,7 +1064,7 @@ class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
     """Return recent events for a single session."""
 
-    detail_window_minutes = 30
+    detail_window_minutes = 120
 
     def test_func(self):
         return is_admin(self.request.user)
