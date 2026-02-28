@@ -34,6 +34,10 @@
 .session-toggle-btn:focus-visible { outline: 2px solid #92DCE5; outline-offset: 2px; }
 .session-toggle-btn { background: transparent; border: none; padding: 0; }
 .session-toggle-btn:hover, .session-toggle-btn:active { background: transparent; }
+.session-modal-btn { background: #fff; color: #0f3f46; border: 1px solid #d1d5db; transition: all 120ms ease; }
+.session-modal-btn:hover { background: #ecf8f3; color: #3C9C64; border-color: #3C9C64; }
+.session-modal-btn:focus-visible { outline: 2px solid #92DCE5; outline-offset: 2px; }
+.page-events-body { padding-top: 16px; }
 
 .stats-page { overflow-x: hidden; }
 
@@ -965,8 +969,8 @@
         <p id="session-modal-subtitle" class="text-sm text-slate-600 m-0"></p>
       </div>
       <div class="flex items-center gap-2">
-        <button id="session-modal-refresh" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Refresh</button>
-        <button id="session-modal-close" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#3C9C64]">Close</button>
+        <button id="session-modal-refresh" type="button" class="session-modal-btn px-4 py-2 rounded-lg font-semibold">Refresh</button>
+        <button id="session-modal-close" type="button" class="session-modal-btn px-4 py-2 rounded-lg font-semibold">Close</button>
       </div>
     </div>
     <div id="session-modal-body" class="mt-4 space-y-2 text-sm text-slate-700">Loading...</div>
@@ -1103,7 +1107,7 @@
       toggleBtn.appendChild(right);
 
       const body = document.createElement('div');
-      body.className = 'px-5 pb-5 space-y-3 hidden page-events-body';
+      body.className = 'px-6 pb-6 pt-5 space-y-3 hidden page-events-body';
       const events = (page.events || []).filter((evt) => evt.event_type !== 'session_exit');
       if (!events.length) {
         const empty = document.createElement('div');
@@ -1113,7 +1117,7 @@
       } else {
         events.slice().reverse().forEach((evt) => {
           const row = document.createElement('div');
-          row.className = 'p-2 rounded-lg bg-slate-50 border border-slate-200';
+          row.className = 'p-3 rounded-lg bg-slate-50 border border-slate-200';
           row.innerHTML = `
             <div class="font-semibold text-[#0f3f46]">${evt.event_type} • ${fmtAgo(evt.created)}</div>
             ${evt.label ? `<div class="text-slate-600">${evt.label}</div>` : ''}
