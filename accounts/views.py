@@ -1382,10 +1382,12 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .exclude(path__startswith="/admin")
             .exclude(metadata__href__icontains="/admin")
             .exclude(metadata__target__icontains="modal")
-            .values("label", "path", "metadata__target")
+            .values("label", "path")
             .annotate(count=Count("id"))
             .order_by("-count")
         )
+        for row in top_clicks:
+            row["page_title"] = _path_to_title(row.get("path") or "")
 
         current_host = request.get_host()
         landing_referrers = list(
