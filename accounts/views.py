@@ -1550,7 +1550,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         def _label_counts(qs):
             return list(
                 qs.values("path", "label")
-                .annotate(count=Count("id"))
+                .annotate(count=Count("person_key", distinct=True))
                 .order_by("-count")
             )
 
