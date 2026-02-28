@@ -1327,12 +1327,16 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "nav_toggle",
             "menu-toggle",
             "mobile-menu-toggle",
+            "continue with microsoft",
             "",
         ]
         top_clicks = list(
             events.filter(event_type=AnalyticsEventType.CLICK)
             .exclude(label__in=top_clicks_exclude)
-            .values("label")
+            .exclude(path__startswith="/admin")
+            .exclude(metadata__href__icontains="/admin")
+            .exclude(metadata__target__icontains="modal")
+            .values("label", "path", "metadata__target")
             .annotate(count=Count("id"))
             .order_by("-count")
         )

@@ -28,6 +28,8 @@
 .table-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 999px; }
 .table-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 999px; }
 
+.stats-page { overflow-x: hidden; }
+
 @media (max-width: 768px) {
   .table-basic { table-layout: fixed; font-size: 0.9rem; }
   .table-basic th, .table-basic td { padding: 0.45rem 0.35rem; white-space: normal; word-break: break-word; }
@@ -37,7 +39,7 @@
 {% endblock %}
 
 {% block content %}
-<main id="content">
+<main id="content" class="stats-page">
   <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-12 pt-14">
     <div class="max-w-[1100px] mx-auto px-4 text-center">
       <h1 class="text-4xl leading-tight font-semibold m-0">Visitor stats</h1>
@@ -656,16 +658,18 @@
                 <div class="table-scroll">
                   <table class="table-basic text-sm w-full">
                   <thead class="text-[#0f3f46]">
-                    <tr><th>Label</th><th>Clicks</th></tr>
+                    <tr><th>Label</th><th>Page</th><th>Target</th><th>Clicks</th></tr>
                   </thead>
                   <tbody>
                     {% for row in top_clicks %}
                     <tr>
                       <td>{{ row.label }}</td>
+                      <td>{{ row.path }}</td>
+                      <td>{{ row.metadata__target }}</td>
                       <td>{{ row.count }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="2" class="text-slate-500 py-2">No data yet</td></tr>
+                    <tr><td colspan="4" class="text-slate-500 py-2">No data yet</td></tr>
                     {% endfor %}
                   </tbody>
                   </table>
