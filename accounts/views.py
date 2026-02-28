@@ -61,6 +61,7 @@ from core.models import (
     SocialPlatform,
     AnalyticsEvent,
     AnalyticsEventType,
+    Page,
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
@@ -1196,18 +1197,9 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         exit_rate = round((exit_sessions / unique_sessions) * 100, 1) if unique_sessions else 0
 
         path_map: dict[str, dict[str, int]] = {}
-        exit_scroll_by_session: dict[str, float] = {}
 
         for row in exit_events_dedup:
             path = row.get("path") or ""
-            scroll_val = row.get("metadata__exit_scroll") or 0
-            try:
-                scroll_num = float(scroll_val)
-            except Exception:
-                scroll_num = 0.0
-            session_key = row.get("person_key") or ""
-            exit_scroll_by_session[session_key] = scroll_num
-
             entry = path_map.setdefault(path, {"count": 0})
             entry["count"] = int(entry["count"]) + 1
 
@@ -1221,7 +1213,18 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             )
         exit_by_path.sort(key=lambda r: r.get("count", 0), reverse=True)
 
-        click_path_map: dict[str, dict[str, float | int | set[str]]] = {}
+        click_path_map: dict[str, dict[str, int]] = {}
+
+        page_title_map = {
+            (p.get("path") or "").strip("/"): p.get("title") or ""
+            for p in Page.objects.all().values("path", "title")
+        }
+
+        def _path_to_title(path_val: str) -> str:
+            norm = (path_val or "").strip("/")
+            if not norm:
+                return "Home"
+            return page_title_map.get(norm, path_val or "(unknown)")
 
         session_pages: dict[str, list[str]] = {}
         for row in page_views.order_by("person_key", "created", "id").values("person_key", "path"):
@@ -1230,7 +1233,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             session_pages.setdefault(session_key, []).append(path)
 
         for session_key, paths in session_pages.items():
-            # Build a simple navigation sequence of page paths, ignoring clicks/buttons.
+            # Build a simple navigation sequence of page titles, ignoring clicks/buttons.
             deduped_paths: list[str] = []
             for p in paths:
                 if not p:
@@ -1241,28 +1244,16 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if not deduped_paths:
                 continue
 
-            sequence = " > ".join(deduped_paths)
-            entry = click_path_map.setdefault(
-                sequence,
-                {"count": 0, "sessions": set(), "scroll_total": 0.0, "scroll_count": 0},
-            )
+            title_sequence = " > ".join([_path_to_title(p) for p in deduped_paths])
+            entry = click_path_map.setdefault(title_sequence, {"count": 0})
             entry["count"] = int(entry["count"]) + 1
-            entry["sessions"].add(session_key)
-
-            if session_key in exit_scroll_by_session:
-                entry["scroll_total"] = float(entry["scroll_total"]) + float(exit_scroll_by_session[session_key])
-                entry["scroll_count"] = int(entry["scroll_count"]) + 1
 
         click_paths = []
         for sequence, entry in click_path_map.items():
-            avg_scroll = (entry["scroll_total"] / entry["scroll_count"]) if entry["scroll_count"] else 0
             click_paths.append(
                 {
                     "metadata__click_path": sequence,
                     "count": entry["count"],
-                    "sessions": len(entry["sessions"]),
-                    "avg_scroll": avg_scroll,
-                    "avg_scroll_label": f"{round(avg_scroll):.0f}%",
                 }
             )
         click_paths.sort(key=lambda r: r.get("count", 0), reverse=True)
