@@ -1366,6 +1366,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
         for row in top_pages:
             row["avg_duration_label"] = self._format_ms(row.get("avg_duration") or 0)
+            row["page_title"] = _path_to_title(row.get("path") or "")
 
         top_clicks_exclude = [
             "menu_toggle",
