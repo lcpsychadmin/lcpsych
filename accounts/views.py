@@ -1084,6 +1084,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         ] + [
             {"category": "Email", **row} for row in email_cta_clicks
         ]
+        for row in cta_clicks_combined:
+            row["page_title"] = _path_to_title(row.get("path") or "")
         cta_clicks_combined.sort(key=lambda r: r.get("count", 0), reverse=True)
 
         weekday_map: dict[int, dict[str, int | str]] = {}
