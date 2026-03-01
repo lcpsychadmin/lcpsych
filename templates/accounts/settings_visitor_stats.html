@@ -1097,6 +1097,21 @@
     const list = document.createElement('div');
     list.className = 'space-y-4 text-sm';
 
+    const eventTitle = (evt) => {
+      if (!evt) return '';
+      if (evt.event_type === 'hover_intent') return 'Hover intent';
+      const raw = evt.event_type || '';
+      return raw.replace(/_/g, ' ');
+    };
+
+    const eventMetaDetail = (evt) => {
+      if (!evt || evt.event_type !== 'hover_intent') return '';
+      const duration = evt.duration_ms ? `Hover duration: ${fmtDuration(evt.duration_ms)}` : '';
+      const target = (evt.metadata && evt.metadata.target) ? `Target: ${evt.metadata.target}` : '';
+      const parts = [duration, target].filter(Boolean).join(' • ');
+      return parts ? `<div class="text-xs text-slate-500">${parts}</div>` : '';
+    };
+
     pages.forEach((page, idx) => {
       const wrapper = document.createElement('div');
       wrapper.className = `session-page-card rounded-xl overflow-hidden ${page.is_current ? 'is-current' : ''}`;
@@ -1145,8 +1160,9 @@
           const row = document.createElement('div');
           row.className = 'p-3 rounded-lg bg-slate-50 border border-slate-200';
           row.innerHTML = `
-            <div class="font-semibold text-[#0f3f46]">${evt.event_type} • ${fmtAgo(evt.created)}</div>
+            <div class="font-semibold text-[#0f3f46]">${eventTitle(evt)} • ${fmtAgo(evt.created)}</div>
             ${evt.label ? `<div class="text-slate-600">${evt.label}</div>` : ''}
+            ${eventMetaDetail(evt)}
             ${evt.page_title || evt.path ? `<div class="text-xs text-slate-500">${evt.page_title || evt.path}</div>` : ''}
           `;
           body.appendChild(row);
