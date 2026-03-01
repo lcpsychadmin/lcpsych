@@ -39,6 +39,13 @@
 .session-modal-btn:focus-visible { outline: 2px solid #92DCE5; outline-offset: 2px; }
 .page-events-body { padding-top: 16px; }
 
+.update-range-btn { background: #1b5c64 !important; border: 1px solid #1b5c64 !important; color: #fff !important; box-shadow: 0 8px 20px rgba(12, 50, 55, 0.15); }
+.update-range-btn:hover { background: #0f3f46 !important; border-color: #0f3f46 !important; color: #fff !important; }
+.update-range-btn:focus-visible { outline: 2px solid #92DCE5; outline-offset: 2px; }
+.refresh-live-btn { background: #fff !important; color: #0f3f46 !important; border: 1px solid #cbd5e1 !important; box-shadow: 0 6px 16px rgba(12, 50, 55, 0.08); }
+.refresh-live-btn:hover { background: #EAF7F1 !important; color: #0f3f46 !important; border-color: #3C9C64 !important; }
+.refresh-live-btn:focus-visible { outline: 2px solid #92DCE5; outline-offset: 2px; }
+
 .stats-page { overflow-x: hidden; }
 
 .session-row-left { display: flex; flex-direction: column; row-gap: 6px; text-align: left; flex: 1 1 auto; }
@@ -119,7 +126,7 @@
               <div class="flex-1 min-w-[200px] text-sm text-slate-600">
                 <span>Select up to the past 365 days. Default is last 30 days.</span>
               </div>
-              <button type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#3C9C64] text-white font-semibold hover:bg-[#92DCE5] hover:text-[#005F6B] transition-colors">Update range</button>
+              <button type="submit" class="update-range-btn inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold transition-colors">Update range</button>
             </form>
           </div>
 
@@ -131,7 +138,7 @@
               </div>
               <div class="flex items-center gap-2 text-sm text-slate-700">
                 <span class="badge-muted" id="live-count-badge">0 active</span>
-                <button id="refresh-live" type="button" class="px-3 py-2 rounded-lg border border-slate-300 text-[#0f3f46] font-semibold bg-white hover:border-[#3C9C64] hover:text-[#0f3f46] hover:bg-[#EAF7F1] transition-colors">Refresh now</button>
+                <button id="refresh-live" type="button" class="refresh-live-btn px-3 py-2 rounded-lg font-semibold transition-colors">Refresh now</button>
               </div>
             </div>
             <div class="table-scroll">
