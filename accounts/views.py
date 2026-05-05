@@ -2187,6 +2187,27 @@ class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):
             form = ServiceForm(instance=editing)
         return render(request, self.template_name, self._context(form=form, editing=editing))
 
+    def post(self, request: HttpRequest) -> HttpResponse:
+        action = request.POST.get("action", "save")
+
+        if action == "delete":
+            service = get_object_or_404(Service, pk=request.POST.get("object_id"))
+            title = service.title
+            service.delete()
+            messages.success(request, f"Service '{title}' deleted.")
+            return redirect("accounts:services")
+
+        object_id = request.POST.get("object_id")
+        editing = get_object_or_404(Service, pk=object_id) if object_id else None
+        form = ServiceForm(request.POST, request.FILES, instance=editing)
+        if form.is_valid():
+            service = form.save()
+            verb = "updated" if editing else "created"
+            messages.success(request, f"Service '{service.title}' {verb}.")
+            return redirect("accounts:services")
+
+        return render(request, self.template_name, self._context(form=form, editing=editing))
+
 
 class ManageSEOSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "accounts/manage_seo.html"
