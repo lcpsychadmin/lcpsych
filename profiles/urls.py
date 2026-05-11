@@ -10,12 +10,6 @@ urlpatterns = [
     path("therapists/", views.profiles_list, name="profile_list"),
     path("therapists/edit/", views.profile_edit, name="profile_edit"),
     path("therapists/<slug:slug>/", views.profile_detail, name="profile_detail"),
-    # Intersectional programmatic SEO pages
-    path(
-        "therapists/<slug:therapist_slug>/services/<slug:service_slug>/",
-        views.therapist_service_page,
-        name="therapist_service",
-    ),
     # Hierarchy: state / county-or-city / city-under-county
     path(
         "therapists/<slug:therapist_slug>/<slug:state_slug>/",

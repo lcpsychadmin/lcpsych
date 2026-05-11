@@ -365,7 +365,7 @@
       <div class="geo-carousel-track flex gap-6 overflow-x-auto scroll-smooth pb-4" style="scroll-snap-type:x mandatory;">
         {% for svc in all_services %}
         <div class="geo-carousel-item" style="scroll-snap-align:start;">
-          <a href="{% url 'profiles:therapist_service' therapist_slug=profile.slug service_slug=svc.slug %}" class="group flex flex-col h-full rounded-lg bg-white shadow-sm hover:shadow-md transition overflow-hidden no-underline">
+          <div class="flex flex-col h-full rounded-lg bg-white shadow-sm overflow-hidden">
             {% if svc.image_url %}
               <div class="h-40 w-full bg-cover bg-center" style="background-image: url('{{ svc.image_url|escape }}');"></div>
             {% endif %}
@@ -374,11 +374,8 @@
               {% if svc.excerpt %}
                 <div class="mt-3 text-sm text-slate-700 line-clamp-5">{{ svc.excerpt|safe }}</div>
               {% endif %}
-              <div class="mt-auto pt-4">
-                <span class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-white" style="background:#3C9C64;">Learn more</span>
-              </div>
             </div>
-          </a>
+          </div>
         </div>
         {% endfor %}
       </div>

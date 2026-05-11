@@ -102,9 +102,6 @@
   {# ── Hero ──────────────────────────────────────────────── #}
   <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-0">
     <div class="relative max-w-6xl mx-auto px-4 pt-16 pb-24 flex flex-col items-center text-center gap-5">
-      <div class="w-full text-left">
-        <div class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">{{ office.name }}</div>
-      </div>
       <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white m-0 max-w-3xl">{{ office.display_heading }}</h1>
       {% if office.full_address %}
         <p class="text-lg text-white/85 m-0">{{ office.full_address|linebreaksbr }}</p>
@@ -316,8 +313,7 @@
   </section>
   {% endif %}
 
-  {# ── Areas served ──────────────────────────────────────── #}
-  {% if areas.states.exists or areas.counties.exists or areas.cities.exists %}
+  {# ── Helpful links ─────────────────────────────────────── #}
   <section class="relative z-20 pt-14 md:pt-16 pb-12 md:pb-14" style="background:#92DCE5;">
     {% if therapists or services %}
     <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
@@ -335,44 +331,68 @@
     </div>
     {% endif %}
     <div class="max-w-6xl mx-auto px-4">
-      <h2 class="text-2xl font-bold text-[#04606B] mb-8 m-0">Areas served from this office</h2>
+      <h2 class="text-3xl font-bold m-0" style="color:#04606B; margin-bottom:3rem;">Explore L+C Psychological Services</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-      {% if areas.states %}
-      <div class="mb-8">
-        <h3 class="text-sm font-semibold text-[#04606B] uppercase tracking-wider border-b-2 border-[#04606B] pb-2 mb-4">States</h3>
-        <div class="flex flex-wrap gap-2">
-          {% for state in areas.states %}
-            <a href="/areas-served/{{ state.slug }}/" class="inline-flex rounded-full border border-[#04606B]/20 bg-white px-4 py-1.5 text-sm text-[#04606B] font-medium hover:bg-[#04606B] hover:text-white hover:border-transparent transition-colors">{{ state.name }}</a>
-          {% endfor %}
-        </div>
+        {# About Us #}
+        <a href="/about-us/" class="group flex flex-col items-center text-center gap-5 rounded-xl bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <span style="display:flex;width:88px;height:88px;flex-shrink:0;align-items:center;justify-content:center;border-radius:50%;background:#04606B;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 0 0-4-4h-1M9 20H4v-2a4 4 0 0 1 4-4h1m4-4a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"/>
+            </svg>
+          </span>
+          <div>
+            <p class="font-bold text-gray-900 text-lg mb-2 m-0">About Us</p>
+            <p class="text-base text-gray-500 leading-snug m-0">Meet our team of dedicated clinicians and learn what drives our approach to care.</p>
+          </div>
+          <span class="text-base font-semibold group-hover:underline mt-auto" style="color:#04606B;">Learn more →</span>
+        </a>
+
+        {# Blog #}
+        <a href="/blog/" class="group flex flex-col items-center text-center gap-5 rounded-xl bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <span style="display:flex;width:88px;height:88px;flex-shrink:0;align-items:center;justify-content:center;border-radius:50%;background:#04606B;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
+          </span>
+          <div>
+            <p class="font-bold text-gray-900 text-lg mb-2 m-0">Blog</p>
+            <p class="text-base text-gray-500 leading-snug m-0">Resources and insights on mental health, therapy, and well-being from our clinicians.</p>
+          </div>
+          <span class="text-base font-semibold group-hover:underline mt-auto" style="color:#04606B;">Read articles →</span>
+        </a>
+
+        {# Insurance #}
+        <a href="/insurance/" class="group flex flex-col items-center text-center gap-5 rounded-xl bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <span style="display:flex;width:88px;height:88px;flex-shrink:0;align-items:center;justify-content:center;border-radius:50%;background:#04606B;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </span>
+          <div>
+            <p class="font-bold text-gray-900 text-lg mb-2 m-0">Insurance</p>
+            <p class="text-base text-gray-500 leading-snug m-0">See which plans we accept and how to verify your coverage before your first visit.</p>
+          </div>
+          <span class="text-base font-semibold group-hover:underline mt-auto" style="color:#04606B;">Check coverage →</span>
+        </a>
+
+        {# FAQ #}
+        <a href="/faq/" class="group flex flex-col items-center text-center gap-5 rounded-xl bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <span style="display:flex;width:88px;height:88px;flex-shrink:0;align-items:center;justify-content:center;border-radius:50%;background:#04606B;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1.5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+            </svg>
+          </span>
+          <div>
+            <p class="font-bold text-gray-900 text-lg mb-2 m-0">FAQ</p>
+            <p class="text-base text-gray-500 leading-snug m-0">Answers to common questions about starting therapy, what to expect, and how we work.</p>
+          </div>
+          <span class="text-base font-semibold group-hover:underline mt-auto" style="color:#04606B;">View FAQs →</span>
+        </a>
+
       </div>
-      {% endif %}
-
-      {% if areas.counties %}
-      <div class="mb-8">
-        <h3 class="text-sm font-semibold text-[#04606B] uppercase tracking-wider border-b-2 border-[#04606B] pb-2 mb-4">Counties</h3>
-        <div class="flex flex-wrap gap-2">
-          {% for loc in areas.counties %}
-            <a href="{{ loc.get_url_path }}" class="inline-flex rounded-full border border-[#04606B]/20 bg-white px-4 py-1.5 text-sm text-[#04606B] font-medium hover:bg-[#04606B] hover:text-white hover:border-transparent transition-colors">{{ loc.name }}, {{ loc.state.abbreviation }}</a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-      {% if areas.cities %}
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-[#04606B] uppercase tracking-wider border-b-2 border-[#04606B] pb-2 mb-4">Cities</h3>
-        <div class="flex flex-wrap gap-2">
-          {% for loc in areas.cities %}
-            <a href="{{ loc.get_url_path }}" class="inline-flex rounded-full border border-[#04606B]/20 bg-white px-4 py-1.5 text-sm text-[#04606B] font-medium hover:bg-[#04606B] hover:text-white hover:border-transparent transition-colors">{{ loc.name }}, {{ loc.state.abbreviation }}</a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
     </div>
   </section>
-  {% endif %}
 
   {# ── Back link + CTA ────────────────────────────────────── #}
   <section class="relative z-30 pt-16 pb-10 md:pt-20 md:pb-12" style="background:#04606B;">

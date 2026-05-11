@@ -21,7 +21,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.views.static import serve
 from core.sitemaps import StaticViewSitemap, PageSitemap, PostSitemap
 from geo.sitemaps import GeoStateSitemap, GeoCitySitemap, GeoCountySitemap, GeoStateServiceSitemap, GeoLocationServiceSitemap, GeoRegionSitemap, GeoRegionServiceSitemap, GeoRegionTherapistSitemap
-from profiles.sitemaps import TherapistSitemap, TherapistServiceSitemap, TherapistStateSitemap, TherapistAreaSitemap
+from profiles.sitemaps import TherapistSitemap, TherapistStateSitemap, TherapistAreaSitemap
 from core import views as core_views
 from accounts.views import ManageTherapistsView
 from django.conf import settings
@@ -48,7 +48,6 @@ urlpatterns = [
             'geo_region_services': GeoRegionServiceSitemap,
             'geo_region_therapists': GeoRegionTherapistSitemap,
             'therapists': TherapistSitemap,
-            'therapist_services': TherapistServiceSitemap,
             'therapist_states': TherapistStateSitemap,
             'therapist_areas': TherapistAreaSitemap,
         }

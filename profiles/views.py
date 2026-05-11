@@ -180,40 +180,6 @@ def profiles_list(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
-@user_passes_test(is_therapist_or_admin)
-def therapist_service_page(request: HttpRequest, therapist_slug: str, service_slug: str) -> HttpResponse:
-    """
-    Intersectional page: a specific therapist offering a specific service.
-    URL: /therapists/<therapist_slug>/services/<service_slug>/
-    Returns 404 if therapist is not published, service doesn't exist, or therapist doesn't offer the service.
-    """
-    from core.models import Service
-    from geo.utils.availability import get_locations_for_therapist
-
-    profile = get_object_or_404(TherapistProfile, slug=therapist_slug, is_published=True)
-    service = get_object_or_404(Service, slug=service_slug)
-
-    if not profile.services.filter(pk=service.pk).exists():
-        from django.http import Http404
-        raise Http404
-
-    locations = get_locations_for_therapist(profile).select_related("state")
-    all_services = profile.services.all()
-
-    return render(request, "profiles/therapist_service.html", {
-        "profile": profile,
-        "service": service,
-        "locations": locations,
-        "all_services": all_services,
-        "seo_title": f"{profile.display_name} | {service.title} Therapist",
-        "seo_description": (
-            f"{profile.display_name} provides {service.title.lower()} therapy at "
-            f"L+C Psychological Services. Schedule an appointment today."
-        ),
-    })
-
-
 def _build_scoped_sections(locations, therapist_slug, current_location, current_state):
     """
     Build location sections scoped to the current page area:
