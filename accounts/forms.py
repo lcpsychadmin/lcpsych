@@ -5,6 +5,7 @@ from ckeditor.widgets import CKEditorWidget
 
 from core.models import (
     Service,
+    ServiceContentBlock,
     PaymentFeeRow,
     InsuranceProvider,
     InsuranceExclusion,
@@ -42,6 +43,38 @@ class LoginForm(AuthenticationForm):
         self.fields["username"].label = "Email/Username"
 
 
+class ServiceContentBlockForm(forms.ModelForm):
+    """Form for a single ServiceContentBlock.
+
+    Sets initial['order'] = 0 so that an empty extra form row whose order
+    widget renders as 0 is NOT considered 'changed', preventing spurious
+    required-field validation errors when the user saves without filling in
+    any blocks.
+    """
+
+    class Meta:
+        model = ServiceContentBlock
+        fields = ["order", "heading", "body"]
+        widgets = {
+            "order": forms.NumberInput(attrs={"class": "input-basic"}),
+            "heading": forms.TextInput(attrs={"class": "input-basic"}),
+            "body": forms.Textarea(attrs={"rows": 4, "class": "input-basic"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial.setdefault("order", 0)
+
+
+ServiceContentBlockFormSet = forms.inlineformset_factory(
+    Service,
+    ServiceContentBlock,
+    form=ServiceContentBlockForm,
+    extra=1,
+    can_delete=True,
+)
+
+
 class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
@@ -53,15 +86,12 @@ class ServiceForm(forms.ModelForm):
             "excerpt",
             "cta_label",
             "background_image",
-            "image_url",
             "hero_heading",
             "hero_subheading",
-            "body",
         ]
         widgets = {
             "excerpt": forms.Textarea(attrs={"rows": 3}),
             "hero_subheading": forms.Textarea(attrs={"rows": 3}),
-            "body": CKEditorWidget(),
         }
 
     def __init__(self, *args, **kwargs):
@@ -69,21 +99,13 @@ class ServiceForm(forms.ModelForm):
         self.fields["slug"].required = False
         self.fields["slug"].help_text = "Optional. Leave blank to auto-generate from the title."
         self.fields["cta_label"].help_text = "Button label shown on the homepage card."
-        self.fields["image_url"].label = "Background image URL"
-        self.fields["image_url"].help_text = (
-            "Use this if you don't have a file to upload. Accepts an absolute URL."
-        )
         self.fields["background_image"].required = False
         self.fields["background_image"].label = "Background image"
         self.fields["hero_heading"].label = "Hero heading"
         self.fields["hero_heading"].help_text = "Defaults to the service title if left blank."
         self.fields["hero_subheading"].label = "Hero introduction"
         self.fields["hero_subheading"].help_text = "Defaults to the excerpt if left blank."
-        self.fields["body"].label = "Detail page content"
-
         for name, field in self.fields.items():
-            if name == "body":
-                continue
             existing = field.widget.attrs.get("class", "").strip()
             if "input-basic" not in existing.split():
                 field.widget.attrs["class"] = f"{existing} input-basic".strip()

@@ -27,6 +27,7 @@ from .forms import (
     LoginForm,
     InviteUserForm,
     ServiceForm,
+    ServiceContentBlockFormSet,
     PaymentFeeRowForm,
     InsuranceProviderForm,
     InsuranceExclusionForm,
@@ -3074,12 +3075,13 @@ class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return is_admin(self.request.user)
 
-    def _context(self, form: ServiceForm | None = None, editing: Service | None = None) -> dict:
+    def _context(self, form: ServiceForm | None = None, editing: Service | None = None, block_formset=None) -> dict:
         services = Service.objects.order_by("order", "title")
         return {
             "form": form or ServiceForm(),
             "editing": editing,
             "services": services,
+            "block_formset": block_formset or ServiceContentBlockFormSet(instance=editing),
             "active_page": "services",
         }
 
@@ -3107,11 +3109,15 @@ class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):
         form = ServiceForm(request.POST, request.FILES, instance=editing)
         if form.is_valid():
             service = form.save()
+            block_formset = ServiceContentBlockFormSet(request.POST, instance=service)
+            if block_formset.is_valid():
+                block_formset.save()
             verb = "updated" if editing else "created"
             messages.success(request, f"Service '{service.title}' {verb}.")
             return redirect("accounts:services")
 
-        return render(request, self.template_name, self._context(form=form, editing=editing))
+        block_formset = ServiceContentBlockFormSet(request.POST, instance=editing)
+        return render(request, self.template_name, self._context(form=form, editing=editing, block_formset=block_formset))
 
 
 class ManageSEOSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):

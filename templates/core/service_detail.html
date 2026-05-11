@@ -116,6 +116,11 @@
   padding-top: 48px;
   border-top: 1px solid rgba(4, 96, 107, 0.18);
 }
+.service-content__block:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
 .service-content__block-heading {
   font-family: "Poppins", sans-serif;
   font-size: clamp(20px, 2.5vw, 26px);
@@ -532,9 +537,11 @@
   </section>
   <section class="service-content" id="service-details">
     <div class="service-content__inner">
+      {% if not content_blocks %}
       <div class="service-content__body">
         {{ body_html|safe }}
       </div>
+      {% endif %}
       {% for block in content_blocks %}
       <div class="service-content__block">
         <h2 class="service-content__block-heading">{{ block.heading }}</h2>

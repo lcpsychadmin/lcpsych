@@ -233,12 +233,13 @@ class HeroSettingsAdmin(admin.ModelAdmin):
         return False
 
 
-class ServiceContentBlockInline(admin.TabularInline):
+class ServiceContentBlockInline(admin.StackedInline):
     model = ServiceContentBlock
     extra = 1
     fields = ["order", "heading", "body"]
     verbose_name = "Content Block"
-    verbose_name_plural = "Content Blocks"
+    verbose_name_plural = "Detail Page Content Blocks"
+    show_change_link = False
 
 
 @admin.register(Service)
@@ -246,9 +247,15 @@ class ServiceAdmin(admin.ModelAdmin):
     class ServiceAdminForm(forms.ModelForm):
         class Meta:
             model = Service
-            fields = ['title', 'slug', 'excerpt', 'image_url', 'page', 'order', 'status']
+            fields = [
+                'title', 'slug', 'status', 'order',
+                'excerpt', 'image_url', 'background_image',
+                'hero_heading', 'hero_subheading', 'cta_label',
+                'page',
+            ]
             widgets = {
                 'excerpt': CKEditorWidget(),
+                'hero_subheading': forms.Textarea(attrs={'rows': 3}),
             }
 
     form = ServiceAdminForm
@@ -261,10 +268,15 @@ class ServiceAdmin(admin.ModelAdmin):
 
     readonly_fields = ("linked_page", "page_edit_link", "page_excerpt_preview", "page_content_preview")
     fieldsets = (
-        ("Service", {
-            'fields': ("title", "slug", "status", "order", "image_url", "excerpt"),
+        ("Service Card", {
+            'fields': ("title", "slug", "status", "order", "excerpt", "image_url", "background_image", "cta_label"),
         }),
-        ("Linked Page", {
+        ("Detail Page Hero", {
+            'fields': ("hero_heading", "hero_subheading"),
+            'description': "Overrides the hero heading/intro shown at the top of the service detail page. Leave blank to inherit from the card title/excerpt.",
+        }),
+        ("Linked Page (legacy)", {
+            'classes': ('collapse',),
             'fields': ("page", "linked_page", "page_edit_link", "page_excerpt_preview", "page_content_preview"),
         }),
     )

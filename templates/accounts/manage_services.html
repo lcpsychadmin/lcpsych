@@ -45,14 +45,26 @@
 
           {# ── Form card ── #}
           <div class="card-surface p-6 md:p-8">
-            <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">{% if editing %}Edit: {{ editing.title }}{% else %}Add a service{% endif %}</h2>
-            <p class="text-slate-600 mt-2 mb-0">Services appear as cards on the homepage and each has its own detail page.</p>
+            {% if editing %}
+              <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Edit: {{ editing.title }}</h2>
+              <p class="text-slate-600 mt-2 mb-0">Services appear as cards on the homepage and each has its own detail page.</p>
+            {% else %}
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Services</h2>
+                  <p class="text-slate-600 mt-2 mb-0">Services appear as cards on the homepage and each has its own detail page.</p>
+                </div>
+                <button type="button" id="show-add-form-btn" class="btn-primary" style="white-space:nowrap;">+ Add service</button>
+              </div>
+            {% endif %}
 
             {% if form.non_field_errors %}
               <div class="mt-4 text-sm text-[#b91c1c]">{{ form.non_field_errors }}</div>
             {% endif %}
 
-            <form method="post" enctype="multipart/form-data" class="mt-6 space-y-6">
+            <div id="add-service-form-wrap" {% if not editing and not form.errors %}style="display:none;"{% endif %}>
+            {% if not editing %}<hr class="section-divider">{% endif %}
+            <form method="post" enctype="multipart/form-data" class="mt-{% if editing %}6{% else %}0{% endif %} space-y-6">
               {% csrf_token %}
               {% if editing %}
                 <input type="hidden" name="object_id" value="{{ editing.id }}">
@@ -122,34 +134,57 @@
               <hr class="section-divider">
 
               {# Row 4: Background image #}
-              <div class="grid md:grid-cols-2 gap-5">
-                <div>
-                  <label class="field-label" for="{{ form.background_image.id_for_label }}">Background image</label>
-                  {{ form.background_image }}
-                  {% if form.background_image.errors %}<div class="error-text">{{ form.background_image.errors|striptags }}</div>{% endif %}
-                  {% if editing and editing.background_image %}
-                    <p class="help-text">Upload a new file to replace the current image.</p>
-                    <div class="thumbnail mt-2" style="background-image: url('{{ editing.background_image.url }}');"></div>
-                  {% endif %}
-                </div>
-                <div>
-                  <label class="field-label" for="{{ form.image_url.id_for_label }}">Background image URL</label>
-                  {{ form.image_url }}
-                  {% if form.image_url.errors %}<div class="error-text">{{ form.image_url.errors|striptags }}</div>{% endif %}
-                  <p class="help-text">{{ form.image_url.help_text }}</p>
-                  {% if editing and editing.image_url and not editing.background_image %}
-                    <div class="thumbnail mt-2" style="background-image: url('{{ editing.image_url }}');"></div>
-                  {% endif %}
-                </div>
+              <div>
+                <label class="field-label" for="{{ form.background_image.id_for_label }}">Background image</label>
+                {{ form.background_image }}
+                {% if form.background_image.errors %}<div class="error-text">{{ form.background_image.errors|striptags }}</div>{% endif %}
+                {% if editing and editing.card_background_url %}
+                  <p class="help-text">Upload a new file to replace the current image.</p>
+                  <div class="thumbnail mt-2" id="bg-thumb" style="background-image: url('{{ editing.card_background_url|escape }}');"></div>
+                {% else %}
+                  <div class="thumbnail mt-2" id="bg-thumb" style="display:none;"></div>
+                {% endif %}
               </div>
 
               <hr class="section-divider">
 
-              {# Row 5: Rich body content #}
+              {# Row 5: Detail page content blocks #}
               <div>
-                <label class="field-label" for="{{ form.body.id_for_label }}">Detail page content</label>
-                {{ form.body }}
-                {% if form.body.errors %}<div class="error-text">{{ form.body.errors|striptags }}</div>{% endif %}
+                <h3 class="text-lg font-semibold text-[#0f3f46] mb-1">Detail page content</h3>
+                <p class="help-text mb-4">Add sections that appear on this service's detail page. Each block has a heading and body text.</p>
+
+                {{ block_formset.management_form }}
+                <div id="block-formset-container" class="space-y-4">
+                  {% for bf in block_formset %}
+                    <div class="block-form-row border border-[rgba(146,220,229,0.5)] rounded-xl p-4 space-y-3 bg-slate-50/60">
+                      {{ bf.id }}
+                      <div class="grid md:grid-cols-[80px_1fr] gap-3 items-start">
+                        <div>
+                          <label class="field-label text-sm" for="{{ bf.order.id_for_label }}">Order</label>
+                          {{ bf.order }}
+                          {% if bf.order.errors %}<div class="error-text">{{ bf.order.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div>
+                          <label class="field-label text-sm" for="{{ bf.heading.id_for_label }}">Heading</label>
+                          {{ bf.heading }}
+                          {% if bf.heading.errors %}<div class="error-text">{{ bf.heading.errors|striptags }}</div>{% endif %}
+                        </div>
+                      </div>
+                      <div>
+                        <label class="field-label text-sm" for="{{ bf.body.id_for_label }}">Body text</label>
+                        {{ bf.body }}
+                        {% if bf.body.errors %}<div class="error-text">{{ bf.body.errors|striptags }}</div>{% endif %}
+                      </div>
+                      {% if block_formset.can_delete %}
+                        <div class="flex items-center gap-2 pt-1">
+                          {{ bf.DELETE }}
+                          <label for="{{ bf.DELETE.id_for_label }}" class="text-sm text-[#b91c1c] font-medium cursor-pointer">Delete this block</label>
+                        </div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+                <button type="button" id="add-block-btn" class="action-btn mt-3">+ Add another block</button>
               </div>
 
               <div class="flex flex-wrap items-center gap-3 pt-2">
@@ -157,9 +192,12 @@
                 {% if editing %}
                   <a href="{{ editing.get_absolute_url }}" class="action-btn" target="_blank" rel="noopener">Preview live page →</a>
                   <a href="{% url 'accounts:services' %}" class="action-btn">Cancel</a>
+                {% else %}
+                  <button type="button" id="cancel-add-btn" class="action-btn">Cancel</button>
                 {% endif %}
               </div>
             </form>
+            </div>{# /add-service-form-wrap #}
           </div>
 
           {# ── Existing services table ── #}
@@ -170,6 +208,7 @@
                 <table class="table-card min-w-full">
                   <thead>
                     <tr>
+                      <th>Image</th>
                       <th>Title</th>
                       <th>Status</th>
                       <th class="no-wrap">Order</th>
@@ -181,6 +220,15 @@
                   <tbody>
                     {% for service in services %}
                       <tr>
+                        <td>
+                          {% if service.card_background_url %}
+                            <div style="width:56px;height:40px;border-radius:6px;background-size:cover;background-position:center;background-image:url('{{ service.card_background_url|escape }}')"></div>
+                          {% else %}
+                            <div style="width:56px;height:40px;border-radius:6px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;">
+                              <svg width="18" height="18" fill="none" stroke="#94a3b8" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+                            </div>
+                          {% endif %}
+                        </td>
                         <td class="font-semibold text-[#0f3f46]">{{ service.title }}</td>
                         <td><span class="status-pill">{{ service.get_status_display }}</span></td>
                         <td>{{ service.order }}</td>
@@ -218,3 +266,75 @@
 {% block before_footer %}
   <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
 {% endblock %}
+
+{% block body_extra %}
+<script>
+(function () {
+  // Live background image preview
+  const bgInput = document.getElementById('{{ form.background_image.id_for_label }}');
+  const bgThumb = document.getElementById('bg-thumb');
+  if (bgInput && bgThumb) {
+    bgInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        bgThumb.style.backgroundImage = 'url(' + e.target.result + ')';
+        bgThumb.style.display = '';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Show/hide add form
+  const showBtn = document.getElementById('show-add-form-btn');
+  const cancelBtn = document.getElementById('cancel-add-btn');
+  const formWrap = document.getElementById('add-service-form-wrap');
+  if (showBtn && formWrap) {
+    showBtn.addEventListener('click', function () {
+      formWrap.style.display = '';
+      showBtn.style.display = 'none';
+    });
+  }
+  if (cancelBtn && formWrap) {
+    cancelBtn.addEventListener('click', function () {
+      formWrap.style.display = 'none';
+      if (showBtn) showBtn.style.display = '';
+    });
+  }
+  const container = document.getElementById('block-formset-container');
+  const addBtn = document.getElementById('add-block-btn');
+  if (!container || !addBtn) return;
+
+  const totalFormsInput = document.querySelector('[name$="-TOTAL_FORMS"]');
+  if (!totalFormsInput) return;
+
+  addBtn.addEventListener('click', function () {
+    const formCount = parseInt(totalFormsInput.value, 10);
+    // Clone the last form row (or first if none) and clear its values
+    const rows = container.querySelectorAll('.block-form-row');
+    const template = rows.length ? rows[rows.length - 1].cloneNode(true) : rows[0].cloneNode(true);
+
+    // Update all name/id/for attributes to use the new index
+    template.querySelectorAll('[name],[id],[for]').forEach(el => {
+      ['name', 'id', 'for'].forEach(attr => {
+        const val = el.getAttribute(attr);
+        if (val) {
+          el.setAttribute(attr, val.replace(/-\d+-/, `-${formCount}-`));
+        }
+      });
+      // Clear values
+      if (el.tagName === 'INPUT' && el.type !== 'hidden' && el.type !== 'checkbox') el.value = '';
+      if (el.tagName === 'TEXTAREA') el.value = '';
+      if (el.tagName === 'INPUT' && el.type === 'checkbox') el.checked = false;
+    });
+    // Clear hidden id field
+    const idInput = template.querySelector('[name$="-id"]');
+    if (idInput) idInput.value = '';
+
+    container.appendChild(template);
+    totalFormsInput.value = formCount + 1;
+  });
+})();
+</script>
+{% endblock body_extra %}
