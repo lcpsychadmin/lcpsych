@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Homepage Hero | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.btn-primary { background: #3C9C64; color: #fff; border-radius: 0.75rem; padding: 0.65rem 1.6rem; font-weight: 600; border: 0; transition: background 0.2s ease, color 0.2s ease; }
+.btn-primary:hover,
+.btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
+.action-btn { border-radius: 0.75rem; border: 1px solid rgba(15, 63, 70, 0.14); padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 600; color: #0f3f46; background: #fff; transition: all 0.2s ease; }
+.action-btn:hover,
+.action-btn:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
+.input-basic { width: 100%; padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 1.5px solid rgba(146, 220, 229, 0.7); background: rgba(255, 255, 255, 0.96); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.input-basic:focus { border-color: #92DCE5; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.55); outline: none; }
+.table-card { width: 100%; border-collapse: collapse; }
+.table-card td, .table-card th { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(15, 63, 70, 0.12); text-align: left; }
+.table-card th { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(15, 63, 70, 0.68); }
+.pill { display: inline-flex; padding: 0.2rem 0.65rem; border-radius: 999px; background: rgba(146,220,229,0.28); color: #0f3f46; font-weight: 600; font-size: 0.8rem; }
+.text-muted { color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Homepage Hero</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Edit the heading, subheading, background image, and content blocks for the homepage hero section.</p>
+    </div>
+  </section>
+
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="elementor-1393">
+      <div class="elementor-element elementor-element-a80adf4">
+        <div class="e-con-inner">
+          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+              <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3C267.7,18.8,269.7,18,269.6,18z"/>
+            </svg>
+          </div>
+          <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+              <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3C267.7,18.8,269.7,18,269.6,18z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" %}
+
+        <div class="space-y-6">
+
+          {% if messages %}
+          <div class="space-y-2">
+            {% for message in messages %}
+            <div class="rounded-xl px-4 py-3 text-sm font-medium {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% else %}bg-red-50 text-red-800 border border-red-200{% endif %}">
+              {{ message }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# --- Hero text & image --- #}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Hero Text &amp; Image</h2>
+            <p class="text-slate-600 text-sm mb-6">These values appear in the large banner at the top of the homepage.</p>
+
+            <form method="post" enctype="multipart/form-data" class="space-y-5">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="hero_save">
+
+              <div>
+                <label class="block text-sm font-semibold mb-1" for="{{ form.heading.id_for_label }}">Heading</label>
+                {{ form.heading }}
+                {% if form.heading.errors %}<p class="text-red-600 text-xs mt-1">{{ form.heading.errors|join:", " }}</p>{% endif %}
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-1" for="{{ form.subheading.id_for_label }}">Subheading</label>
+                {{ form.subheading }}
+                {% if form.subheading.errors %}<p class="text-red-600 text-xs mt-1">{{ form.subheading.errors|join:", " }}</p>{% endif %}
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-1" for="{{ form.featured_image.id_for_label }}">Background image</label>
+                {% if hero.featured_image %}
+                <div class="mb-3">
+                  <img src="{{ hero.featured_image.url }}" alt="Current hero background" class="rounded-xl max-h-40 object-cover border border-slate-200">
+                  <p class="text-xs text-slate-500 mt-1">Current image. Upload a new file below to replace it.</p>
+                </div>
+                {% endif %}
+                {{ form.featured_image }}
+                {% if form.featured_image.errors %}<p class="text-red-600 text-xs mt-1">{{ form.featured_image.errors|join:", " }}</p>{% endif %}
+              </div>
+
+              <div class="pt-2">
+                <button type="submit" class="btn-primary">Save hero settings</button>
+              </div>
+            </form>
+          </div>
+
+          {# --- Content blocks --- #}
+          <div class="card-surface p-6 md:p-8">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Content Blocks</h2>
+              {% if editing_block %}<span class="pill">Editing block</span>{% endif %}
+            </div>
+            <p class="text-slate-600 text-sm mb-6">These blocks appear below the hero image on a white background. Each block has a heading and a paragraph of text.</p>
+
+            <div class="flex flex-col lg:flex-row lg:items-start lg:gap-8">
+
+              {# Add / edit form #}
+              <div class="lg:w-2/5 space-y-4">
+                <h3 class="text-base font-semibold text-[#0f3f46]">{% if editing_block %}Edit block{% else %}Add a block{% endif %}</h3>
+                <form method="post" class="space-y-3">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="block_save">
+                  {% if editing_block %}<input type="hidden" name="object_id" value="{{ editing_block.pk }}">{% endif %}
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Heading</label>
+                    {{ block_form.heading }}
+                    {% if block_form.heading.errors %}<p class="text-red-600 text-xs mt-1">{{ block_form.heading.errors|join:", " }}</p>{% endif %}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Body text</label>
+                    {{ block_form.body }}
+                    {% if block_form.body.errors %}<p class="text-red-600 text-xs mt-1">{{ block_form.body.errors|join:", " }}</p>{% endif %}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Order <span class="font-normal text-slate-500">(lower = first)</span></label>
+                    {{ block_form.order }}
+                    {% if block_form.order.errors %}<p class="text-red-600 text-xs mt-1">{{ block_form.order.errors|join:", " }}</p>{% endif %}
+                  </div>
+                  <div class="flex gap-3 pt-1">
+                    <button type="submit" class="btn-primary">{% if editing_block %}Update block{% else %}Add block{% endif %}</button>
+                    {% if editing_block %}<a href="{% url 'accounts:settings_hero' %}" class="action-btn">Cancel</a>{% endif %}
+                  </div>
+                </form>
+              </div>
+
+              {# Existing blocks table #}
+              <div class="lg:w-3/5 mt-6 lg:mt-0">
+                {% if blocks %}
+                <table class="table-card">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Heading</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for block in blocks %}
+                    <tr>
+                      <td class="text-muted text-sm w-10">{{ block.order }}</td>
+                      <td>
+                        <span class="font-medium text-sm">{{ block.heading }}</span>
+                        <p class="text-muted text-xs mt-0.5 line-clamp-2">{{ block.body|truncatechars:80 }}</p>
+                      </td>
+                      <td class="text-right whitespace-nowrap">
+                        <a href="?edit_block={{ block.pk }}" class="action-btn mr-1">Edit</a>
+                        <form method="post" class="inline" onsubmit="return confirm('Delete this content block?')">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="block_delete">
+                          <input type="hidden" name="object_id" value="{{ block.pk }}">
+                          <button type="submit" class="action-btn text-red-600 hover:bg-red-50">Delete</button>
+                        </form>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-sm">No content blocks yet. Add one using the form.</p>
+                {% endif %}
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}

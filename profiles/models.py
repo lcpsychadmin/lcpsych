@@ -44,6 +44,12 @@ class TherapistProfile(models.Model):
         related_name="therapists",
     )
     client_focuses = models.ManyToManyField(ClientFocus, related_name="therapists", blank=True)
+    locations = models.ManyToManyField(
+        "geo.GeoLocation",
+        related_name="therapists",
+        blank=True,
+        help_text="Office locations where this therapist sees clients.",
+    )
     services = models.ManyToManyField(
         "core.Service",
         related_name="therapists",

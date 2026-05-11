@@ -61,87 +61,16 @@
 
         <div class="space-y-6">
           <div class="card-surface p-6 md:p-8">
-            <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">Contact section</h2>
-            <p class="text-slate-600 text-sm mb-4">Update map, office, hours, and contact details.</p>
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mb-1">Contact section</h2>
+            <p class="text-slate-600 text-sm mb-5">These values power the call, email, and schedule buttons on the homepage contact block.</p>
             <form method="post" class="space-y-4">
               {% csrf_token %}
               <input type="hidden" name="action" value="contact_save">
               <div class="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold mb-1">Section heading</label>
-                  {{ contact_form.heading }}
-                  {{ contact_form.heading.errors }}
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Map embed URL</label>
-                  {{ contact_form.map_embed_url }}
-                  {{ contact_form.map_embed_url.errors }}
-                </div>
-              </div>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Directions URL</label>
-                  {{ contact_form.directions_url }}
-                  {{ contact_form.directions_url.errors }}
-                </div>
-                <div class="flex items-center gap-2 mt-6 md:mt-0">
-                  {{ contact_form.is_active }}
-                  <label for="{{ contact_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ contact_form.is_active.label }}</label>
-                </div>
-              </div>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Office title</label>
-                  {{ contact_form.office_title }}
-                  {{ contact_form.office_title.errors }}
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Office address (one line per row)</label>
-                  {{ contact_form.office_address }}
-                  {{ contact_form.office_address.errors }}
-                </div>
-              </div>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Office hours title</label>
-                  {{ contact_form.office_hours_title }}
-                  {{ contact_form.office_hours_title.errors }}
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Office hours (one per line)</label>
-                  {{ contact_form.office_hours }}
-                  {{ contact_form.office_hours.errors }}
-                </div>
-              </div>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Contact title</label>
-                  {{ contact_form.contact_title }}
-                  {{ contact_form.contact_title.errors }}
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold mb-1">CTA URL</label>
-                  {{ contact_form.cta_url }}
-                  {{ contact_form.cta_url.errors }}
-                </div>
-              </div>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Phone label</label>
-                  {{ contact_form.phone_label }}
-                  {{ contact_form.phone_label.errors }}
-                </div>
-                <div>
                   <label class="block text-sm font-semibold mb-1">Phone number</label>
                   {{ contact_form.phone_number }}
                   {{ contact_form.phone_number.errors }}
-                </div>
-              </div>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Fax label</label>
-                  {{ contact_form.fax_label }}
-                  {{ contact_form.fax_label.errors }}
                 </div>
                 <div>
                   <label class="block text-sm font-semibold mb-1">Fax number</label>
@@ -149,25 +78,22 @@
                   {{ contact_form.fax_number.errors }}
                 </div>
               </div>
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Email label</label>
-                  {{ contact_form.email_label }}
-                  {{ contact_form.email_label.errors }}
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold mb-1">Email address</label>
-                  {{ contact_form.email_address }}
-                  {{ contact_form.email_address.errors }}
-                </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1">Email address <span class="font-normal text-slate-400">(shows as an &ldquo;Email us&rdquo; button in the hero)</span></label>
+                {{ contact_form.email_address }}
+                {{ contact_form.email_address.errors }}
               </div>
               <div class="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold mb-1">CTA label</label>
+                  <label class="block text-sm font-semibold mb-1">Schedule button label</label>
                   {{ contact_form.cta_label }}
                   {{ contact_form.cta_label.errors }}
                 </div>
-                <div aria-hidden="true"></div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Schedule button URL</label>
+                  {{ contact_form.cta_url }}
+                  {{ contact_form.cta_url.errors }}
+                </div>
               </div>
               <button type="submit" class="btn-primary">Save contact section</button>
             </form>

@@ -26,8 +26,12 @@ from .models import (
 	AnalyticsEventType,
 	InsuranceProvider,
 	InsuranceExclusion,
+	HeroSettings,
+	AboutSection,
+	OurPhilosophy,
 )
 from profiles.models import TherapistProfile
+from core.utils.bot_detection import is_bot_ua
 
 
 def _client_ip(request) -> str:
@@ -112,6 +116,9 @@ def analytics_event(request):
 	ip = _client_ip(request)
 	user_agent = (request.META.get("HTTP_USER_AGENT", "") or "")[:1000]
 	geo = _geolocate_ip(ip)
+
+	if is_bot_ua(user_agent):
+		return HttpResponse(status=204)
 
 	blocked_paths = ("/admin", "/accounts/login", "/accounts/logout")
 	if event_type not in {AnalyticsEventType.AUTH_SUCCESS, AnalyticsEventType.AUTH_FAILED}:
@@ -252,7 +259,17 @@ def home(request):
 		InsuranceProvider.objects.filter(is_active=True).order_by('order', 'name', 'id')
 	)
 
-	ctx = {**seo_ctx, 'services': services, 'therapists': therapists, 'accepted_providers': accepted_providers}
+	hero_settings = (
+		HeroSettings.objects
+		.prefetch_related('content_blocks')
+		.filter(pk=1)
+		.first()
+	)
+
+	from core.utils import get_offices
+	home_offices = list(get_offices())
+
+	ctx = {**seo_ctx, 'services': services, 'therapists': therapists, 'accepted_providers': accepted_providers, 'hero_settings': hero_settings, 'home_offices': home_offices}
 	return render(request, 'home.html', ctx)
 
 
@@ -312,6 +329,14 @@ def about_us(request):
 		'Learn how L+C Psychological Services supports clients with compassionate therapy, psychological testing, and a mission built on genuine connection.',
 		'About Us',
 	)
+	context['therapists'] = (
+		TherapistProfile.objects.filter(is_published=True)
+		.order_by('home_order', 'last_name', 'first_name')
+		.prefetch_related('top_services', 'services', 'client_focuses', 'license_type')
+	)[:8]
+	context['hero_settings'] = HeroSettings.get_solo()
+	context['about_section'] = AboutSection.objects.order_by('id').first() or AboutSection()
+	context['philosophy_section'] = OurPhilosophy.objects.order_by('id').first() or OurPhilosophy()
 	return render(request, 'pages/about_us.html', context)
 
 
@@ -339,13 +364,156 @@ def insurance(request):
 
 
 def contact_us(request):
+	from core.utils import get_offices
+	offices = list(get_offices().prefetch_related('therapists', 'geo_states', 'geo_locations'))
 	context = _static_seo_context(
 		'contact-us',
 		'Contact L+C Psychological Services',
-		'Get directions to our Florence, Kentucky office, review hours, and contact L+C Psychological Services by phone, fax, or email.',
+		'Find an L+C Psychological Services office near you. Get directions, office hours, and contact information for each location.',
 		'Contact Us',
 	)
+	context['offices'] = offices
 	return render(request, 'pages/contact_us.html', context)
+
+
+def contact_detail(request, slug: str):
+	from core.utils import get_office_by_slug, get_therapists_for_office, get_services_for_office, get_areas_served_by_office, get_office_schema
+	import json as _json
+	try:
+		office = get_office_by_slug(slug)
+	except Exception:
+		from django.http import Http404
+		raise Http404("Office not found.")
+	therapists = _build_therapist_cards(get_therapists_for_office(office))
+	services = get_services_for_office(office)
+	areas = get_areas_served_by_office(office)
+	schema = get_office_schema(office, request)
+	context = _static_seo_context(
+		f'contact-us/{slug}',
+		f'{office.name} Office | L+C Psychological Services',
+		f'Contact our {office.name} office. Get directions, hours, phone, and schedule an appointment with L+C Psychological Services.',
+		office.display_heading,
+	)
+	context.update({
+		'office': office,
+		'therapists': therapists,
+		'services': services,
+		'areas': areas,
+		'schema_json': _json.dumps(schema, ensure_ascii=False),
+	})
+	return render(request, 'pages/contact_detail.html', context)
+
+
+# ---------------------------------------------------------------------------
+# Telehealth pages
+# ---------------------------------------------------------------------------
+
+def telehealth_page(request):
+	import json as _json
+	from core.utils import (
+		get_telehealth_office,
+		get_therapists_for_telehealth,
+		get_services_for_telehealth,
+		get_telehealth_schema,
+	)
+	try:
+		office = get_telehealth_office()
+	except Exception:
+		raise Http404("Telehealth office not found.")
+	therapists = _build_therapist_cards(get_therapists_for_telehealth(office))
+	services = get_services_for_telehealth(office)
+	schema = get_telehealth_schema(office, request)
+	states = office.geo_states.filter(is_active=True).order_by("name")
+	context = _static_seo_context(
+		'telehealth',
+		'Telehealth Therapy | L+C Psychological Services',
+		'Online therapy available throughout Kentucky, Ohio, and Indiana. Schedule telehealth appointments with licensed therapists at L+C Psychological Services.',
+		'Telehealth Therapy',
+	)
+	context.update({
+		'office': office,
+		'therapists': therapists,
+		'services': services,
+		'states': states,
+		'schema_json': _json.dumps(schema, ensure_ascii=False),
+	})
+	return render(request, 'pages/telehealth.html', context)
+
+
+def telehealth_service_page(request, service_slug: str):
+	import json as _json
+	from core.utils import (
+		get_telehealth_office,
+		get_therapists_for_telehealth,
+		get_telehealth_schema,
+	)
+	service = get_object_or_404(
+		Service.objects.all(),
+		slug=service_slug,
+		status=PublishStatus.PUBLISH,
+	)
+	try:
+		office = get_telehealth_office()
+	except Exception:
+		raise Http404("Telehealth office not found.")
+	# Only show therapists at the telehealth office who offer this service
+	therapists_qs = (
+		get_therapists_for_telehealth(office)
+		.filter(services=service)
+		.select_related("license_type")
+		.prefetch_related("client_focuses", "top_services", "services")
+	)
+	therapists = _build_therapist_cards(therapists_qs)
+	states = office.geo_states.filter(is_active=True).order_by("name")
+	schema = get_telehealth_schema(office, request)
+	context = _static_seo_context(
+		f'telehealth/services/{service_slug}',
+		f'{service.title} via Telehealth | L+C Psychological Services',
+		f'Online {service.title} therapy available throughout Kentucky, Ohio, and Indiana via telehealth at L+C Psychological Services.',
+		f'{service.title} — Telehealth',
+	)
+	context.update({
+		'office': office,
+		'service': service,
+		'therapists': therapists,
+		'states': states,
+		'schema_json': _json.dumps(schema, ensure_ascii=False),
+	})
+	return render(request, 'pages/telehealth_service.html', context)
+
+
+def telehealth_therapist_page(request, therapist_slug: str):
+	import json as _json
+	from core.utils import get_telehealth_office, get_telehealth_schema
+	try:
+		office = get_telehealth_office()
+	except Exception:
+		raise Http404("Telehealth office not found.")
+	therapist = get_object_or_404(
+		office.therapists.filter(is_published=True).select_related("license_type").prefetch_related(
+			"client_focuses", "top_services", "services", "license_type",
+		),
+		slug=therapist_slug,
+	)
+	services = therapist.services.filter(status=PublishStatus.PUBLISH).order_by("order", "title")
+	states = office.geo_states.filter(is_active=True).order_by("name")
+	schema = get_telehealth_schema(office, request)
+	full_name = f"{therapist.first_name} {therapist.last_name}".strip()
+	context = _static_seo_context(
+		f'telehealth/{therapist_slug}',
+		f'{full_name} — Telehealth Therapy | L+C Psychological Services',
+		f'Book online therapy with {full_name} via telehealth. Serving Kentucky, Ohio, and Indiana at L+C Psychological Services.',
+		f'{full_name} — Telehealth',
+	)
+	context.update({
+		'office': office,
+		'therapist': therapist,
+		'therapist_card': _build_therapist_cards([therapist])[0],
+		'services': services,
+		'states': states,
+		'schema_json': _json.dumps(schema, ensure_ascii=False),
+	})
+	return render(request, 'pages/telehealth_therapist.html', context)
 
 
 def faq(request):
@@ -363,6 +531,7 @@ def service_detail(request, slug: str):
 		Service.objects.select_related('page').prefetch_related(
 			'therapists__license_type',
 			'therapists__client_focuses',
+			'content_blocks',
 		),
 		slug=slug,
 		status=PublishStatus.PUBLISH,
@@ -395,6 +564,8 @@ def service_detail(request, slug: str):
 		.order_by('home_order', 'last_name', 'first_name', 'pk')
 	)
 	therapists = _build_therapist_cards(therapists_qs)
+	from core.models import OfficeLocation
+	office_locations = list(OfficeLocation.objects.filter(is_active=True, is_virtual=False).order_by("order", "name"))
 	context = {
 		'service': service,
 		'body_html': mark_safe(body_html),
@@ -404,6 +575,8 @@ def service_detail(request, slug: str):
 		'og_image_url': service.seo_image_url,
 		'other_services': other_services,
 		'therapists': therapists,
+		'office_locations': office_locations,
+		'content_blocks': service.content_blocks.all(),
 	}
 	return render(request, 'core/service_detail.html', context)
 

@@ -20,6 +20,8 @@ from django.views.generic import TemplateView
 from django.contrib.sitemaps.views import sitemap
 from django.views.static import serve
 from core.sitemaps import StaticViewSitemap, PageSitemap, PostSitemap
+from geo.sitemaps import GeoStateSitemap, GeoCitySitemap, GeoCountySitemap, GeoStateServiceSitemap, GeoLocationServiceSitemap, GeoRegionSitemap, GeoRegionServiceSitemap, GeoRegionTherapistSitemap
+from profiles.sitemaps import TherapistSitemap, TherapistServiceSitemap, TherapistStateSitemap, TherapistAreaSitemap
 from core import views as core_views
 from accounts.views import ManageTherapistsView
 from django.conf import settings
@@ -37,6 +39,18 @@ urlpatterns = [
             'static': StaticViewSitemap,
             'pages': PageSitemap,
             'posts': PostSitemap,
+            'geo_states': GeoStateSitemap,
+            'geo_cities': GeoCitySitemap,
+            'geo_counties': GeoCountySitemap,
+            'geo_state_services': GeoStateServiceSitemap,
+            'geo_location_services': GeoLocationServiceSitemap,
+            'geo_regions': GeoRegionSitemap,
+            'geo_region_services': GeoRegionServiceSitemap,
+            'geo_region_therapists': GeoRegionTherapistSitemap,
+            'therapists': TherapistSitemap,
+            'therapist_services': TherapistServiceSitemap,
+            'therapist_states': TherapistStateSitemap,
+            'therapist_areas': TherapistAreaSitemap,
         }
     }, name='django.contrib.sitemaps.views.sitemap'),
     path('location.xml', core_views.location_xml, name='location_xml'),
@@ -44,6 +58,9 @@ urlpatterns = [
         template_name='robots.txt',
         content_type='text/plain'
     ), name='robots_txt'),
+    # Geo routes — the StateSlugConverter ensures only valid state slugs match,
+    # so these patterns never shadow other single-segment URLs (about-us, etc.)
+    path('', include('geo.urls')),
     # Place profiles before core to avoid being shadowed by core catch-all
     path('', include('profiles.urls')),
     path('', include('core.urls')),

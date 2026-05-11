@@ -13,12 +13,47 @@
     .contact-heading h3 {
       font-size: clamp(1.4rem, 2.8vw, 2rem);
       font-weight: 700;
-      margin: 0;
+      margin: 0 0 0.5rem;
     }
+    /* Location nav */
+    .loc-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .loc-nav-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ffffff;
+      opacity: 0.55;
+      padding: 4px;
+      line-height: 0;
+      transition: opacity 160ms ease;
+    }
+    .loc-nav-btn:hover { opacity: 1; }
+    .loc-nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .loc-dots { display: flex; gap: 8px; align-items: center; }
+    .loc-dot {
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: background 160ms ease, transform 160ms ease;
+      border: none;
+      padding: 0;
+    }
+    .loc-dot.active { background: #ffffff; transform: scale(1.3); }
+    /* Panels */
+    .loc-panel { display: none; }
+    .loc-panel.active { display: block; }
+    /* Map */
     .contact-map {
       border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.28);
       background: #0b6170;
     }
     .contact-map iframe {
@@ -27,6 +62,7 @@
       border: 0;
       display: block;
     }
+    /* Cards */
     .contact-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -41,7 +77,7 @@
       color: #0f3f46;
       border-radius: 18px;
       padding: 1.35rem 1.15rem 1.25rem;
-      box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16);
+      box-shadow: 0 14px 26px rgba(0,0,0,0.16);
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
@@ -64,25 +100,17 @@
       font-size: clamp(1rem, 2.6vw, 1.125rem);
     }
     .contact-icon {
-      width: 36px;
-      height: 36px;
+      width: 36px; height: 36px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       background: #e2f6f9;
       color: #0f3f46;
-      font-weight: 700;
       flex: 0 0 auto;
     }
-    .contact-icon svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-    }
-    .contact-actions {
-      margin-top: auto;
-    }
+    .contact-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .contact-actions { margin-top: auto; width: 100%; }
     .contact-btn {
       display: inline-flex;
       align-items: center;
@@ -110,61 +138,115 @@
       text-align: center;
       font-size: clamp(1rem, 2.4vw, 1.1rem);
     }
-    .contact-links strong {
-      white-space: nowrap;
-    }
-    .contact-links a {
-      color: inherit;
-      text-decoration: none;
-      word-break: break-word;
-    }
+    .contact-links strong { white-space: nowrap; }
+    .contact-links a { color: inherit; text-decoration: none; word-break: break-word; }
     .contact-links a:hover { text-decoration: underline; }
   </style>
 
   <div class="contact-shell">
     <div class="contact-heading">
-      <h3>Proud to Serve Cincinnati / Northern Kentucky</h3>
-    </div>
-
-    <div class="contact-map">
-      <iframe loading="lazy" src="https://maps.google.com/maps?q=6900%20houston%20rd.%20Florence%2C%20KY%2041091&t=m&z=15&output=embed&iwloc=near" title="6900 Houston Rd, Florence KY"></iframe>
-    </div>
-
-    <div class="contact-grid">
-      <div class="contact-card">
-        <h4><span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.26 7-12.04A7 7 0 0 0 5 8.96C5 14.74 12 21 12 21Z"></path><circle cx="12" cy="9" r="2.8"></circle></svg></span>Our Office</h4>
-        <p>
-          6900 Houston Rd.<br>
-          Building 500 Suite 11<br>
-          Florence, KY 41042
-        </p>
-        <div class="contact-actions">
-          <a class="contact-btn" href="https://maps.google.com/maps/dir//6900+Houston+Rd+Florence,+KY+41042/@39.0086253,-84.647614,15z/data=!4m5!4m4!1m0!1m2!1m1!1s0x8841c7da6f65d4c7:0xa64ac61629ef897f" target="_blank" rel="noopener">Get Directions</a>
+      <h3>Our Locations</h3>
+      {% if home_offices|length > 1 %}
+      <div class="loc-nav">
+        <button class="loc-nav-btn" id="loc-prev" aria-label="Previous location">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <div class="loc-dots" id="loc-dots">
+          {% for office in home_offices %}
+          <button class="loc-dot{% if forloop.first %} active{% endif %}" data-index="{{ forloop.counter0 }}" aria-label="{{ office.name }}"></button>
+          {% endfor %}
         </div>
+        <button class="loc-nav-btn" id="loc-next" aria-label="Next location">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
       </div>
+      {% endif %}
+    </div>
 
-      <div class="contact-card">
-        <h4><span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"></circle><path d="m16 4-1 2"></path><path d="m8 4 1 2"></path><path d="M12 10v3l2 1"></path></svg></span>Office Hours</h4>
-        <p>
-          <strong>Mon – Thurs:</strong> 8AM – 9PM<br>
-          <strong>Friday:</strong> 8AM – 5PM<br>
-          <strong>Saturday:</strong> 8AM – 2PM
-        </p>
+    {% for office in home_offices %}
+    <div class="loc-panel{% if forloop.first %} active{% endif %}" data-panel="{{ forloop.counter0 }}">
+      {% if office.map_embed_url %}
+      <div class="contact-map">
+        <iframe loading="lazy" src="{{ office.map_embed_url }}" title="{{ office.name }}"></iframe>
       </div>
+      {% endif %}
 
-      <div class="contact-card">
-        <h4><span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 5.5 9 8c.4.4.5 1 .3 1.5l-.8 1.8a10.8 10.8 0 0 0 4.2 4.2l1.8-.8c.5-.2 1.1-.1 1.5.3l2.5 2.5c.4.4.5 1 .2 1.5-.5.8-1.4 1.3-2.3 1.3A13 13 0 0 1 5 6.8c0-.9.5-1.8 1.3-2.3.5-.3 1.1-.2 1.5.2Z"></path></svg></span>Contact Us</h4>
-        <div class="contact-links">
-          <strong>Office:</strong><a href="tel:8595254911" data-analytics-label="cta_call_contact_home">859-525-4911</a>
-          <strong>Fax:</strong><a href="tel:8595256446">859-525-6446</a>
-          {% if contact and contact.email_address %}
-          <strong>Email:</strong><a href="mailto:{{ contact.email_address }}" data-analytics-label="cta_email_contact_home">{{ contact.email_address }}</a>
+      <div class="contact-grid">
+        <div class="contact-card">
+          <h4>
+            <span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.26 7-12.04A7 7 0 0 0 5 8.96C5 14.74 12 21 12 21Z"></path><circle cx="12" cy="9" r="2.8"></circle></svg></span>
+            {{ office.name }}
+          </h4>
+          {% if office.address_line1 %}
+          <p>
+            {{ office.address_line1 }}<br>
+            {% if office.address_line2 %}{{ office.address_line2 }}<br>{% endif %}
+            {{ office.address_city }}{% if office.address_state %}, {{ office.address_state }}{% endif %}{% if office.address_zip %} {{ office.address_zip }}{% endif %}
+          </p>
+          {% endif %}
+          {% if office.directions_url %}
+          <div class="contact-actions">
+            <a class="contact-btn" href="{{ office.directions_url }}" target="_blank" rel="noopener">Get Directions</a>
+          </div>
           {% endif %}
         </div>
-        <div class="contact-actions" style="margin-top:1rem;">
-          <a class="contact-btn" href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" data-schedule-trigger data-analytics-label="cta_schedule_contact_home">Schedule Online</a>
+
+        <div class="contact-card">
+          <h4>
+            <span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"></circle><path d="m16 4-1 2"></path><path d="m8 4 1 2"></path><path d="M12 10v3l2 1"></path></svg></span>
+            {{ office.office_hours_title }}
+          </h4>
+          {% if office.office_hours %}
+          <p>
+            {% for line in office.office_hours.splitlines %}
+            {{ line }}<br>
+            {% endfor %}
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="contact-card">
+          <h4>
+            <span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 5.5 9 8c.4.4.5 1 .3 1.5l-.8 1.8a10.8 10.8 0 0 0 4.2 4.2l1.8-.8c.5-.2 1.1-.1 1.5.3l2.5 2.5c.4.4.5 1 .2 1.5-.5.8-1.4 1.3-2.3 1.3A13 13 0 0 1 5 6.8c0-.9.5-1.8 1.3-2.3.5-.3 1.1-.2 1.5.2Z"></path></svg></span>
+            Contact Us
+          </h4>
+          <div class="contact-links">
+            {% if office.phone_number %}<strong>{{ office.phone_label }}:</strong><a href="tel:{{ office.phone_number|cut:'-'|cut:'('|cut:')'|cut:' ' }}" data-analytics-label="cta_call_contact_home_{{ office.slug }}">{{ office.phone_number }}</a>{% endif %}
+            {% if office.fax_number %}<strong>{{ office.fax_label }}:</strong><a href="tel:{{ office.fax_number|cut:'-'|cut:'('|cut:')'|cut:' ' }}">{{ office.fax_number }}</a>{% endif %}
+            {% if office.email_address %}<strong>{{ office.email_label }}:</strong><a href="mailto:{{ office.email_address }}" data-analytics-label="cta_email_contact_home_{{ office.slug }}">{{ office.email_address }}</a>{% endif %}
+          </div>
+          {% if office.cta_url %}
+          <div class="contact-actions" style="margin-top:1rem;">
+            <a class="contact-btn" href="{{ office.cta_url }}" data-schedule-trigger data-analytics-label="cta_schedule_contact_home_{{ office.slug }}">{{ office.cta_label }}</a>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
+    {% endfor %}
   </div>
+
+  <script>
+  (function () {
+    var panels = document.querySelectorAll('#contactus .loc-panel');
+    var dots = document.querySelectorAll('#contactus .loc-dot');
+    var total = panels.length;
+    if (total <= 1) return;
+    var current = 0;
+
+    function show(idx) {
+      panels[current].classList.remove('active');
+      dots[current].classList.remove('active');
+      current = (idx + total) % total;
+      panels[current].classList.add('active');
+      dots[current].classList.add('active');
+    }
+
+    document.getElementById('loc-prev').addEventListener('click', function () { show(current - 1); });
+    document.getElementById('loc-next').addEventListener('click', function () { show(current + 1); });
+    dots.forEach(function (dot) {
+      dot.addEventListener('click', function () { show(parseInt(dot.dataset.index, 10)); });
+    });
+  })();
+  </script>
 </section>

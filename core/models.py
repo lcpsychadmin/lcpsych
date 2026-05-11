@@ -215,6 +215,89 @@ class Service(Timestamped):
 		return reverse("core:service_detail", args=[self.slug])
 
 
+class ServiceContentBlock(models.Model):
+	"""A heading + body content block attached to a Service detail page."""
+
+	service = models.ForeignKey(
+		Service,
+		on_delete=models.CASCADE,
+		related_name="content_blocks",
+	)
+	order = models.PositiveSmallIntegerField(
+		default=0,
+		help_text="Lower numbers appear first.",
+	)
+	heading = models.CharField(max_length=200, help_text="Section heading")
+	body = models.TextField(help_text="Paragraph text for this section")
+
+	class Meta:
+		ordering = ["order"]
+
+	def __str__(self):
+		return self.heading
+
+
+class HeroSettings(models.Model):
+	"""Singleton-style model for configuring the home page hero section."""
+
+	heading = models.CharField(
+		max_length=200,
+		default="L+C Psychological Services",
+		help_text="Main hero heading displayed over the image.",
+	)
+	subheading = models.CharField(
+		max_length=300,
+		default="Sometimes We Get Disconnected",
+		help_text="Subheading displayed beneath the main heading.",
+	)
+	featured_image = models.ImageField(
+		upload_to="hero/",
+		blank=True,
+		null=True,
+		help_text="Background image for the hero section.",
+	)
+	about_hero_image = models.ImageField(
+		upload_to="hero/",
+		blank=True,
+		null=True,
+		help_text="Featured image displayed in the About Us page hero section.",
+	)
+
+	class Meta:
+		verbose_name = "Hero settings"
+		verbose_name_plural = "Hero settings"
+
+	def __str__(self) -> str:
+		return "Hero Settings"
+
+	@classmethod
+	def get_solo(cls):
+		obj, _ = cls.objects.get_or_create(pk=1)
+		return obj
+
+
+class HeroContentBlock(models.Model):
+	"""A heading + body content block displayed below the home page hero image."""
+
+	hero = models.ForeignKey(
+		HeroSettings,
+		on_delete=models.CASCADE,
+		related_name="content_blocks",
+	)
+	order = models.PositiveSmallIntegerField(
+		default=0,
+		help_text="Lower numbers appear first.",
+	)
+	heading = models.CharField(max_length=200, help_text="Block heading")
+	body = models.TextField(help_text="Paragraph text for this block")
+
+	class Meta:
+		ordering = ["order"]
+
+	def __str__(self) -> str:
+		return self.heading
+
+
 class FeeCategory(models.TextChoices):
 	PROFESSIONAL = 'professional', 'Professional Service'
 	MISC = 'misc', 'Miscellaneous'
@@ -291,15 +374,35 @@ class InsuranceExclusion(Timestamped):
 class AboutSection(Timestamped):
 	"""Configurable copy for the homepage About and Mission section."""
 
+	about_heading = models.CharField(
+		max_length=200,
+		default="About L+C Psychological Services",
+		help_text="Main H1 heading in the About Us page hero.",
+	)
+	about_subheading = models.CharField(
+		max_length=400,
+		default="Founded on the belief that genuine connection is the foundation of healing — we are a team of dedicated psychologists and therapists serving Northern Kentucky and beyond.",
+		help_text="Subheading paragraph in the About Us page hero.",
+	)
 	about_title = models.CharField(max_length=200, default="About Us")
 	about_body = RichTextField(blank=True, help_text="Main About Us copy.")
 	mission_title = models.CharField(max_length=200, default="Our Mission")
 	mission_body = RichTextField(blank=True, help_text="Mission statement copy.")
-	cta_label = models.CharField(max_length=200, blank=True, default="Schedule Your First Appointment Today")
+	cta_label = models.CharField(max_length=200, blank=True, default="Schedule Your First Appointment")
 	cta_url = models.URLField(
 		blank=True,
 		default="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/",
 		help_text="Optional CTA button link; leave blank to hide the button.",
+	)
+	clinicians_heading = models.CharField(
+		max_length=200,
+		default="Meet Our Clinicians",
+		help_text="Heading for the Meet Our Clinicians section on the About Us page.",
+	)
+	clinicians_subtext = models.CharField(
+		max_length=400,
+		default="Our team of licensed psychologists and therapists brings expertise, warmth, and dedication to every client they serve.",
+		help_text="Subtitle beneath the clinicians heading.",
 	)
 	is_active = models.BooleanField(default=True)
 
@@ -331,6 +434,21 @@ class OurPhilosophy(Timestamped):
 
 	title = models.CharField(max_length=255, default="Our philosophy of treatment is that people have a need to be connected.")
 	body = RichTextField(blank=True, help_text="Displayed under the philosophy heading.")
+	value1_title = models.CharField(max_length=100, default="Connection", help_text="First value card title.")
+	value1_description = models.TextField(
+		default="We believe meaningful relationships are central to healing and growth — both within therapy and in every area of life.",
+		help_text="First value card description.",
+	)
+	value2_title = models.CharField(max_length=100, default="Compassion", help_text="Second value card title.")
+	value2_description = models.TextField(
+		default="We meet every client with empathy, warmth, and genuine care — creating a safe space where you feel heard and understood.",
+		help_text="Second value card description.",
+	)
+	value3_title = models.CharField(max_length=100, default="Growth", help_text="Third value card title.")
+	value3_description = models.TextField(
+		default="We help clients build the skills, insight, and resilience needed to thrive — supporting real, lasting change at every stage of life.",
+		help_text="Third value card description.",
+	)
 	is_active = models.BooleanField(default=True)
 
 	class Meta:
@@ -489,6 +607,9 @@ class SocialProfile(Timestamped):
 	platform = models.CharField(max_length=32, choices=SocialPlatform.choices, unique=True)
 	account_name = models.CharField(max_length=255, blank=True, help_text="Friendly label for the connected page/profile.")
 	account_id = models.CharField(max_length=255, blank=True, help_text="Platform-specific page/profile/business identifier.")
+	# App-level credentials (OAuth 1.0a: consumer key/secret; OAuth 2.0: client id/secret)
+	client_id = models.CharField(max_length=255, blank=True)
+	client_secret = models.TextField(blank=True)
 	access_token = models.TextField(blank=True)
 	refresh_token = models.TextField(blank=True)
 	token_expires_at = models.DateTimeField(null=True, blank=True)
@@ -565,3 +686,126 @@ class AnalyticsEvent(Timestamped):
 			return ""
 		secret = getattr(settings, "SECRET_KEY", "")
 		return hashlib.sha256(f"{ip}|{secret}".encode()).hexdigest()
+
+
+class OfficeLocation(Timestamped):
+	"""Physical office location with contact info, hours, and geo/therapist associations."""
+
+	name = models.CharField(max_length=200, help_text="Short display name, e.g. 'Florence, KY'")
+	slug = models.SlugField(max_length=200, unique=True, help_text="URL slug for /contact-us/<slug>/")
+	section_heading = models.CharField(
+		max_length=255,
+		blank=True,
+		help_text="Hero heading for this office's contact page. Defaults to the office name.",
+	)
+
+	# Map & navigation
+	map_embed_url = models.URLField(
+		max_length=1000,
+		blank=True,
+		help_text="Full Google Maps embed URL for the iframe src.",
+	)
+	directions_url = models.URLField(
+		max_length=1000,
+		blank=True,
+		help_text="Google Maps directions URL for the 'Get Directions' button.",
+	)
+
+	# Structured address (used for schema markup)
+	address_line1 = models.CharField(max_length=200, blank=True, help_text="Street address (e.g. '6900 Houston Rd.')")
+	address_line2 = models.CharField(max_length=200, blank=True, help_text="Suite/building (e.g. 'Building 500 Suite 11')")
+	address_city = models.CharField(max_length=100, blank=True)
+	address_state = models.CharField(max_length=50, blank=True, help_text="Two-letter state code (e.g. 'KY')")
+	address_zip = models.CharField(max_length=20, blank=True)
+
+	# Hours
+	office_hours_title = models.CharField(max_length=200, default="Office hours")
+	office_hours = models.TextField(
+		blank=True,
+		help_text="One entry per line, e.g. 'Mon – Thurs: 8AM – 9PM'.",
+	)
+
+	# Contact
+	phone_label = models.CharField(max_length=100, default="Office")
+	phone_number = models.CharField(max_length=50, blank=True)
+	fax_label = models.CharField(max_length=100, default="Fax")
+	fax_number = models.CharField(max_length=50, blank=True)
+	email_label = models.CharField(max_length=100, default="Email")
+	email_address = models.EmailField(blank=True)
+
+	# Scheduling CTA
+	cta_label = models.CharField(max_length=120, default="Schedule Online")
+	cta_url = models.URLField(
+		max_length=500,
+		blank=True,
+		default="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/",
+	)
+
+	# Associations
+	therapists = models.ManyToManyField(
+		"profiles.TherapistProfile",
+		related_name="offices",
+		blank=True,
+		help_text="Therapists who see clients at this location.",
+	)
+	geo_states = models.ManyToManyField(
+		"geo.GeoState",
+		related_name="offices",
+		blank=True,
+		help_text="States served from this office (for areas-served linking).",
+	)
+	geo_locations = models.ManyToManyField(
+		"geo.GeoLocation",
+		related_name="offices",
+		blank=True,
+		help_text="Specific cities/counties served from this office.",
+	)
+
+	# Display
+	is_active = models.BooleanField(default=True)
+	is_virtual = models.BooleanField(
+		default=False,
+		help_text="Mark as True for virtual/telehealth locations (no physical address).",
+	)
+	order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first.")
+
+	class Meta:
+		ordering = ["order", "name"]
+		verbose_name = "Office location"
+		verbose_name_plural = "Office locations"
+
+	def __str__(self) -> str:
+		return self.name
+
+	def save(self, *args, **kwargs):
+		if not self.slug:
+			from django.utils.text import slugify
+			self.slug = slugify(self.name)[:200]
+		super().save(*args, **kwargs)
+
+	@property
+	def display_heading(self) -> str:
+		return self.section_heading or self.name
+
+	@property
+	def full_address(self) -> str:
+		"""Multi-line formatted address."""
+		parts = [p for p in [self.address_line1, self.address_line2] if p]
+		city_line = ", ".join(p for p in [self.address_city, self.address_state] if p)
+		if self.address_zip:
+			city_line = f"{city_line} {self.address_zip}".strip()
+		if city_line:
+			parts.append(city_line)
+		return "\n".join(parts)
+
+	@property
+	def schema_address(self) -> dict:
+		"""PostalAddress dict for JSON-LD schema."""
+		return {
+			"@type": "PostalAddress",
+			"streetAddress": " ".join(p for p in [self.address_line1, self.address_line2] if p),
+			"addressLocality": self.address_city,
+			"addressRegion": self.address_state,
+			"postalCode": self.address_zip,
+			"addressCountry": "US",
+		}

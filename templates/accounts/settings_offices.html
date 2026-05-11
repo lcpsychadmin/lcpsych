@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% block title %}Office Locations | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.btn-primary { background: #3C9C64; color: #fff; border-radius: 0.75rem; padding: 0.65rem 1.6rem; font-weight: 600; border: 0; cursor: pointer; transition: background 0.2s; }
+.btn-primary:hover { background: #92DCE5; color: #005F6B; }
+.btn-danger { background: #ef4444; color: #fff; border-radius: 0.6rem; padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; border: 0; cursor: pointer; transition: background 0.2s; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-edit { background: #04606B; color: #fff; border-radius: 0.6rem; padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; border: 0; cursor: pointer; transition: background 0.2s; text-decoration: none; display: inline-block; }
+.btn-edit:hover { background: #007b8a; color: #fff; }
+.input-basic { width: 100%; padding: 0.625rem 0.875rem; border-radius: 0.75rem; border: 1.5px solid rgba(146, 220, 229, 0.7); background: rgba(255, 255, 255, 0.96); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.input-basic:focus { border-color: #92DCE5; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.55); outline: none; }
+.office-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(0,95,107,0.08); }
+.office-row:last-child { border-bottom: 0; }
+.badge-active { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #d1fae5; color: #065f46; }
+.badge-inactive { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #fee2e2; color: #991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Office Locations</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Manage physical office locations shown on the <a href="/contact-us/" target="_blank" class="underline text-[#92DCE5]">/contact-us/</a> page.</p>
+    </div>
+  </section>
+
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" %}
+
+        <div class="space-y-6">
+
+          {# Messages #}
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="rounded-xl px-4 py-3 text-sm font-medium
+              {% if msg.tags == 'success' %}bg-green-100 text-green-800
+              {% elif msg.tags == 'error' %}bg-red-100 text-red-800
+              {% else %}bg-blue-100 text-blue-800{% endif %}">
+              {{ msg }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# Existing office list #}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">All Offices</h2>
+            {% if offices %}
+              {% for office in offices %}
+              <div class="office-row">
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-[#04606B]">{{ office.name }}</div>
+                  <div class="text-sm text-slate-500">
+                  {% if office.is_virtual %}
+                    <span class="inline-block mr-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[#92DCE5]/30 text-[#04606B]">Virtual</span>
+                    <a href="/telehealth/" target="_blank" class="underline hover:text-[#04606B]">/telehealth/</a>
+                  {% else %}
+                    {{ office.address_line1 }}{% if office.address_city %}, {{ office.address_city }}, {{ office.address_state }}{% endif %} &mdash; <a href="/contact-us/{{ office.slug }}/" target="_blank" class="underline hover:text-[#04606B]">/contact-us/{{ office.slug }}/</a>
+                  {% endif %}
+                </div>
+                </div>
+                <span class="{% if office.is_active %}badge-active{% else %}badge-inactive{% endif %}">{{ office.is_active|yesno:"Active,Inactive" }}</span>
+                <a href="?edit={{ office.pk }}" class="btn-edit">Edit</a>
+                <form method="post" style="display:inline;" onsubmit="return confirm('Delete {{ office.name }}?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="pk" value="{{ office.pk }}">
+                  <button type="submit" class="btn-danger">Delete</button>
+                </form>
+              </div>
+              {% endfor %}
+            {% else %}
+              <p class="text-slate-500 text-sm">No office locations yet. Add one below.</p>
+            {% endif %}
+          </div>
+
+          {# Add / Edit form #}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-1">
+              {% if editing %}Edit: {{ editing.name }}{% else %}Add New Office{% endif %}
+            </h2>
+            {% if editing %}<p class="text-sm text-slate-500 mb-4"><a href="?">← Add a new office instead</a></p>{% endif %}
+
+            <form method="post" class="space-y-5">
+              {% csrf_token %}
+              {% if editing %}<input type="hidden" name="edit_id" value="{{ editing.pk }}">{% endif %}
+
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Office name <span class="text-red-500">*</span></label>
+                  {{ form.name }}
+                  {{ form.name.errors }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Slug</label>
+                  {{ form.slug }}
+                  <p class="text-xs text-slate-400 mt-1">{{ form.slug.help_text }}</p>
+                  {{ form.slug.errors }}
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-1">Section heading</label>
+                {{ form.section_heading }}
+                <p class="text-xs text-slate-400 mt-1">{{ form.section_heading.help_text }}</p>
+              </div>
+
+              <hr class="border-slate-200">
+              <h3 class="text-sm font-bold text-[#04606B] uppercase tracking-wide">Address</h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Address line 1</label>
+                  {{ form.address_line1 }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Address line 2</label>
+                  {{ form.address_line2 }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">City</label>
+                  {{ form.address_city }}
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">State</label>
+                    {{ form.address_state }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">ZIP</label>
+                    {{ form.address_zip }}
+                  </div>
+                </div>
+              </div>
+
+              <hr class="border-slate-200">
+              <h3 class="text-sm font-bold text-[#04606B] uppercase tracking-wide">Map</h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Map embed URL</label>
+                  {{ form.map_embed_url }}
+                  <p class="text-xs text-slate-400 mt-1">Full Google Maps iframe src URL.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Directions URL</label>
+                  {{ form.directions_url }}
+                </div>
+              </div>
+
+              <hr class="border-slate-200">
+              <h3 class="text-sm font-bold text-[#04606B] uppercase tracking-wide">Contact</h3>
+              <div class="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Phone label</label>
+                  {{ form.phone_label }}
+                </div>
+                <div class="col-span-2">
+                  <label class="block text-sm font-semibold mb-1">Phone number</label>
+                  {{ form.phone_number }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Fax label</label>
+                  {{ form.fax_label }}
+                </div>
+                <div class="col-span-2">
+                  <label class="block text-sm font-semibold mb-1">Fax number</label>
+                  {{ form.fax_number }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Email label</label>
+                  {{ form.email_label }}
+                </div>
+                <div class="col-span-2">
+                  <label class="block text-sm font-semibold mb-1">Email address</label>
+                  {{ form.email_address }}
+                </div>
+              </div>
+
+              <hr class="border-slate-200">
+              <h3 class="text-sm font-bold text-[#04606B] uppercase tracking-wide">Office Hours</h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Hours section title</label>
+                  {{ form.office_hours_title }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Hours (one per line)</label>
+                  {{ form.office_hours }}
+                </div>
+              </div>
+
+              <hr class="border-slate-200">
+              <h3 class="text-sm font-bold text-[#04606B] uppercase tracking-wide">CTA / Scheduling</h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">CTA button label</label>
+                  {{ form.cta_label }}
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">CTA URL</label>
+                  {{ form.cta_url }}
+                </div>
+              </div>
+
+              <hr class="border-slate-200">
+              <div class="flex flex-wrap items-center gap-6">
+                <div class="flex items-center gap-2">
+                  {{ form.is_active }}
+                  <label for="{{ form.is_active.id_for_label }}" class="text-sm font-semibold">Active (show on site)</label>
+                </div>
+                <div class="flex items-center gap-2">
+                  {{ form.is_virtual }}
+                  <label for="{{ form.is_virtual.id_for_label }}" class="text-sm font-semibold">Virtual / Telehealth (no physical address)</label>
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="block text-sm font-semibold">Display order:</label>
+                  <div style="width:80px;">{{ form.order }}</div>
+                </div>
+              </div>
+
+              <hr class="border-slate-200">
+              <h3 class="text-sm font-bold text-[#04606B] uppercase tracking-wide">Therapists at this office</h3>
+              <p class="text-xs text-slate-500 -mt-2">Select therapists who see clients at this location.</p>
+
+              <script>
+              const initialTherapists = [
+                {% if editing %}{% for t in editing.therapists.all %}{"id":"{{ t.pk }}","name":"{{ t.full_name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}
+              ];
+              </script>
+
+              <div id="therapist-selector">
+                <div class="flex gap-2 items-center">
+                  <select id="therapist-dropdown" class="input-basic flex-1">
+                    <option value="">— Select a therapist —</option>
+                    {% for t in all_therapists %}
+                    <option value="{{ t.pk }}" data-name="{{ t.full_name|escapejs }}">{{ t.full_name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="button" id="therapist-add-btn" class="btn-primary" style="white-space:nowrap; padding:0.625rem 1.2rem;">+ Add</button>
+                </div>
+                <div id="therapist-pills" class="flex flex-wrap gap-2 mt-3 min-h-[2rem]"></div>
+                <div id="therapist-hidden-inputs"></div>
+              </div>
+
+              <script>
+              (function () {
+                const dropdown = document.getElementById('therapist-dropdown');
+                const addBtn = document.getElementById('therapist-add-btn');
+                const pillsContainer = document.getElementById('therapist-pills');
+                const hiddenInputs = document.getElementById('therapist-hidden-inputs');
+                const selected = new Map();
+
+                function renderPills() {
+                  pillsContainer.innerHTML = '';
+                  hiddenInputs.innerHTML = '';
+                  dropdown.querySelectorAll('option').forEach(function(opt) { opt.disabled = false; });
+                  selected.forEach(function(name, id) {
+                    const pill = document.createElement('span');
+                    pill.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:999px;font-size:0.875rem;font-weight:600;background:#04606B;color:#fff;';
+                    const label = document.createTextNode(name + ' ');
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.dataset.id = id;
+                    btn.innerHTML = '&times;';
+                    btn.style.cssText = 'background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.75);font-size:1rem;font-weight:700;line-height:1;padding:0 0 0 2px;';
+                    btn.addEventListener('mouseover', function() { this.style.color = '#fff'; });
+                    btn.addEventListener('mouseout', function() { this.style.color = 'rgba(255,255,255,0.75)'; });
+                    btn.addEventListener('click', function() {
+                      selected.delete(this.dataset.id);
+                      renderPills();
+                    });
+                    pill.appendChild(label);
+                    pill.appendChild(btn);
+                    pillsContainer.appendChild(pill);
+
+                    const inp = document.createElement('input');
+                    inp.type = 'hidden';
+                    inp.name = 'therapist_ids';
+                    inp.value = id;
+                    hiddenInputs.appendChild(inp);
+
+                    const opt = dropdown.querySelector('option[value="' + id + '"]');
+                    if (opt) opt.disabled = true;
+                  });
+                  if (selected.size === 0) {
+                    pillsContainer.innerHTML = '<span class="text-xs text-slate-400 italic">No therapists assigned yet.</span>';
+                  }
+                }
+
+                addBtn.addEventListener('click', function () {
+                  const opt = dropdown.options[dropdown.selectedIndex];
+                  if (!opt || !opt.value) return;
+                  selected.set(opt.value, opt.dataset.name || opt.text);
+                  dropdown.value = '';
+                  renderPills();
+                });
+
+                initialTherapists.forEach(function(t) {
+                  selected.set(String(t.id), t.name);
+                });
+                renderPills();
+              })();
+              </script>
+
+              <div class="pt-2">
+                <button type="submit" class="btn-primary">
+                  {% if editing %}Update office{% else %}Add office{% endif %}
+                </button>
+                {% if editing %}
+                <a href="?" class="ml-3 text-sm text-slate-500 hover:underline">Cancel</a>
+                {% endif %}
+              </div>
+
+            </form>
+          </div>
+
+        </div><!-- /content -->
+      </div><!-- /settings-layout -->
+    </div>
+  </section>
+
+</main>
+{% endblock %}

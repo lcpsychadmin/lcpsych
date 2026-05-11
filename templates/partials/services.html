@@ -29,14 +29,66 @@
                 <div class="elementor-element elementor-element-05fab96 e-con-full e-flex e-con e-child" data-id="05fab96" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}" style="padding-top: 32px;">
                     <div class="elementor-element elementor-element-9989799 elementor-widget elementor-widget-heading" data-id="9989799" data-element_type="widget" data-widget_type="heading.default">
                         <div class="elementor-widget-container">
-                            <h2 class="elementor-heading-title elementor-size-default">Mental Health Services in Northern Kentucky</h2>
+                            <h2 class="elementor-heading-title elementor-size-default">Mental Health Services</h2>
                         </div>
                     </div>
                 </div>
                 <div class="elementor-element elementor-element-1c63c99 e-con-full e-flex e-con e-child" data-id="1c63c99" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}" style="padding-bottom: 32px;">
                     <div class="elementor-element elementor-element-4081021 elementor-grid-3 elementor-grid-tablet-2 elementor-grid-mobile-1 elementor-widget elementor-widget-loop-grid" data-id="4081021" data-element_type="widget" data-settings="{&quot;template_id&quot;:1745,&quot;_skin&quot;:&quot;post&quot;,&quot;columns&quot;:&quot;3&quot;,&quot;columns_tablet&quot;:&quot;2&quot;,&quot;columns_mobile&quot;:&quot;1&quot;,&quot;edit_handle_selector&quot;:&quot;[data-elementor-type=\&quot;loop-item\&quot;]&quot;,&quot;row_gap&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:&quot;&quot;,&quot;sizes&quot;:[]},&quot;row_gap_tablet&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:&quot;&quot;,&quot;sizes&quot;:[]},&quot;row_gap_mobile&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:&quot;&quot;,&quot;sizes&quot;:[]}}" data-widget_type="loop-grid.post">
                         <div class="elementor-widget-container">
-                            <div class="elementor-loop-container elementor-grid">
+                            <style>
+                            .services-carousel-wrapper { position: relative; padding: 0 44px; }
+                            .services-carousel-track {
+                                display: flex;
+                                overflow-x: scroll;
+                                scroll-snap-type: x mandatory;
+                                scroll-behavior: smooth;
+                                gap: 16px;
+                                padding: 10px 4px;
+                                -ms-overflow-style: none;
+                                scrollbar-width: none;
+                            }
+                            .services-carousel-track::-webkit-scrollbar { display: none; }
+                            .services-carousel-slide {
+                                flex: 0 0 calc(33.333% - 11px);
+                                scroll-snap-align: start;
+                                min-width: 0;
+                            }
+                            @media (max-width: 1023px) {
+                                .services-carousel-slide { flex: 0 0 calc(50% - 8px); }
+                            }
+                            @media (max-width: 767px) {
+                                .services-carousel-slide { flex: 0 0 100%; }
+                                .services-carousel-wrapper { padding: 0 36px; }
+                            }
+                            .services-carousel-btn {
+                                position: absolute;
+                                top: 50%;
+                                transform: translateY(-50%);
+                                background: #04606B;
+                                color: white;
+                                border: none;
+                                border-radius: 50%;
+                                width: 40px;
+                                height: 40px;
+                                font-size: 28px;
+                                cursor: pointer;
+                                z-index: 10;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                opacity: 0.85;
+                                transition: opacity 0.2s, background 0.2s, color 0.2s;
+                                line-height: 1;
+                                padding: 0 0 2px 0;
+                            }
+                            .services-carousel-btn:hover { opacity: 1; background: #92DCE5; color: #04606B; }
+                            .services-carousel-prev { left: 0; }
+                            .services-carousel-next { right: 0; }
+                            </style>
+                            <div class="services-carousel-wrapper">
+                            <button class="services-carousel-btn services-carousel-prev" aria-label="Previous services">&#8249;</button>
+                            <div class="services-carousel-track" id="services-carousel-track">
                                 <style id="loop-1745">
                                 .elementor-1745 .elementor-element.elementor-element-23dc65e {
                                     --display: flex;
@@ -434,6 +486,7 @@
                                 }
                                 </style>
                                 {% endif %}
+                                <div class="services-carousel-slide">
                                 <div data-elementor-type="loop-item" data-elementor-id="1745" class="elementor elementor-1745 e-loop-item e-loop-item-s{{ forloop.counter }} service type-service status-publish hentry" data-elementor-post-type="elementor_library" data-custom-edit-handle="1">
                                     <div data-dce-background-color="#005F6B" {% if service.card_background_url %}data-dce-background-overlay-image-url="{{ service.card_background_url|escape }}"{% endif %} class="elementor-element elementor-element-23dc65e e-con-full e-flex e-con e-parent" data-id="23dc65e" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;_ha_eqh_enable&quot;:false}">
                                         <div class="elementor-element elementor-element-50bd3d6 e-con-full e-flex e-con e-child" data-id="50bd3d6" data-element_type="container" data-settings="{&quot;_ha_eqh_enable&quot;:false}">
@@ -453,7 +506,7 @@
                                         <div class="elementor-element elementor-element-6fdea98 elementor-align-center elementor-widget elementor-widget-button" data-id="6fdea98" data-element_type="widget" data-widget_type="button.default">
                                             <div class="elementor-widget-container">
                                                 <div class="elementor-button-wrapper">
-                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="{{ service.get_absolute_url }}">
+                                                    <a class="elementor-button elementor-button-link elementor-size-sm" href="{% if region_slug %}/regions/{{ region_slug }}/services/{{ service.slug }}/{% elif state_slug and location and location.location_type == 'city' and location.county %}/{{ state_slug }}/{{ location.county.slug }}/{{ location.slug }}/services/{{ service.slug }}/{% elif state_slug and location_slug %}/{{ state_slug }}/{{ location_slug }}/services/{{ service.slug }}/{% elif state_slug %}/{{ state_slug }}/services/{{ service.slug }}/{% else %}{{ service.get_absolute_url }}{% endif %}">
                                                         <span class="elementor-button-content-wrapper">
                                                             <span class="elementor-button-text">{{ service.cta_label|default:"Learn More..." }}</span>
                                                         </span>
@@ -463,8 +516,28 @@
                                         </div>
                                     </div>
                                 </div>
+                                </div>
                                 {% endfor %}
                             </div>
+                            <button class="services-carousel-btn services-carousel-next" aria-label="Next services">&#8250;</button>
+                            </div>
+                            <script>
+                            (function() {
+                                var track = document.getElementById('services-carousel-track');
+                                if (!track) return;
+                                var wrapper = track.parentElement;
+                                var prevBtn = wrapper.querySelector('.services-carousel-prev');
+                                var nextBtn = wrapper.querySelector('.services-carousel-next');
+                                if (prevBtn) prevBtn.addEventListener('click', function() {
+                                    var slide = track.querySelector('.services-carousel-slide');
+                                    track.scrollBy({ left: -(slide ? slide.offsetWidth + 16 : 300), behavior: 'smooth' });
+                                });
+                                if (nextBtn) nextBtn.addEventListener('click', function() {
+                                    var slide = track.querySelector('.services-carousel-slide');
+                                    track.scrollBy({ left: slide ? slide.offsetWidth + 16 : 300, behavior: 'smooth' });
+                                });
+                            })();
+                            </script>
                         </div>
                     </div>
                 </div>

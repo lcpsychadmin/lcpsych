@@ -34,12 +34,16 @@ from .forms import (
     WhatWeDoItemForm,
     WhatWeDoSectionForm,
     AboutSectionForm,
+    AboutHeroImageForm,
     OurPhilosophyForm,
     InspirationalQuoteForm,
     CompanyQuoteForm,
     ContactInfoForm,
     StaticPageSEOForm,
     SocialProfileForm,
+    OfficeLocationForm,
+    HeroSettingsForm,
+    HeroContentBlockForm,
 )
 from .models import EmailConfirmation
 from core.models import (
@@ -62,10 +66,14 @@ from core.models import (
     AnalyticsEvent,
     AnalyticsEventType,
     Page,
+    OfficeLocation,
+    HeroSettings,
+    HeroContentBlock,
 )
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
 from blog.models import Post
+from core.utils.bot_detection import bot_ua_exclude_q
 
 
 logger = logging.getLogger(__name__)
@@ -295,6 +303,7 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
         whatwedo_item_form: WhatWeDoItemForm | None = None,
         editing_whatwedo_item: WhatWeDoItem | None = None,
         about_section_form: AboutSectionForm | None = None,
+        about_hero_image_form: AboutHeroImageForm | None = None,
         philosophy_form: OurPhilosophyForm | None = None,
         inspirational_form: InspirationalQuoteForm | None = None,
         company_form: CompanyQuoteForm | None = None,
@@ -396,6 +405,8 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "whatwedo_item_editing": editing_whatwedo_item,
             "about_section": about_section,
             "about_section_form": about_section_form or AboutSectionForm(instance=about_section),
+            "about_hero_image_form": about_hero_image_form or AboutHeroImageForm(instance=HeroSettings.get_solo()),
+            "hero_settings": HeroSettings.get_solo(),
             "philosophy_section": philosophy_section,
             "philosophy_form": philosophy_form or OurPhilosophyForm(instance=philosophy_section),
             "inspirational_quote": inspirational_quote,
@@ -689,6 +700,20 @@ class ManageTherapistsView(LoginRequiredMixin, UserPassesTestMixin, View):
             )
             return render(request, self.template_name, ctx)
 
+        if action == "about_hero_image_save":
+            hero = HeroSettings.get_solo()
+            image_form = AboutHeroImageForm(request.POST, request.FILES, instance=hero)
+            if image_form.is_valid():
+                image_form.save()
+                messages.success(request, "About page hero image updated.")
+                return self._redirect_to_self()
+            ctx = self._build_context(
+                request,
+                about_hero_image_form=image_form,
+                active_page=active_page,
+            )
+            return render(request, self.template_name, ctx)
+
         if action == "philosophy_save":
             section = OurPhilosophy.objects.order_by("id").first()
             if not section:
@@ -890,13 +915,15 @@ class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
             if bound_platform and profile.platform == bound_platform and bound_form is not None:
                 profile_forms.append((profile, bound_form))
             else:
-                profile_forms.append((profile, SocialProfileForm(prefix=profile.platform, instance=profile)))
+                profile_forms.append((profile, SocialProfileForm(prefix=profile.platform, instance=profile, platform=profile.platform)))
         return profile_forms
 
     def get(self, request: HttpRequest) -> HttpResponse:
+        from blog.models import Post
         ctx = {
             "profile_forms": self._forms(),
             "active_page": "social_posting",
+            "recent_posts": Post.objects.order_by("-publish_at", "-created_at").values("id", "title", "status")[:20],
         }
         return render(request, self.template_name, ctx)
 
@@ -907,17 +934,344 @@ class SocialPostingSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
             return redirect(reverse("accounts:settings_social_posting"))
 
         profile, _ = SocialProfile.objects.get_or_create(platform=platform)
-        form = SocialProfileForm(request.POST, prefix=platform, instance=profile)
+        form = SocialProfileForm(request.POST, prefix=platform, instance=profile, platform=platform)
         if form.is_valid():
             form.save()
             messages.success(request, f"Saved settings for {profile.get_platform_display()}.")  # type: ignore[attr-defined]
             return redirect(reverse("accounts:settings_social_posting"))
 
+        from blog.models import Post
         ctx = {
             "profile_forms": self._forms(bound_platform=platform, bound_form=form),
             "active_page": "social_posting",
+            "recent_posts": Post.objects.order_by("-publish_at", "-created_at").values("id", "title", "status")[:20],
         }
         return render(request, self.template_name, ctx)
+
+
+class SocialPlatformTestView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    POST /accounts/settings/social-posting/test/
+    Body: platform=<platform_value>
+    Returns JSON: {ok: bool, message: str}
+
+    Makes the lightest possible read-only API call for each platform to confirm
+    the stored credentials are valid without creating or modifying any data.
+    """
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def post(self, request: HttpRequest) -> JsonResponse:
+        import urllib.request
+        import urllib.error
+
+        platform = request.POST.get("platform", "").strip()
+        if not platform:
+            return JsonResponse({"ok": False, "message": "No platform specified."}, status=400)
+
+        try:
+            profile = SocialProfile.objects.get(platform=platform)
+        except SocialProfile.DoesNotExist:
+            return JsonResponse({"ok": False, "message": "Platform not configured."}, status=404)
+
+        if not profile.access_token:
+            return JsonResponse({
+                "ok": False,
+                "message": "No access token saved — add credentials and save before testing.",
+            })
+
+        try:
+            ok, message = self._test(profile)
+        except Exception as exc:
+            logger.warning("Social platform test error for %s: %s", platform, exc)
+            return JsonResponse({"ok": False, "message": f"Unexpected error: {exc}"})
+
+        return JsonResponse({"ok": ok, "message": message})
+
+    # ------------------------------------------------------------------
+    # Per-platform test helpers
+    # ------------------------------------------------------------------
+
+    def _test(self, profile: SocialProfile) -> tuple[bool, str]:
+        platform = profile.platform
+        if platform == SocialPlatform.INSTAGRAM:
+            return self._test_instagram(profile)
+        if platform == SocialPlatform.X:
+            return self._test_x(profile)
+        if platform == SocialPlatform.FACEBOOK_PAGE:
+            return self._test_facebook(profile)
+        if platform == SocialPlatform.GOOGLE_BUSINESS:
+            return self._test_google(profile)
+        if platform == SocialPlatform.LINKEDIN_PAGE:
+            return self._test_linkedin(profile)
+        return False, f"No test implemented for platform '{platform}'."
+
+    def _oauth1_header(
+        self,
+        method: str,
+        url: str,
+        consumer_key: str,
+        consumer_secret: str,
+        token: str,
+        token_secret: str,
+    ) -> str:
+        """Build an OAuth 1.0a HMAC-SHA1 Authorization header (RFC 5849)."""
+        import base64
+        import hashlib
+        import hmac as _hmac
+        import time
+        import uuid
+        from urllib.parse import quote
+
+        _pct = lambda s: quote(str(s), safe="")
+
+        nonce = uuid.uuid4().hex
+        timestamp = str(int(time.time()))
+
+        oauth_params: dict[str, str] = {
+            "oauth_consumer_key": consumer_key,
+            "oauth_nonce": nonce,
+            "oauth_signature_method": "HMAC-SHA1",
+            "oauth_timestamp": timestamp,
+            "oauth_token": token,
+            "oauth_version": "1.0",
+        }
+
+        # Signature base string
+        param_string = "&".join(
+            f"{_pct(k)}={_pct(v)}" for k, v in sorted(oauth_params.items())
+        )
+        base_string = "&".join([method.upper(), _pct(url), _pct(param_string)])
+        signing_key = f"{_pct(consumer_secret)}&{_pct(token_secret)}"
+
+        sig = _hmac.new(signing_key.encode(), base_string.encode(), hashlib.sha1).digest()
+        oauth_params["oauth_signature"] = base64.b64encode(sig).decode()
+
+        return "OAuth " + ", ".join(
+            f'{_pct(k)}="{_pct(v)}"' for k, v in sorted(oauth_params.items())
+        )
+
+    def _http_get(self, url: str, headers: dict | None = None) -> tuple[int, dict]:
+        """Minimal GET — returns (status_code, parsed_json_body)."""
+        import json
+        import urllib.request
+        import urllib.error
+
+        req = urllib.request.Request(url, headers=headers or {})
+        try:
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                body = json.loads(resp.read().decode())
+                return resp.status, body
+        except urllib.error.HTTPError as exc:
+            try:
+                body = json.loads(exc.read().decode())
+            except Exception:
+                body = {}
+            return exc.code, body
+
+    def _test_instagram(self, profile: SocialProfile) -> tuple[bool, str]:
+        # Instagram Graph API: GET /me?fields=id,name&access_token=...
+        url = (
+            f"https://graph.instagram.com/me"
+            f"?fields=id,name,username"
+            f"&access_token={profile.access_token}"
+        )
+        status, body = self._http_get(url)
+        if status == 200 and "id" in body:
+            name = body.get("username") or body.get("name") or body["id"]
+            return True, f"Connected as @{name}."
+        error = body.get("error", {}).get("message", f"HTTP {status}")
+        return False, f"Instagram error: {error}"
+
+    def _test_x(self, profile: SocialProfile) -> tuple[bool, str]:
+        # X API v2 with OAuth 1.0a user context (required for tweet.write).
+        # Needs: client_id=API Key, client_secret=API Secret,
+        #        access_token=Access Token, refresh_token=Access Token Secret.
+        if not profile.client_id or not profile.client_secret:
+            return False, "Missing API Key or API Secret — save all four OAuth 1.0a credentials first."
+        if not profile.refresh_token:
+            return False, "Missing Access Token Secret — save the token secret in the 'Refresh token' field first."
+
+        url = "https://api.twitter.com/2/users/me"
+        auth_header = self._oauth1_header(
+            method="GET",
+            url=url,
+            consumer_key=profile.client_id,
+            consumer_secret=profile.client_secret,
+            token=profile.access_token,
+            token_secret=profile.refresh_token,
+        )
+        status, body = self._http_get(url, headers={"Authorization": auth_header})
+        if status == 200 and "data" in body:
+            username = body["data"].get("username", body["data"].get("id", "unknown"))
+            return True, f"Connected as @{username}."
+        errors = body.get("errors") or body.get("detail", f"HTTP {status}")
+        if isinstance(errors, list):
+            errors = errors[0].get("message", str(errors[0]))
+        return False, f"X error: {errors}"
+
+    def _test_facebook(self, profile: SocialProfile) -> tuple[bool, str]:
+        # Graph API: GET /{page_id}?fields=name,id&access_token=...
+        url = (
+            f"https://graph.facebook.com/v19.0/{profile.account_id}"
+            f"?fields=name,id"
+            f"&access_token={profile.access_token}"
+        )
+        status, body = self._http_get(url)
+        if status == 200 and "id" in body:
+            name = body.get("name", body["id"])
+            return True, f"Connected to page \"{name}\"."
+        error = body.get("error", {}).get("message", f"HTTP {status}")
+        return False, f"Facebook error: {error}"
+
+    def _test_google(self, profile: SocialProfile) -> tuple[bool, str]:
+        # Google Business Profile API: GET the location resource to verify access.
+        # account_id is stored as "accounts/{acct}/locations/{loc}"
+        resource = profile.account_id.strip("/")
+        url = f"https://mybusinessbusinessinformation.googleapis.com/v1/{resource}"
+        status, body = self._http_get(
+            url,
+            headers={"Authorization": f"Bearer {profile.access_token}"},
+        )
+        if status == 200:
+            name = body.get("title") or body.get("name") or resource
+            return True, f"Connected to location \"{name}\"."
+        error = (body.get("error") or {}).get("message", f"HTTP {status}")
+        return False, f"Google Business error: {error}"
+
+    def _test_linkedin(self, profile: SocialProfile) -> tuple[bool, str]:
+        # LinkedIn API: GET /v2/organizations/{id} — verify the org is accessible.
+        org_id = profile.account_id.strip()
+        if org_id.startswith("urn:li:organization:"):
+            org_id = org_id.split(":")[-1]
+        url = f"https://api.linkedin.com/v2/organizations/{org_id}"
+        status, body = self._http_get(
+            url,
+            headers={
+                "Authorization": f"Bearer {profile.access_token}",
+                "LinkedIn-Version": "202401",
+            },
+        )
+        if status == 200:
+            name = body.get("localizedName") or body.get("name", {}).get("localized", {})
+            if isinstance(name, dict):
+                name = next(iter(name.values()), org_id)
+            return True, f"Connected to page \"{name or org_id}\"."
+        error = body.get("message") or body.get("serviceErrorCode") or f"HTTP {status}"
+        return False, f"LinkedIn error: {error}"
+
+
+class SocialPreviewView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    POST  platform=<str>&post_id=<int>
+    Returns JSON { text, char_count, char_limit }.
+    Renders the message_template with real blog post data — no actual posting.
+    """
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def post(self, request: HttpRequest) -> JsonResponse:
+        platform = (request.POST.get("platform") or "").strip()
+        post_id_raw = (request.POST.get("post_id") or "").strip()
+
+        if not platform:
+            return JsonResponse({"ok": False, "message": "No platform specified."}, status=400)
+        if not post_id_raw:
+            return JsonResponse({"ok": False, "message": "No post_id specified."}, status=400)
+
+        try:
+            from blog.models import Post
+            post = Post.objects.get(pk=int(post_id_raw))
+        except (ValueError, Post.DoesNotExist):
+            return JsonResponse({"ok": False, "message": "Post not found."}, status=404)
+
+        try:
+            profile = SocialProfile.objects.get(platform=platform)
+        except SocialProfile.DoesNotExist:
+            return JsonResponse({"ok": False, "message": "Platform not configured."}, status=404)
+
+        from core.utils.social_posting import CHAR_LIMITS, build_message
+        char_limit = CHAR_LIMITS.get(platform)
+        text = build_message(profile.message_template, post, char_limit)
+
+        feature_image_url = None
+        if post.feature_image and post.feature_image.name:
+            try:
+                feature_image_url = post.feature_image.url
+            except Exception:
+                pass
+
+        return JsonResponse({
+            "ok": True,
+            "text": text,
+            "char_count": len(text),
+            "char_limit": char_limit,
+            "feature_image_url": feature_image_url,
+        })
+
+
+class SocialSendTestPostView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    POST  platform=<str>&post_id=<int>
+    Sends a real post to the platform using the rendered message template.
+    Prepends '[TEST] ' so it's clearly marked as a test post.
+    Returns JSON { ok, message }.
+    """
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def post(self, request: HttpRequest) -> JsonResponse:
+        platform = (request.POST.get("platform") or "").strip()
+        post_id_raw = (request.POST.get("post_id") or "").strip()
+
+        if not platform:
+            return JsonResponse({"ok": False, "message": "No platform specified."}, status=400)
+        if not post_id_raw:
+            return JsonResponse({"ok": False, "message": "No post_id specified."}, status=400)
+
+        try:
+            from blog.models import Post
+            post = Post.objects.get(pk=int(post_id_raw))
+        except (ValueError, Post.DoesNotExist):
+            return JsonResponse({"ok": False, "message": "Post not found."}, status=404)
+
+        try:
+            profile = SocialProfile.objects.get(platform=platform)
+        except SocialProfile.DoesNotExist:
+            return JsonResponse({"ok": False, "message": "Platform not configured."}, status=404)
+
+        if not profile.access_token:
+            return JsonResponse({"ok": False, "message": "No access token saved — save credentials first."})
+
+        from core.utils.social_posting import CHAR_LIMITS, build_message, _POSTERS
+        char_limit = CHAR_LIMITS.get(platform)
+        text = build_message(profile.message_template, post, char_limit)
+
+        # Prepend [TEST] marker with a timestamp so repeated sends are never
+        # rejected as duplicate content by platforms like X (Twitter v2 API).
+        # Reduce the char limit by the prefix length so build_message trims
+        # the excerpt rather than slicing the rendered text (which cuts the URL).
+        import time as _time
+        prefix = f"[TEST {int(_time.time())}] "
+        adjusted_limit = (char_limit - len(prefix)) if char_limit else None
+        text = build_message(profile.message_template, post, adjusted_limit)
+        text = prefix + text
+
+        poster = _POSTERS.get(platform)
+        if not poster:
+            return JsonResponse({"ok": False, "message": f"No poster implemented for '{platform}'."})
+
+        image_field = post.feature_image if (post.feature_image and post.feature_image.name) else None
+        try:
+            ok, message = poster(profile, text, image_field=image_field)
+        except Exception as exc:
+            logger.warning("Send-test error for %s: %s", platform, exc)
+            return JsonResponse({"ok": False, "message": f"Unexpected error: {exc}"})
+
+        return JsonResponse({"ok": ok, "message": message})
 
 
 class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -966,6 +1320,7 @@ class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         events = (
             AnalyticsEvent.objects.filter(is_authenticated=False, created__gte=cutoff)
+            .exclude(bot_ua_exclude_q())
             .annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
             .order_by("session_id", "-created")
             .values(
@@ -1107,6 +1462,7 @@ class ActiveSessionDetailApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         events_qs = (
             AnalyticsEvent.objects.filter(is_authenticated=False, created__gte=cutoff)
+            .exclude(bot_ua_exclude_q())
             .annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
             .filter(Q(session_id=session_key) | Q(person_key=session_key))
             .order_by("created", "id")
@@ -1435,7 +1791,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), timezone=tzinfo)
 
         all_events = AnalyticsEvent.objects.filter(created__gte=start_dt, created__lt=end_dt)
-        events = all_events.filter(is_authenticated=False)
+        events = all_events.filter(is_authenticated=False).exclude(bot_ua_exclude_q())
 
         person_expr = Case(
             When(~Q(ip_hash="") & ~Q(user_agent=""), then=Concat("ip_hash", Value("|"), "user_agent")),
@@ -2010,6 +2366,143 @@ class ContactSettingsView(ManageTherapistsView):
     section_slug = "contact"
 
 
+class OfficesSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Admin settings for managing OfficeLocation records."""
+
+    template_name = "accounts/settings_offices.html"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def _get_context(self, request: HttpRequest, form: OfficeLocationForm | None = None, editing: OfficeLocation | None = None) -> dict:
+        from profiles.models import TherapistProfile as _TP
+        offices = OfficeLocation.objects.order_by("order", "name")
+        return {
+            "active_page": "offices",
+            "offices": offices,
+            "form": form or OfficeLocationForm(),
+            "editing": editing,
+            "all_therapists": _TP.objects.order_by("last_name", "first_name"),
+        }
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        edit_id = request.GET.get("edit")
+        editing = None
+        form = None
+        if edit_id:
+            try:
+                editing = OfficeLocation.objects.get(pk=edit_id)
+                form = OfficeLocationForm(instance=editing)
+            except OfficeLocation.DoesNotExist:
+                pass
+        return render(request, self.template_name, self._get_context(request, form, editing))
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        action = request.POST.get("action", "")
+
+        if action == "delete":
+            pk = request.POST.get("pk")
+            if pk:
+                OfficeLocation.objects.filter(pk=pk).delete()
+                messages.success(request, "Office location deleted.")
+            return redirect(reverse("accounts:settings_offices"))
+
+        edit_id = request.POST.get("edit_id")
+        instance = None
+        if edit_id:
+            try:
+                instance = OfficeLocation.objects.get(pk=edit_id)
+            except OfficeLocation.DoesNotExist:
+                pass
+
+        form = OfficeLocationForm(request.POST, instance=instance)
+        if form.is_valid():
+            office = form.save()
+            # Handle M2M: therapists
+            therapist_ids = request.POST.getlist("therapist_ids")
+            if therapist_ids is not None:
+                from profiles.models import TherapistProfile as _TP
+                office.therapists.set(_TP.objects.filter(pk__in=therapist_ids))
+            verb = "Updated" if instance else "Created"
+            messages.success(request, f"{verb} office: {office.name}.")
+            return redirect(reverse("accounts:settings_offices"))
+
+        editing = instance
+        return render(request, self.template_name, self._get_context(request, form, editing))
+
+
+class HeroSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Admin settings for the homepage hero section."""
+
+    template_name = "accounts/settings_hero.html"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def _get_context(
+        self,
+        request: HttpRequest,
+        form: HeroSettingsForm | None = None,
+        block_form: HeroContentBlockForm | None = None,
+        editing_block: HeroContentBlock | None = None,
+    ) -> dict:
+        hero = HeroSettings.get_solo()
+        blocks = hero.content_blocks.order_by("order", "id")
+        return {
+            "active_page": "hero",
+            "hero": hero,
+            "form": form or HeroSettingsForm(instance=hero),
+            "block_form": block_form or HeroContentBlockForm(),
+            "blocks": blocks,
+            "editing_block": editing_block,
+        }
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        edit_block_id = request.GET.get("edit_block")
+        editing_block = None
+        block_form = None
+        if edit_block_id:
+            editing_block = get_object_or_404(HeroContentBlock, pk=edit_block_id)
+            block_form = HeroContentBlockForm(instance=editing_block)
+        return render(request, self.template_name, self._get_context(request, block_form=block_form, editing_block=editing_block))
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        action = request.POST.get("action", "").strip()
+
+        if action == "hero_save":
+            hero = HeroSettings.get_solo()
+            form = HeroSettingsForm(request.POST, request.FILES, instance=hero)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Homepage hero settings saved.")
+                return redirect(reverse("accounts:settings_hero"))
+            return render(request, self.template_name, self._get_context(request, form=form))
+
+        if action == "block_save":
+            hero = HeroSettings.get_solo()
+            object_id = request.POST.get("object_id")
+            editing_block = get_object_or_404(HeroContentBlock, pk=object_id) if object_id else None
+            block_form = HeroContentBlockForm(request.POST, instance=editing_block)
+            if block_form.is_valid():
+                block = block_form.save(commit=False)
+                block.hero = hero
+                block.save()
+                verb = "updated" if editing_block else "added"
+                messages.success(request, f"Content block '{block.heading}' {verb}.")
+                return redirect(reverse("accounts:settings_hero"))
+            return render(request, self.template_name, self._get_context(request, block_form=block_form, editing_block=editing_block))
+
+        if action == "block_delete":
+            object_id = request.POST.get("object_id")
+            block = get_object_or_404(HeroContentBlock, pk=object_id)
+            name = block.heading
+            block.delete()
+            messages.success(request, f"Deleted content block '{name}'.")
+            return redirect(reverse("accounts:settings_hero"))
+
+        return redirect(reverse("accounts:settings_hero"))
+
+
 class WhatWeDoSettingsView(ManageTherapistsView):
     template_name = "accounts/settings_whatwedo.html"
     success_url_name = "accounts:settings_whatwedo"
@@ -2032,6 +2525,418 @@ class PaymentSettingsView(ManageTherapistsView):
     template_name = "accounts/settings_payment.html"
     success_url_name = "accounts:settings_payment"
     section_slug = "payment"
+
+
+class AreasServedSettingsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Custom settings page for managing geographic areas served (states, cities, counties)."""
+
+    template_name = "accounts/settings_areas_served.html"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def _get_context(self, request: HttpRequest) -> dict:
+        from geo.models import GeoState, GeoLocation, GeoContentBlock, GeoRegion
+
+        states = list(
+            GeoState.objects.prefetch_related("locations__county").order_by("name")
+        )
+        regions = list(GeoRegion.objects.prefetch_related("states", "locations", "offices").order_by("name"))
+        # counties_by_state: {state_pk: [county, ...]} — for dropdowns in forms
+        counties_by_state: dict[int, list] = {}
+        # tree_by_state: {state_pk: {"counties": [{"county": obj, "cities": [...]}, ...], "unassigned": [...]}}
+        tree_by_state: dict[int, dict] = {}
+        for state in states:
+            locs = list(state.locations.all())
+            counties = [l for l in locs if l.location_type == GeoLocation.COUNTY]
+            counties_by_state[state.pk] = counties
+            county_map: dict[int, list] = {c.pk: [] for c in counties}
+            unassigned: list = []
+            for loc in locs:
+                if loc.location_type == GeoLocation.CITY:
+                    if loc.county_id and loc.county_id in county_map:
+                        county_map[loc.county_id].append(loc)
+                    else:
+                        unassigned.append(loc)
+            tree_by_state[state.pk] = {
+                "counties": [{"county": c, "cities": county_map[c.pk]} for c in counties],
+                "unassigned": unassigned,
+            }
+        from core.models import OfficeLocation as _OL
+        return {
+            "active_page": "areas_served",
+            "states": states,
+            "counties_by_state": counties_by_state,
+            "tree_by_state": tree_by_state,
+            "GeoLocation": GeoLocation,
+            "all_offices": _OL.objects.filter(is_active=True).order_by("order", "name"),
+            "regions": regions,
+        }
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        ctx = self._get_context(request)
+        action = request.GET.get("action")
+        pk = request.GET.get("pk")
+
+        if action == "add_state":
+            ctx["show_add_state_form"] = True
+        elif action == "edit_state" and pk:
+            from geo.models import GeoState
+            try:
+                ctx["editing_state"] = GeoState.objects.get(pk=pk)
+            except GeoState.DoesNotExist:
+                pass
+        elif action == "edit_location" and pk:
+            from geo.models import GeoLocation
+            try:
+                ctx["editing_location"] = GeoLocation.objects.select_related("state").get(pk=pk)
+            except GeoLocation.DoesNotExist:
+                pass
+        elif action == "add_location":
+            ctx["add_location_state_pk"] = request.GET.get("state_pk")
+        elif action == "add_region":
+            ctx["show_add_region_form"] = True
+        elif action == "edit_region" and pk:
+            from geo.models import GeoRegion
+            try:
+                ctx["editing_region"] = GeoRegion.objects.prefetch_related("states", "locations", "offices").get(pk=pk)
+            except GeoRegion.DoesNotExist:
+                pass
+
+        # Keep tree expanded after a save (no edit form, just open the right group)
+        saved_loc_pk = request.GET.get("saved_location")
+        if saved_loc_pk:
+            from geo.models import GeoLocation
+            try:
+                ctx["saved_location"] = GeoLocation.objects.select_related("state", "county").get(pk=saved_loc_pk)
+            except GeoLocation.DoesNotExist:
+                pass
+        saved_state_pk = request.GET.get("saved_state")
+        if saved_state_pk and saved_state_pk.isdigit():
+            ctx["saved_state_pk"] = int(saved_state_pk)
+        saved_region_pk = request.GET.get("saved_region")
+        if saved_region_pk and saved_region_pk.isdigit():
+            ctx["saved_region_pk"] = int(saved_region_pk)
+
+        return render(request, self.template_name, ctx)
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        from geo.models import GeoState, GeoLocation, GeoContentBlock
+
+        action = request.POST.get("action")
+        base_url = reverse("accounts:settings_areas_served")
+
+        # ---- State: toggle active ----------------------------------------
+        if action == "toggle_state":
+            pk = request.POST.get("pk")
+            try:
+                state = GeoState.objects.get(pk=pk)
+                state.is_active = not state.is_active
+                state.save(update_fields=["is_active"])
+                messages.success(
+                    request,
+                    f"{'Activated' if state.is_active else 'Deactivated'} {state.name}.",
+                )
+            except GeoState.DoesNotExist:
+                messages.error(request, "State not found.")
+            return redirect(base_url)
+
+        # ---- State: save SEO / heading fields ----------------------------
+        if action == "save_state":
+            pk = request.POST.get("pk")
+            try:
+                state = GeoState.objects.get(pk=pk)
+                state.hero_heading = request.POST.get("hero_heading", "").strip()
+                state.hero_subheading = request.POST.get("hero_subheading", "").strip()
+                state.seo_title = request.POST.get("seo_title", "").strip()
+                state.seo_description = request.POST.get("seo_description", "").strip()
+                state.offers_in_office = request.POST.get("offers_in_office") == "on"
+                state.offers_telehealth = request.POST.get("offers_telehealth") == "on"
+                update_fields = ["hero_heading", "hero_subheading", "seo_title", "seo_description", "offers_in_office", "offers_telehealth"]
+                if "hero_image" in request.FILES:
+                    state.hero_image = request.FILES["hero_image"]
+                    update_fields.append("hero_image")
+                elif request.POST.get("clear_hero_image"):
+                    state.hero_image = None
+                    update_fields.append("hero_image")
+                state.save(update_fields=update_fields)
+                # M2M: offices
+                from core.models import OfficeLocation as _OL
+                office_ids = request.POST.getlist("office_ids")
+                state.offices.set(_OL.objects.filter(pk__in=office_ids))
+                messages.success(request, f"Saved {state.name}.")
+            except GeoState.DoesNotExist:
+                messages.error(request, "State not found.")
+            return redirect(base_url + f"?saved_state={pk}")
+
+        # ---- Location: toggle active ------------------------------------
+        if action == "toggle_location":
+            pk = request.POST.get("pk")
+            try:
+                loc = GeoLocation.objects.get(pk=pk)
+                loc.is_active = not loc.is_active
+                loc.save(update_fields=["is_active"])
+                messages.success(
+                    request,
+                    f"{'Activated' if loc.is_active else 'Deactivated'} {loc.name}.",
+                )
+            except GeoLocation.DoesNotExist:
+                messages.error(request, "Location not found.")
+            return redirect(base_url)
+
+        # ---- Location: save SEO / heading fields -----------------------
+        if action == "save_location":
+            pk = request.POST.get("pk")
+            try:
+                loc = GeoLocation.objects.get(pk=pk)
+                loc.hero_heading = request.POST.get("hero_heading", "").strip()
+                loc.hero_subheading = request.POST.get("hero_subheading", "").strip()
+                loc.seo_title = request.POST.get("seo_title", "").strip()
+                loc.seo_description = request.POST.get("seo_description", "").strip()
+                # Only cities can have a county parent
+                if loc.location_type == GeoLocation.CITY:
+                    county_pk = request.POST.get("county_pk") or None
+                    if county_pk:
+                        try:
+                            loc.county = GeoLocation.objects.get(pk=county_pk, location_type=GeoLocation.COUNTY, state=loc.state)
+                        except GeoLocation.DoesNotExist:
+                            loc.county = None
+                    else:
+                        loc.county = None
+                loc.offers_in_office = request.POST.get("offers_in_office") == "on"
+                loc.offers_telehealth = request.POST.get("offers_telehealth") == "on"
+                update_fields = ["hero_heading", "hero_subheading", "seo_title", "seo_description", "county", "offers_in_office", "offers_telehealth"]
+                if "hero_image" in request.FILES:
+                    loc.hero_image = request.FILES["hero_image"]
+                    update_fields.append("hero_image")
+                elif request.POST.get("clear_hero_image"):
+                    loc.hero_image = None
+                    update_fields.append("hero_image")
+                loc.save(update_fields=update_fields)
+                # M2M: offices
+                from core.models import OfficeLocation as _OL
+                office_ids = request.POST.getlist("office_ids")
+                loc.offices.set(_OL.objects.filter(pk__in=office_ids))
+                messages.success(request, f"Saved {loc.name}.")
+            except GeoLocation.DoesNotExist:
+                messages.error(request, "Location not found.")
+            return redirect(base_url + f"?saved_location={pk}")
+
+        # ---- Location: add new -----------------------------------------
+        if action == "add_location":
+            state_pk = request.POST.get("state_pk")
+            name = request.POST.get("name", "").strip()
+            location_type = request.POST.get("location_type", GeoLocation.CITY)
+            try:
+                state = GeoState.objects.get(pk=state_pk)
+                if not name:
+                    messages.error(request, "Name is required.")
+                    return redirect(base_url)
+                slug = name.lower().replace(" ", "-").replace(",", "")
+                if location_type == GeoLocation.COUNTY and not slug.endswith("-county"):
+                    slug = slug + "-county"
+                county = None
+                if location_type == GeoLocation.CITY:
+                    county_pk = request.POST.get("county_pk") or None
+                    if county_pk:
+                        try:
+                            county = GeoLocation.objects.get(pk=county_pk, location_type=GeoLocation.COUNTY, state=state)
+                        except GeoLocation.DoesNotExist:
+                            pass
+                GeoLocation.objects.create(
+                    state=state,
+                    name=name,
+                    slug=slug,
+                    location_type=location_type,
+                    county=county,
+                    is_active=True,
+                )
+                messages.success(request, f"Added {name} to {state.name}.")
+            except GeoState.DoesNotExist:
+                messages.error(request, "State not found.")
+            return redirect(base_url)
+
+        # ---- Location: delete ------------------------------------------
+        if action == "delete_location":
+            pk = request.POST.get("pk")
+            try:
+                loc = GeoLocation.objects.get(pk=pk)
+                name = loc.name
+                loc.delete()
+                messages.success(request, f"Deleted {name}.")
+            except GeoLocation.DoesNotExist:
+                messages.error(request, "Location not found.")
+            return redirect(base_url)
+
+        # ---- State: add new --------------------------------------------
+        if action == "add_state":
+            name = request.POST.get("name", "").strip()
+            abbreviation = request.POST.get("abbreviation", "").strip().upper()
+            slug = request.POST.get("slug", "").strip()
+            if not name or not abbreviation or not slug:
+                messages.error(request, "Name, abbreviation, and slug are all required.")
+                return redirect(base_url + "?action=add_state")
+            if GeoState.objects.filter(slug=slug).exists():
+                messages.error(request, f"A state with slug '{slug}' already exists.")
+                return redirect(base_url + "?action=add_state")
+            GeoState.objects.create(
+                name=name,
+                abbreviation=abbreviation,
+                slug=slug,
+                is_active=True,
+            )
+            messages.success(request, f"Added {name}.")
+            return redirect(base_url)
+
+        # ---- State: delete ---------------------------------------------
+        if action == "delete_state":
+            pk = request.POST.get("pk")
+            try:
+                state = GeoState.objects.get(pk=pk)
+                if state.locations.exists():
+                    messages.error(
+                        request,
+                        f"Cannot delete {state.name} — it still has locations. Delete all locations first.",
+                    )
+                else:
+                    name = state.name
+                    state.delete()
+                    messages.success(request, f"Deleted {name}.")
+            except GeoState.DoesNotExist:
+                messages.error(request, "State not found.")
+            return redirect(base_url)
+
+        # ---- Content block: save (add or edit) --------------------------
+        if action == "save_content_block":
+            owner_type = request.POST.get("owner_type")
+            owner_pk = request.POST.get("owner_pk", "")
+            block_pk = request.POST.get("block_pk", "").strip()
+            heading = request.POST.get("heading", "").strip()
+            body = request.POST.get("body", "")
+            order = int(request.POST.get("order", 0) or 0)
+            try:
+                if owner_type == "state":
+                    owner_obj = GeoState.objects.get(pk=owner_pk)
+                    if block_pk:
+                        block = GeoContentBlock.objects.get(pk=block_pk, state=owner_obj)
+                        block.heading = heading
+                        block.body = body
+                        block.order = order
+                        block.save(update_fields=["heading", "body", "order"])
+                    else:
+                        GeoContentBlock.objects.create(state=owner_obj, heading=heading, body=body, order=order)
+                    messages.success(request, "Saved content block.")
+                    return redirect(base_url + f"?action=edit_state&pk={owner_pk}")
+                elif owner_type == "location":
+                    owner_obj = GeoLocation.objects.get(pk=owner_pk)
+                    if block_pk:
+                        block = GeoContentBlock.objects.get(pk=block_pk, location=owner_obj)
+                        block.heading = heading
+                        block.body = body
+                        block.order = order
+                        block.save(update_fields=["heading", "body", "order"])
+                    else:
+                        GeoContentBlock.objects.create(location=owner_obj, heading=heading, body=body, order=order)
+                    messages.success(request, "Saved content block.")
+                    return redirect(base_url + f"?action=edit_location&pk={owner_pk}")
+            except (GeoState.DoesNotExist, GeoLocation.DoesNotExist, GeoContentBlock.DoesNotExist):
+                messages.error(request, "Object not found.")
+            return redirect(base_url)
+
+        # ---- Content block: delete ------------------------------------
+        if action == "delete_content_block":
+            owner_type = request.POST.get("owner_type")
+            owner_pk = request.POST.get("owner_pk", "")
+            block_pk = request.POST.get("block_pk", "")
+            GeoContentBlock.objects.filter(pk=block_pk).delete()
+            messages.success(request, "Deleted content block.")
+            if owner_type == "state":
+                return redirect(base_url + f"?action=edit_state&pk={owner_pk}")
+            return redirect(base_url + f"?action=edit_location&pk={owner_pk}")
+
+        # ---- Region: add new -------------------------------------------
+        if action == "add_region":
+            from geo.models import GeoRegion
+            name = request.POST.get("name", "").strip()
+            slug = request.POST.get("slug", "").strip()
+            if not name or not slug:
+                messages.error(request, "Name and slug are required.")
+                return redirect(base_url + "?action=add_region")
+            if GeoRegion.objects.filter(slug=slug).exists():
+                messages.error(request, f"A region with slug '{slug}' already exists.")
+                return redirect(base_url + "?action=add_region")
+            region = GeoRegion.objects.create(name=name, slug=slug, is_active=True)
+            state_ids = request.POST.getlist("state_ids")
+            location_ids = request.POST.getlist("location_ids")
+            office_ids = request.POST.getlist("office_ids")
+            region.states.set(GeoState.objects.filter(pk__in=state_ids))
+            region.locations.set(GeoLocation.objects.filter(pk__in=location_ids))
+            from core.models import OfficeLocation as _OL
+            region.offices.set(_OL.objects.filter(pk__in=office_ids))
+            messages.success(request, f"Added region '{name}'.")
+            return redirect(base_url)
+
+        # ---- Region: save ----------------------------------------------
+        if action == "save_region":
+            from geo.models import GeoRegion
+            pk = request.POST.get("pk")
+            try:
+                region = GeoRegion.objects.get(pk=pk)
+                region.name = request.POST.get("name", region.name).strip()
+                region.seo_title = request.POST.get("seo_title", "").strip()
+                region.seo_description = request.POST.get("seo_description", "").strip()
+                region.og_image_url = request.POST.get("og_image_url", "").strip()
+                update_fields = ["name", "seo_title", "seo_description", "og_image_url"]
+                if "hero_image" in request.FILES:
+                    region.hero_image = request.FILES["hero_image"]
+                    update_fields.append("hero_image")
+                elif request.POST.get("clear_hero_image"):
+                    region.hero_image = None
+                    update_fields.append("hero_image")
+                region.save(update_fields=update_fields)
+                state_ids = request.POST.getlist("state_ids")
+                location_ids = request.POST.getlist("location_ids")
+                office_ids = request.POST.getlist("office_ids")
+                region.states.set(GeoState.objects.filter(pk__in=state_ids))
+                region.locations.set(GeoLocation.objects.filter(pk__in=location_ids))
+                from core.models import OfficeLocation as _OL
+                region.offices.set(_OL.objects.filter(pk__in=office_ids))
+                messages.success(request, f"Saved region '{region.name}'.")
+            except GeoRegion.DoesNotExist:
+                messages.error(request, "Region not found.")
+            return redirect(base_url + f"?saved_region={pk}")
+
+        # ---- Region: toggle active -------------------------------------
+        if action == "toggle_region":
+            from geo.models import GeoRegion
+            pk = request.POST.get("pk")
+            try:
+                region = GeoRegion.objects.get(pk=pk)
+                region.is_active = not region.is_active
+                region.save(update_fields=["is_active"])
+                messages.success(
+                    request,
+                    f"{'Activated' if region.is_active else 'Deactivated'} {region.name}.",
+                )
+            except GeoRegion.DoesNotExist:
+                messages.error(request, "Region not found.")
+            return redirect(base_url)
+
+        # ---- Region: delete --------------------------------------------
+        if action == "delete_region":
+            from geo.models import GeoRegion
+            pk = request.POST.get("pk")
+            try:
+                region = GeoRegion.objects.get(pk=pk)
+                name = region.name
+                region.delete()
+                messages.success(request, f"Deleted region '{name}'.")
+            except GeoRegion.DoesNotExist:
+                messages.error(request, "Region not found.")
+            return redirect(base_url)
+
+        messages.error(request, "Unknown action.")
+        return redirect(base_url)
 
 
 class PublishedSettingsView(ManageTherapistsView):
@@ -2631,6 +3536,12 @@ class AzureCallbackView(View):
         if not user.groups.filter(name__in=["therapist", "admin", "office_manager"]).exists():
             therapist_group, _ = Group.objects.get_or_create(name="therapist")
             user.groups.add(therapist_group)
+
+        # Grant is_staff to admin-group users so they can access Django admin.
+        should_be_staff = is_admin(user)
+        if user.is_staff != should_be_staff:
+            user.is_staff = should_be_staff
+            user.save(update_fields=["is_staff"])
 
         # Explicit backend ensures Django persists auth without relying on prior authenticate()
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")

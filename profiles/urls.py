@@ -10,5 +10,38 @@ urlpatterns = [
     path("therapists/", views.profiles_list, name="profile_list"),
     path("therapists/edit/", views.profile_edit, name="profile_edit"),
     path("therapists/<slug:slug>/", views.profile_detail, name="profile_detail"),
+    # Intersectional programmatic SEO pages
+    path(
+        "therapists/<slug:therapist_slug>/services/<slug:service_slug>/",
+        views.therapist_service_page,
+        name="therapist_service",
+    ),
+    # Hierarchy: state / county-or-city / city-under-county
+    path(
+        "therapists/<slug:therapist_slug>/<slug:state_slug>/",
+        views.therapist_area_page,
+        name="therapist_state",
+    ),
+    path(
+        "therapists/<slug:therapist_slug>/<slug:state_slug>/<slug:location_slug>/",
+        views.therapist_area_page,
+        name="therapist_area",
+    ),
+    path(
+        "therapists/<slug:therapist_slug>/<slug:state_slug>/<slug:county_slug>/<slug:city_slug>/",
+        views.therapist_city_page,
+        name="therapist_city",
+    ),
+    # Legacy "in" URLs → 301 redirects
+    path(
+        "therapists/<slug:therapist_slug>/in/<slug:state_slug>/",
+        views.therapist_in_redirect,
+        name="therapist_state_old",
+    ),
+    path(
+        "therapists/<slug:therapist_slug>/in/<slug:state_slug>/<slug:location_slug>/",
+        views.therapist_in_redirect,
+        name="therapist_area_old",
+    ),
     re_path(r"^therapists/photo-proxy/?$", views.photo_proxy, name="photo_proxy"),
 ]

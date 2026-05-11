@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.utils.text import slugify
@@ -72,6 +73,9 @@ class Post(models.Model):
         if len(parts) > words:
             snippet += '…'
         return snippet
+
+    def get_absolute_url(self) -> str:
+        return reverse("blog:detail", args=[self.slug])
 
 
 class Category(models.Model):

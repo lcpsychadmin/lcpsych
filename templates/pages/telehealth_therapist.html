@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">{{ schema_json }}</script>
+<style>
+.chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  border-radius: 999px; background: rgba(146, 220, 229, 0.28);
+  color: #0f3f46; padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 700;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content" class="site-main">
+
+  {# ── Breadcrumb ────────────────────────────────────────── #}
+  <nav aria-label="Breadcrumb" class="bg-white border-b border-slate-100">
+    <div class="max-w-6xl mx-auto px-4 py-2 flex items-center gap-1.5 text-sm text-slate-500">
+      <a href="/" class="hover:text-[#04606B] transition-colors">Home</a>
+      <span>›</span>
+      <a href="/telehealth/" class="hover:text-[#04606B] transition-colors">Telehealth</a>
+      <span>›</span>
+      <span class="text-slate-700 font-medium">{{ therapist.display_name }}</span>
+    </div>
+  </nav>
+
+  {# ── Hero ──────────────────────────────────────────────── #}
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white">
+    <div class="relative max-w-6xl mx-auto px-4 py-16 md:py-20">
+      <div class="flex flex-col md:flex-row gap-10 items-center md:items-start">
+
+        {# Photo #}
+        {% if therapist.photo %}
+        <div class="flex-shrink-0">
+          <div class="w-44 h-44 md:w-52 md:h-52 rounded-full overflow-hidden ring-4 ring-[#92DCE5]/60 shadow-xl">
+            <img src="{{ therapist.photo.url }}" alt="Photo of {{ therapist.display_name }}" class="w-full h-full object-cover object-top">
+          </div>
+        </div>
+        {% endif %}
+
+        {# Info #}
+        <div class="flex flex-col gap-4 text-center md:text-left">
+          <div class="flex flex-wrap justify-center md:justify-start gap-2">
+            <div class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Telehealth</div>
+            {% if therapist.license_type %}
+              <div class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">{{ therapist.license_type.name }}</div>
+            {% endif %}
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold text-white m-0">{{ therapist.display_name }}</h1>
+          {% if therapist.license_type %}
+            <p class="text-white/80 text-lg m-0">{{ therapist.license_type.description|default:therapist.license_type.name }}</p>
+          {% endif %}
+          <p class="text-white/75 m-0">
+            Online therapy available in
+            {% for state in states %}{{ state.name }}{% if not forloop.last %}{% if forloop.revcounter == 2 %} and {% else %}, {% endif %}{% endif %}{% endfor %}.
+          </p>
+          <div class="flex flex-wrap justify-center md:justify-start gap-3 mt-2">
+            <a href="{{ office.cta_url }}"
+               class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-5 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white"
+               data-schedule-trigger>{{ office.cta_label }}</a>
+            <a href="/therapists/{{ therapist.slug }}/"
+               class="inline-flex items-center gap-2 rounded-xl border border-white/50 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46] hover:border-transparent">
+              Full profile
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  {# ── Bio ───────────────────────────────────────────────── #}
+  {% if therapist.bio %}
+  <section class="py-12 md:py-16 bg-white">
+    <div class="max-w-3xl mx-auto px-4">
+      <h2 class="text-2xl font-semibold text-[#04606B] mb-4">About {{ therapist.display_name }}</h2>
+      <div class="prose prose-lg max-w-none text-slate-700">{{ therapist.bio|safe }}</div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Services ──────────────────────────────────────────── #}
+  {% if services %}
+  <section class="py-12 md:py-16" style="background:#f0f9fa;">
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-2xl font-semibold text-[#04606B] mb-8">Services offered via telehealth</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for svc in services %}
+        <a href="/telehealth/services/{{ svc.slug }}/" class="group flex flex-col rounded-xl ring-1 ring-slate-200 hover:ring-[#04606B]/40 bg-white shadow-sm hover:shadow-md transition overflow-hidden no-underline">
+          {% if svc.image_url %}
+            <div class="h-36 w-full bg-cover bg-center" style="background-image: url('{{ svc.image_url|escape }}');"></div>
+          {% endif %}
+          <div class="p-5 flex flex-col grow">
+            <h3 class="text-lg font-medium text-[#005F6B] m-0 group-hover:text-[#04606B]">{{ svc.title }}</h3>
+            {% if svc.excerpt %}
+              <div class="prose prose-sm text-slate-600 mt-2 line-clamp-3">{{ svc.excerpt|safe }}</div>
+            {% endif %}
+            <div class="mt-auto pt-3">
+              <span class="text-sm font-medium text-[#04606B] group-hover:underline">Learn more →</span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Telehealth footer strip ──────────────────────────── #}
+  <section class="relative z-20 pt-14 pb-12" style="background:#92DCE5;">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-[#04606B] m-0 mb-2">Book a telehealth session</h2>
+          <p class="text-[#04606B]/80 m-0 text-sm">
+            Online sessions available in
+            {% for state in states %}{{ state.name }}{% if not forloop.last %}{% if forloop.revcounter == 2 %} and {% else %}, {% endif %}{% endif %}{% endfor %}.
+          </p>
+        </div>
+        <a href="{{ office.cta_url }}"
+           class="flex-shrink-0 inline-flex items-center gap-2 rounded-xl bg-[#04606B] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0f3f46]"
+           data-schedule-trigger>{{ office.cta_label }}</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+{% endblock %}

@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     'core',
     'profiles',
     'blog',
+    'geo',
 ]
 
 MIDDLEWARE = [

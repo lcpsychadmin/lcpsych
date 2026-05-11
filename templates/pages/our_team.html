@@ -5,3 +5,7 @@
     {% include "partials/therapists.html" %}
 </main>
 {% endblock %}
+
+{% block before_footer %}
+  {% include "partials/schedule_cta.html" with wave_fill="#ffffff" %}
+{% endblock %}

@@ -12,6 +12,9 @@
         {% else %}
           <a href="tel:+18595254911" class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-4 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white" data-analytics-label="cta_call_contact_section_primary">859-525-4911</a>
         {% endif %}
+        {% if contact and contact.email_address %}
+          <a href="mailto:{{ contact.email_address }}" class="inline-flex items-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46] hover:border-transparent" data-analytics-label="cta_email_contact_section_hero">Email us</a>
+        {% endif %}
         {% if contact and contact.cta_url %}
           <a href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/" class="inline-flex items-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#92DCE5] hover:text-[#0f3f46] hover:border-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70" data-schedule-trigger data-analytics-label="cta_schedule_contact_section">{{ contact.cta_label|default:"Schedule online" }}</a>
         {% endif %}

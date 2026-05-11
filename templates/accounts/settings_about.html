@@ -68,6 +68,16 @@
               {% csrf_token %}
               <input type="hidden" name="action" value="about_save">
               <div>
+                <label class="block text-sm font-semibold mb-1">About page heading</label>
+                {{ about_section_form.about_heading }}
+                {{ about_section_form.about_heading.errors }}
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1">About page subheading</label>
+                {{ about_section_form.about_subheading }}
+                {{ about_section_form.about_subheading.errors }}
+              </div>
+              <div>
                 <label class="block text-sm font-semibold mb-1">About title</label>
                 {{ about_section_form.about_title }}
                 {{ about_section_form.about_title.errors }}
@@ -104,9 +114,46 @@
                 {{ about_section_form.is_active }}
                 <label for="{{ about_section_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ about_section_form.is_active.label }}</label>
               </div>
+              <div class="border-t border-brand-accent/30 pt-4 mt-4">
+                <h3 class="text-base font-semibold text-[#0f3f46] mb-3">Meet Our Clinicians section</h3>
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Clinicians heading</label>
+                    {{ about_section_form.clinicians_heading }}
+                    {{ about_section_form.clinicians_heading.errors }}
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Clinicians subtext</label>
+                    {{ about_section_form.clinicians_subtext }}
+                    {{ about_section_form.clinicians_subtext.errors }}
+                  </div>
+                </div>
+              </div>
               <button type="submit" class="btn-primary">Save About section</button>
             </form>
           </div>
+
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mb-2">About Page Hero Image</h2>
+            <p class="text-slate-600 text-sm mb-4">Upload a featured image that displays in the hero section of the About Us page.</p>
+            <form method="post" enctype="multipart/form-data" class="space-y-4">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="about_hero_image_save">
+              {% if hero_settings.about_hero_image %}
+              <div class="mb-3">
+                <p class="text-sm font-semibold mb-1">Current image</p>
+                <img src="{{ hero_settings.about_hero_image.url }}" alt="Current about hero image" class="rounded-xl max-h-52 object-cover border border-brand-accent/40">
+              </div>
+              {% endif %}
+              <div>
+                <label class="block text-sm font-semibold mb-1">Choose image</label>
+                {{ about_hero_image_form.about_hero_image }}
+                {{ about_hero_image_form.about_hero_image.errors }}
+              </div>
+              <button type="submit" class="btn-primary">Save hero image</button>
+            </form>
+          </div>
+
         </div>
       </div>
     </div>

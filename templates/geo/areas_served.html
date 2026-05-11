@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+/* ---- Copied from services.html for consistency ---- */
+.btn-soft-focus {
+  border: 0 !important;
+  border-color: transparent !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.btn-soft-focus:focus,
+.btn-soft-focus:focus-visible {
+  outline: none !important;
+  border: 0 !important;
+  border-color: transparent !important;
+  box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.65) !important;
+}
+.input-brand,
+input.input-brand {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0.75rem !important;
+  border: 1.5px solid rgba(146, 220, 229, 0.7) !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.input-brand::placeholder,
+input.input-brand::placeholder,
+input.input-brand::-webkit-input-placeholder,
+input.input-brand::-moz-placeholder,
+input.input-brand:-ms-input-placeholder,
+input.input-brand::-ms-input-placeholder {
+  color: rgba(0, 95, 107, 0.55) !important;
+}
+.input-brand:focus,
+.input-brand:focus-visible,
+input.input-brand:focus,
+input.input-brand:focus-visible {
+  outline: none !important;
+  border-color: #92DCE5 !important;
+  box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.55) !important, inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ---- Location cards ------------------------------------------------------ */
+.areas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.area-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1.5px solid rgba(0,95,107,0.10);
+  box-shadow: 0 4px 20px rgba(0,48,57,0.06);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+}
+.area-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(0,48,57,0.13);
+  border-color: rgba(0,95,107,0.25);
+}
+.area-card__thumb {
+  height: 120px;
+  background: linear-gradient(135deg, #0d3f46 0%, #04606B 60%, #007b8a 100%);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+.area-card__body {
+  padding: 14px 16px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.area-card__name {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: #0d3f46;
+  line-height: 1.3;
+}
+.area-card__type {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #6b8e93;
+}
+.area-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+}
+.area-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.area-badge--office  { background: rgba(0,95,107,0.10); color: #005F6B; }
+.area-badge--telehealth { background: rgba(13,63,70,0.08); color: #0d3f46; }
+
+/* State grouping */
+.areas-state-section { margin-bottom: 52px; }
+.areas-state-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.areas-state-name {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: #0d3f46;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.areas-state-name:hover { color: #005F6B; }
+.areas-state-badge {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(0,95,107,0.10);
+  color: #005F6B;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.areas-state-divider {
+  flex: 1;
+  height: 1px;
+  background: rgba(0,95,107,0.18);
+}
+
+/* County grouping */
+.areas-county-section { margin-bottom: 28px; }
+.areas-county-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-left: 4px;
+}
+.areas-county-name {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #005F6B;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.areas-county-name:hover { color: #04606B; text-decoration: underline; }
+.areas-county-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(0,95,107,0.07);
+  color: #005F6B;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.areas-county-divider {
+  flex: 1;
+  height: 1px;
+  background: rgba(0,95,107,0.10);
+}
+
+/* Empty state */
+.areas-empty {
+  text-align: center;
+  padding: 64px 20px;
+  color: #0d3f46;
+  font-size: 15px;
+  display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+
+  {# ---- Hero (matches services page exactly) ---- #}
+  <section class="relative overflow-hidden z-10 text-white pb-0" style="background-color:#04606B;">
+    <div class="max-w-[1100px] mx-auto px-4 pt-16 pb-24 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Areas We Serve</h1>
+      <p class="mt-4 mx-auto max-w-[800px] text-white/90 text-lg">
+        Find L+C therapists near you. Browse all locations we serve across Kentucky and beyond.
+      </p>
+      <div class="mt-6">
+        <div class="max-w-[720px] mx-auto flex gap-2">
+          <input
+            type="text"
+            id="areas-search"
+            class="input-brand flex-1 w-full text-slate-900 py-3 px-4"
+            placeholder="Search cities, counties, or states…"
+            aria-label="Search locations"
+            autocomplete="off"
+          />
+          <button type="button" id="areas-search-btn" class="btn-soft-focus rounded-xl text-white font-semibold py-3 px-4 transition-colors hover:text-[#005F6B]" style="background-color:#3C9C64;" onmouseover="this.style.backgroundColor='#92DCE5'" onmouseout="this.style.backgroundColor='#3C9C64'">Search</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ---- Content section with wave (matches services page) ---- #}
+  <section class="relative z-20 py-10 md:py-14" style="background-color:#92DCE5;">
+    <div style="position:absolute;left:0;top:-1px;width:100%;line-height:0;pointer-events:none;z-index:2;" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none" style="display:block;width:calc(100% + 1.3px);height:30px;">
+        <path fill="#04606B" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z M260.8,11.3 c-0.7-1-2-0.4-4.3-0.4c-2.3,0-6.1-1.2-5.8-1.1c0.3,0.1,3.1,1.5,6,1.9C259.7,12.2,261.4,12.3,260.8,11.3z M242.4,8.6 c0,0-2.4-0.2-5.6-0.9c-3.2-0.8-10.3-2.8-15.1-3.5c-8.2-1.1-15.8,0-15.1,0.1c0.8,0.1,9.6-0.6,17.6,1.1c3.3,0.7,9.3,2.2,12.4,2.7 C239.9,8.7,242.4,8.6,242.4,8.6z M185.2,8.5c1.7-0.7-13.3,4.7-18.5,6.1c-2.1,0.6-6.2,1.6-10,2c-3.9,0.4-8.9,0.4-8.8,0.5 c0,0.2,5.8,0.8,11.2,0c5.4-0.8,5.2-1.1,7.6-1.6C170.5,14.7,183.5,9.2,185.2,8.5z M199.1,6.9c0.2,0-0.8-0.4-4.8,1.1 c-4,1.5-6.7,3.5-6.9,3.7c-0.2,0.1,3.5-1.8,6.6-3C197,7.5,199,6.9,199.1,6.9z M283,6c-0.1,0.1-1.9,1.1-4.8,2.5s-6.9,2.8-6.7,2.7 c0.2,0,3.5-0.6,7.4-2.5C282.8,6.8,283.1,5.9,283,6z M31.3,11.6c0.1-0.2-1.9-0.2-4.5-1.2s-5.4-1.6-7.8-2C15,7.6,7.3,8.5,7.7,8.6 C8,8.7,15.9,8.3,20.2,9.3c2.2,0.5,2.4,0.5,5.7,1.6S31.2,11.9,31.3,11.6z M73,9.2c0.4-0.1,3.5-1.6,8.4-2.6c4.9-1.1,8.9-0.5,8.9-0.8 c0-0.3-1-0.9-6.2-0.3S72.6,9.3,73,9.2z M71.6,6.7C71.8,6.8,75,5.4,77.3,5c2.3-0.3,1.9-0.5,1.9-0.6c0-0.1-1.1-0.2-2.7,0.2 C74.8,5.1,71.4,6.6,71.6,6.7z M93.6,4.4c0.1,0.2,3.5,0.8,5.6,1.8c2.1,1,1.8,0.6,1.9,0.5c0.1-0.1-0.8-0.8-2.4-1.3 C97.1,4.8,93.5,4.2,93.6,4.4z M65.4,11.1c-0.1,0.3,0.3,0.5,1.9-0.2s2.6-1.3,2.2-1.2s-0.9,0.4-2.5,0.8C65.3,10.9,65.5,10.8,65.4,11.1 z M34.5,12.4c-0.2,0,2.1,0.8,3.3,0.9c1.2,0.1,2,0.1,2-0.2c0-0.3-0.1-0.5-1.6-0.4C36.6,12.8,34.7,12.4,34.5,12.4z M152.2,21.1 c-0.1,0.1-2.4-0.3-7.5-0.3c-5,0-13.6-2.4-17.2-3.5c-3.6-1.1,10,3.9,16.5,4.1C150.5,21.6,152.3,21,152.2,21.1z"/>
+        <path fill="#04606B" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+        <path fill="#04606B" d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+        <path fill="#04606B" d="M204.5,13.4c-0.1-0.1,2-1,3.2-1.1c1.2-0.1,2,0,2,0.3c0,0.3-0.1,0.5-1.6,0.4 C206.4,12.9,204.6,13.5,204.5,13.4z"/>
+        <path fill="#04606B" d="M201,10.6c0-0.1-4.4,1.2-6.3,2.2c-1.9,0.9-6.2,3.1-6.1,3.1c0.1,0.1,4.2-1.6,6.3-2.6 S201,10.7,201,10.6z"/>
+        <path fill="#04606B" d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+        <path fill="#04606B" d="M41.9,19.3c0,0,1.2-0.3,2.9-0.1c1.7,0.2,5.8,0.9,8.2,0.7c4.2-0.4,7.4-2.7,7-2.6 c-0.4,0-4.3,2.2-8.6,1.9c-1.8-0.1-5.1-0.5-6.7-0.4S41.9,19.3,41.9,19.3z"/>
+        <path fill="#04606B" d="M75.5,12.6c0.2,0.1,2-0.8,4.3-1.1c2.3-0.2,2.1-0.3,2.1-0.5c0-0.1-1.8-0.4-3.4,0 C76.9,11.5,75.3,12.5,75.5,12.6z"/>
+        <path fill="#04606B" d="M15.6,13.2c0-0.1,4.3,0,6.7,0.5c2.4,0.5,5,1.9,5,2c0,0.1-2.7-0.8-5.1-1.4 C19.9,13.7,15.7,13.3,15.6,13.2z"/>
+      </svg>
+    </div>
+
+    <div class="max-w-[1100px] mx-auto px-4 pt-8">
+
+      {% for group in state_groups %}
+      <div class="areas-state-section" data-state-section data-state-name="{{ group.state.name|lower }}">
+        <div class="areas-state-header">
+          <a href="/{{ group.state.slug }}/" class="areas-state-name" data-state-label>{{ group.state.name }}</a>
+          {% if group.location_count %}
+          <span class="areas-state-badge">{{ group.location_count }} location{{ group.location_count|pluralize }}</span>
+          {% endif %}
+          <div class="areas-state-divider"></div>
+        </div>
+
+        {# Counties with nested cities #}
+        {% for cg in group.county_groups %}
+        <div class="areas-county-section" data-county-section data-county-name="{{ cg.county.name|lower }}">
+          <div class="areas-county-header">
+            <a href="{{ cg.county.get_url_path }}" class="areas-county-name">{{ cg.county.name }}</a>
+            {% if cg.cities %}
+            <span class="areas-county-badge">{{ cg.cities|length }} city{{ cg.cities|length|pluralize:"ies" }}</span>
+            {% endif %}
+            <div class="areas-county-divider"></div>
+          </div>
+          {% if cg.cities %}
+          <div class="areas-grid mb-6">
+            {% for city in cg.cities %}
+            <a href="{{ city.get_url_path }}" class="area-card"
+               data-location-name="{{ city.name|lower }}" data-state-name="{{ group.state.name|lower }}">
+              <div class="area-card__thumb"
+                {% if city.hero_image %}style="background-image:url('{{ city.hero_image.url }}');"
+                {% elif cg.county.hero_image %}style="background-image:url('{{ cg.county.hero_image.url }}');"
+                {% elif group.state.hero_image %}style="background-image:url('{{ group.state.hero_image.url }}');"{% endif %}>
+              </div>
+              <div class="area-card__body">
+                <div class="area-card__name">{{ city.name }}</div>
+                <div class="area-card__type">City &middot; {{ group.state.abbreviation }}</div>
+                <div class="area-card__badges">
+                  {% if city.offers_in_office %}<span class="area-badge area-badge--office">In Office</span>{% endif %}
+                  {% if city.offers_telehealth %}<span class="area-badge area-badge--telehealth">Telehealth</span>{% endif %}
+                </div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        {# Standalone cities (no county parent) #}
+        {% if group.standalone_cities %}
+        <div class="areas-grid" data-standalone-grid>
+          {% for city in group.standalone_cities %}
+          <a href="{{ city.get_url_path }}" class="area-card"
+             data-location-name="{{ city.name|lower }}" data-state-name="{{ group.state.name|lower }}">
+            <div class="area-card__thumb"
+              {% if city.hero_image %}style="background-image:url('{{ city.hero_image.url }}');"
+              {% elif group.state.hero_image %}style="background-image:url('{{ group.state.hero_image.url }}');"{% endif %}>
+            </div>
+            <div class="area-card__body">
+              <div class="area-card__name">{{ city.name }}</div>
+              <div class="area-card__type">City &middot; {{ group.state.abbreviation }}</div>
+              <div class="area-card__badges">
+                {% if city.offers_in_office %}<span class="area-badge area-badge--office">In Office</span>{% endif %}
+                {% if city.offers_telehealth %}<span class="area-badge area-badge--telehealth">Telehealth</span>{% endif %}
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Fallback: state has no counties or cities yet #}
+        {% if not group.county_groups and not group.standalone_cities %}
+        <div class="areas-grid">
+          <a href="/{{ group.state.slug }}/" class="area-card"
+             data-location-name="{{ group.state.name|lower }}" data-state-name="{{ group.state.name|lower }}">
+            <div class="area-card__thumb"
+              {% if group.state.hero_image %}style="background-image:url('{{ group.state.hero_image.url }}');"{% endif %}>
+            </div>
+            <div class="area-card__body">
+              <div class="area-card__name">{{ group.state.name }}</div>
+              <div class="area-card__type">State</div>
+              <div class="area-card__badges">
+                {% if group.state.offers_in_office %}<span class="area-badge area-badge--office">In Office</span>{% endif %}
+                {% if group.state.offers_telehealth %}<span class="area-badge area-badge--telehealth">Telehealth</span>{% endif %}
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endif %}
+
+      </div>
+      {% empty %}
+      <p class="text-center py-16" style="color:#0d3f46;">No areas served have been added yet.</p>
+      {% endfor %}
+
+      <div class="areas-empty" id="areas-empty" aria-live="polite">
+        <p>No locations match your search. Try a different term.</p>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  const input = document.getElementById('areas-search');
+  const btn = document.getElementById('areas-search-btn');
+  const emptyMsg = document.getElementById('areas-empty');
+  if (!input) return;
+
+  function filter() {
+    const q = input.value.trim().toLowerCase();
+    let anyVisible = false;
+
+    document.querySelectorAll('[data-state-section]').forEach(function (section) {
+      const stateName = section.dataset.stateName || '';
+
+      if (!q) {
+        // Show everything
+        section.querySelectorAll('[data-county-section]').forEach(function (cs) { cs.style.display = ''; });
+        section.querySelectorAll('[data-location-name]').forEach(function (card) { card.style.display = ''; });
+        section.querySelectorAll('[data-standalone-grid]').forEach(function (g) { g.style.display = ''; });
+        section.style.display = '';
+        anyVisible = true;
+        return;
+      }
+
+      if (stateName.includes(q)) {
+        // Whole state matches — reveal everything
+        section.querySelectorAll('[data-county-section]').forEach(function (cs) { cs.style.display = ''; });
+        section.querySelectorAll('[data-location-name]').forEach(function (card) { card.style.display = ''; });
+        section.querySelectorAll('[data-standalone-grid]').forEach(function (g) { g.style.display = ''; });
+        section.style.display = '';
+        anyVisible = true;
+        return;
+      }
+
+      let stateHasMatch = false;
+
+      // Handle county sections
+      section.querySelectorAll('[data-county-section]').forEach(function (countySection) {
+        const countyName = countySection.dataset.countyName || '';
+
+        if (countyName.includes(q)) {
+          // County name matches — show all its cities
+          countySection.querySelectorAll('[data-location-name]').forEach(function (card) { card.style.display = ''; });
+          countySection.style.display = '';
+          stateHasMatch = true;
+        } else {
+          // Check individual cities within this county
+          let countyHasMatch = false;
+          countySection.querySelectorAll('[data-location-name]').forEach(function (card) {
+            const locName = card.dataset.locationName || '';
+            if (locName.includes(q)) {
+              card.style.display = '';
+              countyHasMatch = true;
+            } else {
+              card.style.display = 'none';
+            }
+          });
+          countySection.style.display = countyHasMatch ? '' : 'none';
+          if (countyHasMatch) stateHasMatch = true;
+        }
+      });
+
+      // Handle standalone city grids
+      section.querySelectorAll('[data-standalone-grid]').forEach(function (grid) {
+        let gridHasMatch = false;
+        grid.querySelectorAll('[data-location-name]').forEach(function (card) {
+          const locName = card.dataset.locationName || '';
+          if (locName.includes(q)) {
+            card.style.display = '';
+            gridHasMatch = true;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+        grid.style.display = gridHasMatch ? '' : 'none';
+        if (gridHasMatch) stateHasMatch = true;
+      });
+
+      section.style.display = stateHasMatch ? '' : 'none';
+      if (stateHasMatch) anyVisible = true;
+    });
+
+    emptyMsg.style.display = anyVisible ? 'none' : 'block';
+  }
+
+  input.addEventListener('input', filter);
+  if (btn) btn.addEventListener('click', filter);
+})();
+</script>
+
+{% endblock %}
+
+{% block before_footer %}
+  {% include "partials/schedule_cta.html" with wave_fill="#92DCE5" %}
+{% endblock %}

@@ -1,0 +1,80 @@
+{# Reusable office selector (dropdown + pills) for GeoState / GeoLocation edit forms.
+   Usage: {% include "accounts/partials/geo_office_selector.html" with geo_obj=state sel_uid=state.pk %}
+   Requires `all_offices` in the template context.
+   Submits hidden inputs named `office_ids`. #}
+
+<div class="border-t border-slate-200 pt-3 mt-1">
+  <label class="block text-sm font-semibold mb-1">Offices serving this area</label>
+  <p class="text-xs text-slate-500 mb-2">Select which physical offices serve this geographic area.</p>
+
+  <script>
+  window.__geoOffices = window.__geoOffices || {};
+  window.__geoOffices['{{ sel_uid }}'] = [{% for o in geo_obj.offices.all %}{"id":"{{ o.pk }}","name":"{{ o.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+  </script>
+
+  <div style="display:flex;gap:8px;align-items:center;">
+    <select id="odrop-{{ sel_uid }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+      <option value="">— Select an office —</option>
+      {% for o in all_offices %}
+      <option value="{{ o.pk }}" data-name="{{ o.name|escapejs }}">{{ o.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" id="oadd-{{ sel_uid }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+  </div>
+  <div id="opills-{{ sel_uid }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+  <div id="ohidden-{{ sel_uid }}"></div>
+
+  <script>
+  (function() {
+    var uid = '{{ sel_uid }}';
+    var drop = document.getElementById('odrop-' + uid);
+    var addBtn = document.getElementById('oadd-' + uid);
+    var pills = document.getElementById('opills-' + uid);
+    var hidden = document.getElementById('ohidden-' + uid);
+    var sel = new Map();
+
+    function render() {
+      pills.innerHTML = '';
+      hidden.innerHTML = '';
+      drop.querySelectorAll('option').forEach(function(o) { o.disabled = false; });
+      sel.forEach(function(name, id) {
+        var pill = document.createElement('span');
+        pill.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';
+        var lbl = document.createTextNode(name + ' ');
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.dataset.id = id;
+        x.innerHTML = '&times;';
+        x.style.cssText = 'background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';
+        x.addEventListener('click', function() { sel.delete(this.dataset.id); render(); });
+        pill.appendChild(lbl);
+        pill.appendChild(x);
+        pills.appendChild(pill);
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'office_ids';
+        inp.value = id;
+        hidden.appendChild(inp);
+        var opt = drop.querySelector('option[value="' + id + '"]');
+        if (opt) opt.disabled = true;
+      });
+      if (sel.size === 0) {
+        pills.innerHTML = '<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No offices assigned.</span>';
+      }
+    }
+
+    addBtn.addEventListener('click', function() {
+      var opt = drop.options[drop.selectedIndex];
+      if (!opt || !opt.value) return;
+      sel.set(opt.value, opt.dataset.name || opt.text);
+      drop.value = '';
+      render();
+    });
+
+    (window.__geoOffices[uid] || []).forEach(function(o) {
+      sel.set(String(o.id), o.name);
+    });
+    render();
+  })();
+  </script>
+</div>

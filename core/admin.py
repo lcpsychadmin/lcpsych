@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
 from django.conf import settings
-from .models import Page, Post, Category, Tag, Service, PaymentFeeRow, FAQItem, JoinOurTeamSubmission
+from .models import Page, Post, Category, Tag, Service, ServiceContentBlock, PaymentFeeRow, FAQItem, JoinOurTeamSubmission, HeroSettings, HeroContentBlock
 from ckeditor.widgets import CKEditorWidget
 class PageAdminForm(forms.ModelForm):
     class Meta:
@@ -211,6 +211,36 @@ class JoinOurTeamSubmissionAdmin(admin.ModelAdmin):
     readonly_fields = ("created", "updated", "reviewed_at", "user_agent")
 
 
+class HeroContentBlockInline(admin.TabularInline):
+    model = HeroContentBlock
+    extra = 1
+    fields = ["order", "heading", "body"]
+    verbose_name = "Content Block"
+    verbose_name_plural = "Content Blocks"
+
+
+@admin.register(HeroSettings)
+class HeroSettingsAdmin(admin.ModelAdmin):
+    inlines = [HeroContentBlockInline]
+    fields = ["heading", "subheading", "featured_image", "about_hero_image"]
+    verbose_name = "Hero Settings"
+
+    def has_add_permission(self, request):
+        # Prevent creating more than one instance
+        return not HeroSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class ServiceContentBlockInline(admin.TabularInline):
+    model = ServiceContentBlock
+    extra = 1
+    fields = ["order", "heading", "body"]
+    verbose_name = "Content Block"
+    verbose_name_plural = "Content Blocks"
+
+
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
     class ServiceAdminForm(forms.ModelForm):
@@ -222,6 +252,7 @@ class ServiceAdmin(admin.ModelAdmin):
             }
 
     form = ServiceAdminForm
+    inlines = [ServiceContentBlockInline]
     list_display = ("title", "slug", "order", "status", "linked_page")
     list_editable = ("order", "status")
     search_fields = ("title", "excerpt", "slug", "page__title", "page__path")

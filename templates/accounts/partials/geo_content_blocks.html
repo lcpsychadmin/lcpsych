@@ -1,0 +1,99 @@
+{% comment %}
+   Included in each location/state edit panel.
+   Context: cb_owner_type (state|location), cb_owner_pk, cb_owner_obj
+{% endcomment %}
+<div class="border-t border-slate-200 pt-4 mt-2">
+  <h4 class="text-sm font-semibold text-[#0f3f46] mb-1">Content blocks</h4>
+  <p class="text-xs text-slate-500 mb-3">These sections appear as body content on the public page. Use the rich-text editor for formatting.</p>
+
+  {% for cb in cb_owner_obj.content_blocks.all %}
+  <div class="border border-slate-200 rounded-lg mb-3 overflow-hidden">
+    <div class="bg-slate-50 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+      <span class="text-sm font-medium text-[#0f3f46] truncate max-w-[55%]">{{ cb.heading|default:"(no heading)" }}</span>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-400">Order: {{ cb.order }}</span>
+        <button type="button"
+          onclick="(function(el){el.style.display=el.style.display==='none'?'block':'none';})(document.getElementById('cb-edit-{{ cb_owner_pk }}-{{ cb.pk }}'))"
+          class="action-btn">Edit</button>
+        <form method="post" class="inline" onsubmit="return confirm('Delete this content block?')">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete_content_block">
+          <input type="hidden" name="block_pk" value="{{ cb.pk }}">
+          <input type="hidden" name="owner_type" value="{{ cb_owner_type }}">
+          <input type="hidden" name="owner_pk" value="{{ cb_owner_pk }}">
+          <button type="submit" class="action-btn text-red-700 border-red-200 hover:bg-red-50">Delete</button>
+        </form>
+      </div>
+    </div>
+    <div id="cb-edit-{{ cb_owner_pk }}-{{ cb.pk }}" style="display:none;" class="p-3 bg-white">
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_content_block">
+        <input type="hidden" name="block_pk" value="{{ cb.pk }}">
+        <input type="hidden" name="owner_type" value="{{ cb_owner_type }}">
+        <input type="hidden" name="owner_pk" value="{{ cb_owner_pk }}">
+        <div>
+          <label class="block text-xs font-semibold mb-1">Heading</label>
+          <input type="text" name="heading" value="{{ cb.heading }}" required
+            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Body</label>
+          <div class="quill-wrapper border border-slate-200 rounded-lg bg-white overflow-hidden"
+               data-textarea="body-cb-{{ cb_owner_pk }}-{{ cb.pk }}"></div>
+          <textarea name="body" id="body-cb-{{ cb_owner_pk }}-{{ cb.pk }}" class="hidden">{{ cb.body }}</textarea>
+        </div>
+        <div class="flex items-center gap-3">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Order</label>
+            <input type="number" name="order" value="{{ cb.order }}" min="0"
+              class="w-20 border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div class="pt-4">
+            <button type="submit" class="btn-primary" style="font-size:0.82rem;padding:0.45rem 1.1rem;">Save block</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% empty %}
+  <p class="text-xs text-slate-400 italic mb-3">No content blocks yet.</p>
+  {% endfor %}
+
+  <!-- Add new block -->
+  <details class="border border-dashed border-[#92DCE5] rounded-lg overflow-hidden">
+    <summary class="px-3 py-2 text-sm font-semibold text-[#0f3f46] cursor-pointer" style="list-style:none;cursor:pointer;">
+      + Add content block
+    </summary>
+    <div class="p-3 bg-white border-t border-[#92DCE5]/40">
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_content_block">
+        <input type="hidden" name="owner_type" value="{{ cb_owner_type }}">
+        <input type="hidden" name="owner_pk" value="{{ cb_owner_pk }}">
+        <div>
+          <label class="block text-xs font-semibold mb-1">Heading</label>
+          <input type="text" name="heading" required
+            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+            placeholder="e.g. About {{ cb_owner_obj.name }}">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Body</label>
+          <div class="quill-wrapper border border-slate-200 rounded-lg bg-white overflow-hidden"
+               data-textarea="body-new-{{ cb_owner_pk }}"></div>
+          <textarea name="body" id="body-new-{{ cb_owner_pk }}" class="hidden"></textarea>
+        </div>
+        <div class="flex items-center gap-3">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Order</label>
+            <input type="number" name="order" value="{{ cb_owner_obj.content_blocks.count }}" min="0"
+              class="w-20 border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div class="pt-4">
+            <button type="submit" class="btn-primary" style="font-size:0.82rem;padding:0.45rem 1.1rem;">Add block</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </details>
+</div>

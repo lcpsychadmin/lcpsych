@@ -76,6 +76,47 @@
                 {{ philosophy_form.body }}
                 {{ philosophy_form.body.errors }}
               </div>
+              <div class="border-t border-brand-accent/30 pt-4 mt-4">
+                <h3 class="text-base font-semibold text-[#0f3f46] mb-3">Value cards</h3>
+                <div class="space-y-4">
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Value 1 title</label>
+                      {{ philosophy_form.value1_title }}
+                      {{ philosophy_form.value1_title.errors }}
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Value 1 description</label>
+                      {{ philosophy_form.value1_description }}
+                      {{ philosophy_form.value1_description.errors }}
+                    </div>
+                  </div>
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Value 2 title</label>
+                      {{ philosophy_form.value2_title }}
+                      {{ philosophy_form.value2_title.errors }}
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Value 2 description</label>
+                      {{ philosophy_form.value2_description }}
+                      {{ philosophy_form.value2_description.errors }}
+                    </div>
+                  </div>
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Value 3 title</label>
+                      {{ philosophy_form.value3_title }}
+                      {{ philosophy_form.value3_title.errors }}
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Value 3 description</label>
+                      {{ philosophy_form.value3_description }}
+                      {{ philosophy_form.value3_description.errors }}
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div class="flex items-center gap-2">
                 {{ philosophy_form.is_active }}
                 <label for="{{ philosophy_form.is_active.id_for_label }}" class="text-sm font-semibold">{{ philosophy_form.is_active.label }}</label>

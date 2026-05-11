@@ -20,15 +20,18 @@
     </li>
     <li><a class="{% if active_page == 'services' %}is-active{% endif %}" href="{% url 'accounts:services' %}">Manage services</a></li>
     <li><a class="{% if active_page == 'about' %}is-active{% endif %}" href="{% url 'accounts:settings_about' %}">About &amp; Mission</a></li>
+    <li><a class="{% if active_page == 'hero' %}is-active{% endif %}" href="{% url 'accounts:settings_hero' %}">Homepage Hero</a></li>
     <li><a class="{% if active_page == 'philosophy' %}is-active{% endif %}" href="{% url 'accounts:settings_philosophy' %}">Our Philosophy</a></li>
     <li><a class="{% if active_page == 'quotes' %}is-active{% endif %}" href="{% url 'accounts:settings_quotes' %}">Quotes</a></li>
     <li><a class="{% if active_page == 'contact' %}is-active{% endif %}" href="{% url 'accounts:settings_contact' %}">Contact section</a></li>
+    <li><a class="{% if active_page == 'offices' %}is-active{% endif %}" href="{% url 'accounts:settings_offices' %}">Office locations</a></li>
     <li><a class="{% if active_page == 'whatwedo' %}is-active{% endif %}" href="{% url 'accounts:settings_whatwedo' %}">What We Do</a></li>
     <li><a class="{% if active_page == 'faq' %}is-active{% endif %}" href="{% url 'accounts:settings_faq' %}">FAQ</a></li>
     <li><a class="{% if active_page == 'social_posting' %}is-active{% endif %}" href="{% url 'accounts:settings_social_posting' %}">Social posting</a></li>
     <li><a class="{% if active_page == 'visitor_stats' %}is-active{% endif %}" href="{% url 'accounts:settings_visitor_stats' %}">Visitor stats</a></li>
     <li><a class="{% if active_page == 'insurance' %}is-active{% endif %}" href="{% url 'accounts:settings_insurance' %}">Insurance providers</a></li>
     <li><a class="{% if active_page == 'payment' %}is-active{% endif %}" href="{% url 'accounts:settings_payment' %}">Payment table</a></li>
+    <li><a class="{% if active_page == 'areas_served' %}is-active{% endif %}" href="{% url 'accounts:settings_areas_served' %}">Areas served</a></li>
   </ul>
 
   <script>

@@ -17,6 +17,19 @@
 .help-text { margin-top: 0.25rem; font-size: 0.85rem; color: rgba(15, 63, 70, 0.7); }
 .field-label { color: #0f3f46; font-weight: 600; display: block; margin-bottom: 0.35rem; }
 .error-text { color: #b91c1c; font-size: 0.85rem; margin-top: 0.35rem; }
+.test-btn { border-radius: 0.75rem; border: 1.5px solid rgba(15, 63, 70, 0.22); padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 600; color: #0f3f46; background: #fff; cursor: pointer; transition: all 0.2s ease; }
+.test-btn:hover, .test-btn:focus-visible { background: #f0fafa; border-color: #92DCE5; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
+.test-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.send-test-btn { border-radius: 0.75rem; border: 1.5px solid #92DCE5; padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 600; color: #005F6B; background: rgba(146,220,229,0.12); cursor: pointer; transition: all 0.2s ease; }
+.send-test-btn:hover, .send-test-btn:focus-visible { background: rgba(146,220,229,0.28); outline: none; box-shadow: 0 0 0 3px rgba(146,220,229,0.45); }
+.send-test-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.test-result { display: none; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; padding: 0.3rem 0.75rem; border-radius: 999px; }
+.test-result.ok { background: #dcfce7; color: #166534; display: inline-flex; }
+.test-result.fail { background: #fee2e2; color: #991b1b; display: inline-flex; }
+.test-result.loading { background: rgba(146,220,229,0.2); color: #0f3f46; display: inline-flex; }
+.preview-box { background: #f8fffe; border: 1.5px solid rgba(146,220,229,0.6); border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 0.9rem; color: #0f3f46; white-space: pre-wrap; word-break: break-word; min-height: 2.5rem; }
+.preview-meta { font-size: 0.78rem; color: rgba(15,63,70,0.6); margin-top: 0.3rem; }
+.preview-meta.over { color: #b91c1c; font-weight: 700; }
 </style>
 {% endblock %}
 
@@ -29,23 +42,7 @@
     </div>
   </section>
 
-  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
-    <div class="elementor-1393">
-      <div class="elementor-element elementor-element-a80adf4">
-        <div class="e-con-inner">
-          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
-            </svg>
-          </div>
-          <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
-              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
+  <section class="relative z-20 py-10 md:py-14 bg-slate-50">
     <div class="max-w-[1200px] mx-auto px-4">
       <div class="settings-layout">
         {% include "accounts/partials/settings_nav.html" %}
@@ -54,7 +51,7 @@
           <div class="card-surface p-6 md:p-8">
             <div class="space-y-2">
               <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Platforms</h2>
-              <p class="text-slate-600 text-sm m-0">Enter page/profile identifiers and tokens. OAuth connect buttons will replace manual tokens later.</p>
+              <p class="text-slate-600 text-sm m-0">Enter the credentials for each platform you want to enable. Each platform has different token and ID requirements — read the help text carefully.</p>
             </div>
           </div>
 
@@ -74,28 +71,43 @@
                 <input type="hidden" name="platform" value="{{ profile.platform }}">
 
                 <div>
-                  <label class="field-label">Account name / label</label>
+                  <label class="field-label" for="{{ form.account_name.id_for_label }}">Account name / label</label>
                   {{ form.account_name }}
                   {% if form.account_name.errors %}<div class="error-text">{{ form.account_name.errors|striptags }}</div>{% endif %}
+                  <p class="help-text">A friendly internal label for this connected account.</p>
                 </div>
                 <div>
-                  <label class="field-label">Page/Profile ID</label>
+                  <label class="field-label" for="{{ form.client_id.id_for_label }}">{{ form.client_id.label }}</label>
+                  {{ form.client_id }}
+                  {% if form.client_id.errors %}<div class="error-text">{{ form.client_id.errors|striptags }}</div>{% endif %}
+                  {% if form.client_id.help_text %}<p class="help-text">{{ form.client_id.help_text }}</p>{% endif %}
+                </div>
+                <div>
+                  <label class="field-label" for="{{ form.client_secret.id_for_label }}">{{ form.client_secret.label }}</label>
+                  {{ form.client_secret }}
+                  {% if form.client_secret.errors %}<div class="error-text">{{ form.client_secret.errors|striptags }}</div>{% endif %}
+                  {% if form.client_secret.help_text %}<p class="help-text">{{ form.client_secret.help_text }}</p>{% endif %}
+                </div>
+                <div>
+                  <label class="field-label" for="{{ form.account_id.id_for_label }}">{{ form.account_id.label }}</label>
                   {{ form.account_id }}
                   {% if form.account_id.errors %}<div class="error-text">{{ form.account_id.errors|striptags }}</div>{% endif %}
-                  <p class="help-text">Use the platform's page/profile/business ID. Required to send posts.</p>
+                  {% if form.account_id.help_text %}<p class="help-text">{{ form.account_id.help_text }}</p>{% endif %}
                 </div>
                 <div>
-                  <label class="field-label">Access token</label>
+                  <label class="field-label" for="{{ form.access_token.id_for_label }}">{{ form.access_token.label }}</label>
                   {{ form.access_token }}
                   {% if form.access_token.errors %}<div class="error-text">{{ form.access_token.errors|striptags }}</div>{% endif %}
+                  {% if form.access_token.help_text %}<p class="help-text">{{ form.access_token.help_text }}</p>{% endif %}
                 </div>
                 <div>
-                  <label class="field-label">Refresh token (if provided)</label>
+                  <label class="field-label" for="{{ form.refresh_token.id_for_label }}">{{ form.refresh_token.label }}</label>
                   {{ form.refresh_token }}
                   {% if form.refresh_token.errors %}<div class="error-text">{{ form.refresh_token.errors|striptags }}</div>{% endif %}
+                  {% if form.refresh_token.help_text %}<p class="help-text">{{ form.refresh_token.help_text }}</p>{% endif %}
                 </div>
                 <div>
-                  <label class="field-label">Token expires at</label>
+                  <label class="field-label" for="{{ form.token_expires_at.id_for_label }}">Token expires at</label>
                   {{ form.token_expires_at }}
                   {% if form.token_expires_at.errors %}<div class="error-text">{{ form.token_expires_at.errors|striptags }}</div>{% endif %}
                 </div>
@@ -104,15 +116,69 @@
                   <label for="{{ form.auto_post_on_publish.id_for_label }}" class="text-sm text-[#0f3f46] font-semibold">Auto-post on publish</label>
                 </div>
                 <div>
-                  <label class="field-label">Message template</label>
+                  <label class="field-label" for="{{ form.message_template.id_for_label }}">Message template</label>
                   {{ form.message_template }}
                   {% if form.message_template.errors %}<div class="error-text">{{ form.message_template.errors|striptags }}</div>{% endif %}
-                  <p class="help-text">Supports {title}, {excerpt}, {url}. We trim to platform limits.</p>
+                  <p class="help-text">
+                    Supports <code>{title}</code>, <code>{excerpt}</code>, <code>{url}</code>.
+                    {% if form.message_template.help_text %} {{ form.message_template.help_text }}{% endif %}
+                  </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3 pt-1">
                   <button type="submit" class="btn-primary">Save {{ profile.get_platform_display }}</button>
+                  <button type="button"
+                          class="test-btn"
+                          data-platform="{{ profile.platform }}"
+                          data-test-url="{% url 'accounts:settings_social_posting_test' %}"
+                          onclick="testConnection(this)">
+                    Test connection
+                  </button>
+                  <span class="test-result" data-result-for="{{ profile.platform }}"></span>
                 </div>
+
+                {% if recent_posts %}
+                <div class="border-t border-slate-100 pt-4 space-y-3">
+                  <p class="text-xs font-semibold text-[#0f3f46] uppercase tracking-wide m-0">Preview &amp; test post</p>
+                  <div class="flex flex-wrap gap-2 items-end">
+                    <div class="flex-1 min-w-[180px]">
+                      <label class="field-label text-xs" for="post-picker-{{ profile.platform }}">Select a post</label>
+                      <select id="post-picker-{{ profile.platform }}"
+                              class="input-basic text-sm"
+                              data-platform="{{ profile.platform }}">
+                        <option value="">— choose a post —</option>
+                        {% for p in recent_posts %}
+                        <option value="{{ p.id }}">{{ p.title }}{% if p.status == 'draft' %} (draft){% endif %}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <button type="button"
+                            class="action-btn"
+                            data-platform="{{ profile.platform }}"
+                            data-preview-url="{% url 'accounts:settings_social_posting_preview' %}"
+                            onclick="previewPost(this)">
+                      Preview
+                    </button>
+                    <button type="button"
+                            class="send-test-btn"
+                            data-platform="{{ profile.platform }}"
+                            data-send-url="{% url 'accounts:settings_social_posting_send_test' %}"
+                            onclick="sendTestPost(this)">
+                      Send test post
+                    </button>
+                  </div>
+                  <div id="preview-{{ profile.platform }}" class="hidden space-y-2">
+                    <div id="preview-img-{{ profile.platform }}" class="hidden">
+                      <img id="preview-img-el-{{ profile.platform }}"
+                           src="" alt="Feature image"
+                           class="rounded-lg max-h-48 w-full object-cover border border-slate-200">
+                    </div>
+                    <div class="preview-box" id="preview-text-{{ profile.platform }}"></div>
+                    <p class="preview-meta" id="preview-meta-{{ profile.platform }}"></p>
+                  </div>
+                  <span class="test-result" id="send-result-{{ profile.platform }}"></span>
+                </div>
+                {% endif %}
               </form>
             </div>
             {% endfor %}
@@ -123,6 +189,110 @@
   </section>
 </main>
 {% endblock %}
+
+{% block body_extra %}
+<script>
+function getCsrf() {
+  return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+async function testConnection(btn) {
+  const platform = btn.dataset.platform;
+  const url = btn.dataset.testUrl;
+  const result = document.querySelector(`[data-result-for="${platform}"]`);
+  btn.disabled = true;
+  result.textContent = 'Testing…';
+  result.className = 'test-result loading';
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `platform=${encodeURIComponent(platform)}`,
+    });
+    const data = await resp.json();
+    result.textContent = data.message;
+    result.className = `test-result ${data.ok ? 'ok' : 'fail'}`;
+  } catch (err) {
+    result.textContent = 'Network error — could not reach server.';
+    result.className = 'test-result fail';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function previewPost(btn) {
+  const platform = btn.dataset.platform;
+  const url = btn.dataset.previewUrl;
+  const picker = document.getElementById(`post-picker-${platform}`);
+  const postId = picker ? picker.value : '';
+  if (!postId) { alert('Select a post first.'); return; }
+
+  btn.disabled = true;
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `platform=${encodeURIComponent(platform)}&post_id=${encodeURIComponent(postId)}`,
+    });
+    const data = await resp.json();
+    const box = document.getElementById(`preview-${platform}`);
+    const textEl = document.getElementById(`preview-text-${platform}`);
+    const metaEl = document.getElementById(`preview-meta-${platform}`);
+    const imgWrap = document.getElementById(`preview-img-${platform}`);
+      const imgEl = document.getElementById(`preview-img-el-${platform}`);
+      if (data.ok) {
+        textEl.textContent = data.text;
+        const over = data.char_limit && data.char_count > data.char_limit;
+        metaEl.textContent = data.char_limit
+          ? `${data.char_count} / ${data.char_limit} characters${over ? ' — OVER LIMIT' : ''}`
+          : `${data.char_count} characters`;
+        metaEl.className = `preview-meta${over ? ' over' : ''}`;
+        if (data.feature_image_url) {
+          imgEl.src = data.feature_image_url;
+          imgWrap.classList.remove('hidden');
+        } else {
+          imgWrap.classList.add('hidden');
+        }
+        box.classList.remove('hidden');
+    } else {
+      alert(data.message || 'Preview failed.');
+    }
+  } catch (err) {
+    alert('Network error — could not load preview.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function sendTestPost(btn) {
+  const platform = btn.dataset.platform;
+  const url = btn.dataset.sendUrl;
+  const picker = document.getElementById(`post-picker-${platform}`);
+  const postId = picker ? picker.value : '';
+  if (!postId) { alert('Select a post first.'); return; }
+
+  const result = document.getElementById(`send-result-${platform}`);
+  btn.disabled = true;
+  result.textContent = 'Sending…';
+  result.className = 'test-result loading';
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `platform=${encodeURIComponent(platform)}&post_id=${encodeURIComponent(postId)}`,
+    });
+    const data = await resp.json();
+    result.textContent = data.message;
+    result.className = `test-result ${data.ok ? 'ok' : 'fail'}`;
+  } catch (err) {
+    result.textContent = 'Network error — could not reach server.';
+    result.className = 'test-result fail';
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %} {# body_extra #}
 
 {% block before_footer %}
   <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>

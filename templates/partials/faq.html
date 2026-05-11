@@ -17,24 +17,26 @@
 #faq-wrapper [data-faq-item] * { box-shadow: none !important; outline-color: #92DCE5 !important; }
 #faq-wrapper [data-faq-answer] { border-top: 1px solid #d9e6ea !important; }
 #faq-wrapper input#faq-search { border-color: #92DCE5 !important; }
-#faq-wrapper button[type="submit"] { background: #92DCE5; color: #0f3f46; border: 1px solid transparent !important; box-shadow: none; }
-#faq-wrapper button[type="submit"]:hover { background: #E8F6F8 !important; color: #0f3f46 !important; border-color: #92DCE5 !important; }
+#faq-wrapper button[type="submit"] { border: 1px solid transparent !important; box-shadow: none; }
 #faq-wrapper a[href="/faq/"] { border-color: rgba(255,255,255,0.5) !important; }
 #faq-wrapper a[href="/faq/"]:hover { border-color: #92DCE5 !important; }
+.btn-soft-focus { border: 0 !important; border-color: transparent !important; -webkit-appearance: none; appearance: none; }
+.btn-soft-focus:focus, .btn-soft-focus:focus-visible { outline: none !important; border: 0 !important; box-shadow: 0 0 0 4px rgba(146,220,229,0.65) !important; }
+.input-brand, input.input-brand { -webkit-appearance: none; appearance: none; border-radius: 0.75rem !important; border: 1.5px solid rgba(146,220,229,0.7) !important; background-color: rgba(255,255,255,0.96) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.04); transition: box-shadow .2s ease, border-color .2s ease; }
+.input-brand::placeholder, input.input-brand::placeholder { color: rgba(0,95,107,0.55) !important; }
+.input-brand:focus, input.input-brand:focus { outline: none !important; border-color: #92DCE5 !important; box-shadow: 0 0 0 4px rgba(146,220,229,0.55) !important, inset 0 1px 0 rgba(255,255,255,0.8) !important; }
 </style>
 
-<section class="relative overflow-hidden bg-brand-deep text-white">
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(146,220,229,0.18),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.12),transparent_32%)]"></div>
-    <div class="relative max-w-5xl mx-auto px-4 py-16 md:py-20 text-center space-y-5">
-        <div class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">Frequently Asked Questions</div>
-        <h1 class="text-3xl md:text-4xl font-semibold m-0">Find answers quickly</h1>
-        <p class="text-lg text-white/85 max-w-3xl mx-auto m-0">Search common questions about services, scheduling, insurance, and getting matched with a clinician.</p>
-        <form action="/faq/" method="get" class="max-w-3xl mx-auto">
-            <div class="flex flex-col sm:flex-row gap-3 sm:gap-2 items-stretch">
-                <input id="faq-search" name="q" value="{{ request.GET.q }}" type="search" placeholder="Search FAQs (e.g., insurance, evaluation, telehealth)" class="w-full rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-white placeholder:text-white/70 focus:border-[#92DCE5] focus:ring-4 focus:ring-[#92DCE5]/50 focus:outline-none hover:border-[#92DCE5]" />
-                <button type="submit" class="rounded-xl bg-[#92DCE5] px-5 py-3 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-[#E8F6F8] hover:text-[#0f3f46] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Search</button>
+<section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-0">
+    <div class="max-w-[1100px] mx-auto px-4 pt-16 pb-24 text-center">
+        <h1 class="text-4xl leading-tight font-semibold m-0">Find answers quickly</h1>
+        <p class="mt-4 mx-auto max-w-[800px] text-white/90 text-lg">Search common questions about services, scheduling, insurance, and getting matched with a clinician.</p>
+        <form action="/faq/" method="get" class="mt-6">
+            <div class="max-w-[720px] mx-auto flex gap-2">
+                <input id="faq-search" name="q" value="{{ request.GET.q }}" type="search" placeholder="Search FAQs (e.g., insurance, evaluation, telehealth)" class="input-brand flex-1 w-full text-slate-900 py-3 px-4" />
+                <button type="submit" class="btn-soft-focus rounded-xl bg-[#3C9C64] text-white font-semibold py-3 px-4 transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B] focus-visible:bg-[#92DCE5] focus-visible:text-[#005F6B]">Search</button>
                 {% if request.GET.q %}
-                    <a href="/faq/" class="rounded-xl border border-white/40 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#E8F6F8] hover:text-[#0f3f46] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Clear</a>
+                    <a href="/faq/" class="btn-soft-focus rounded-xl border border-white/35 text-white/90 font-semibold py-3 px-4 transition-colors hover:bg-[#92DCE5] hover:text-[#005F6B] hover:border-transparent focus-visible:bg-[#92DCE5] focus-visible:text-[#005F6B] focus-visible:border-transparent">Clear</a>
                 {% endif %}
             </div>
         </form>

@@ -1,4 +1,10 @@
 {% load static %}
+<style>
+    .elementor-1393 .elementor-element.elementor-element-a80adf4 > .elementor-shape-top .elementor-shape-fill,
+    .elementor-1393 .elementor-element.elementor-element-a80adf4 > .e-con-inner > .elementor-shape-top .elementor-shape-fill {
+        fill: #ffffff;
+    }
+</style>
 <section id="ourteam" class="relative bg-brand-accent py-14">
             <div class="elementor-1393">
            <div class="elementor-element elementor-element-a80adf4" >
@@ -68,22 +74,96 @@
     .therapist-card-shell .therapist-card-body {
       margin-top: -1px;
     }
+
+    /* Home therapist carousel */
+    .home-therapist-carousel {
+      position: relative;
+    }
+    .home-therapist-track {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 8px;
+    }
+    .home-therapist-track::-webkit-scrollbar { display: none; }
+    .home-therapist-track > * {
+      flex: 0 0 calc((100% - 2 * 24px) / 3);
+      scroll-snap-align: start;
+    }
+    @media (max-width: 1023px) {
+      .home-therapist-track > * { flex: 0 0 calc((100% - 24px) / 2); }
+    }
+    @media (max-width: 639px) {
+      .home-therapist-track > * { flex: 0 0 82vw; }
+    }
+    .home-therapist-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+      color: #04606B;
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .home-therapist-btn:hover { background: #04606B; color: #ffffff; }
+    .home-therapist-btn--prev { left: -22px; }
+    .home-therapist-btn--next { right: -22px; }
+    @media (max-width: 639px) {
+      .home-therapist-btn--prev { left: -12px; }
+      .home-therapist-btn--next { right: -12px; }
+    }
   </style>
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-10">
-      <h2 class="text-3xl font-semibold text-[#005F6B] m-0">Meet Our Psychologists and Therapists in Northern Kentucky</h2>
+      <h2 class="text-3xl font-semibold text-[#005F6B] m-0">Meet Our Psychologists and Therapists</h2>
       <p class="text-[#0f3f46] text-base md:text-lg mt-3 max-w-3xl mx-auto">
         Licensed clinicians offering in-person and telehealth care tailored to your goals.
       </p>
     </div>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {% if therapists %}
-        {% for card in therapists %}
-          {% include "partials/therapist_card_shared.html" with slug=card.slug photo_url=card.photo_url name=card.profile.display_name accepts_new_clients=card.accepts_new_clients license_text=card.title services=card.services client_focuses=card.focuses %}
-        {% endfor %}
-      {% else %}
-        <p class="text-slate-700">New therapist profiles are coming soon.</p>
-      {% endif %}
+    <div class="home-therapist-carousel px-8 md:px-10">
+      <button class="home-therapist-btn home-therapist-btn--prev" aria-label="Previous therapists">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="home-therapist-track">
+        {% if therapists %}
+          {% for card in therapists %}
+            <div>{% include "partials/therapist_card_shared.html" with slug=card.slug photo_url=card.photo_url name=card.profile.display_name accepts_new_clients=card.accepts_new_clients license_text=card.title services=card.services client_focuses=card.focuses %}</div>
+          {% endfor %}
+        {% else %}
+          <p class="text-slate-700">New therapist profiles are coming soon.</p>
+        {% endif %}
+      </div>
+      <button class="home-therapist-btn home-therapist-btn--next" aria-label="Next therapists">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
   </div>
 </section>
+<script>
+(function () {
+  var carousel = document.querySelector('.home-therapist-carousel');
+  if (!carousel) return;
+  var track = carousel.querySelector('.home-therapist-track');
+  var prev = carousel.querySelector('.home-therapist-btn--prev');
+  var next = carousel.querySelector('.home-therapist-btn--next');
+  function getScrollAmount() {
+    var card = track.firstElementChild;
+    return card ? card.offsetWidth + 24 : 340;
+  }
+  prev.addEventListener('click', function () { track.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' }); });
+  next.addEventListener('click', function () { track.scrollBy({ left: getScrollAmount(), behavior: 'smooth' }); });
+})();
+</script>

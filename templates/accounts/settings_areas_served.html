@@ -1,0 +1,1000 @@
+{% extends "base.html" %}
+{% load auth_extras %}
+{% block title %}Areas Served | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.btn-primary { background: #3C9C64; color: #fff; border-radius: 0.75rem; padding: 0.65rem 1.6rem; font-weight: 600; border: 0; transition: background 0.2s ease, color 0.2s ease; }
+.btn-primary:hover,
+.btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
+.action-btn { border-radius: 0.75rem; border: 1px solid rgba(15, 63, 70, 0.14); padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 600; color: #0f3f46; background: #fff; transition: all 0.2s ease; }
+.action-btn:hover,
+.action-btn:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 3px rgba(146, 220, 229, 0.45); }
+.table-card { width: 100%; border-collapse: collapse; }
+.table-card td,
+.table-card th { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(15, 63, 70, 0.12); text-align: left; }
+.table-card th { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(15, 63, 70, 0.68); }
+.pill { display: inline-flex; padding: 0.2rem 0.65rem; border-radius: 999px; background: rgba(146,220,229,0.28); color: #0f3f46; font-weight: 600; font-size: 0.8rem; }
+.pill-active { background: rgba(60,156,100,0.18); color: #1e6f45; }
+.pill-inactive { background: rgba(220,146,146,0.22); color: #7c2d2d; }
+.text-muted { color: #6b7280; }
+
+/* Location tree */
+.locations-tree { border: 1px solid rgba(15,63,70,0.1); border-radius: 0.75rem; overflow: hidden; }
+.loc-group { border-bottom: 1px solid rgba(15,63,70,0.08); }
+.loc-group:last-child { border-bottom: none; }
+details.loc-group > summary { list-style: none; }
+details.loc-group > summary::-webkit-details-marker { display: none; }
+details.loc-group[open] > summary .loc-chevron { transform: rotate(90deg); }
+.loc-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.85rem; min-height: 2.75rem; flex-wrap: wrap; }
+.loc-row--county { cursor: pointer; background: rgba(15,63,70,0.03); font-weight: 600; color: #0f3f46; transition: background 0.15s; }
+.loc-row--county:hover { background: rgba(146,220,229,0.15); }
+.loc-row--unassigned { cursor: pointer; background: rgba(15,63,70,0.02); font-weight: 600; color: #6b7280; transition: background 0.15s; }
+.loc-row--unassigned:hover { background: rgba(146,220,229,0.1); }
+.loc-row--city { background: #fff; border-top: 1px solid rgba(15,63,70,0.06); font-size: 0.9rem; }
+.loc-row--city:hover { background: rgba(146,220,229,0.06); }
+.loc-chevron { display: inline-block; font-size: 0.7rem; color: #0f3f46; transition: transform 0.15s ease; width: 0.9rem; flex-shrink: 0; }
+.loc-indent { display: inline-block; width: 1.6rem; flex-shrink: 0; }
+.loc-name { font-size: 0.9rem; }
+.loc-slug { max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loc-edit-panel { padding: 1rem 1.25rem; background: #f0fafb; border-top: 1px solid rgba(146,220,229,0.4); }
+.loc-edit-panel--city { margin-left: 1.6rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <!-- Hero -->
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">Areas served</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Manage the states, cities, and counties shown on geographic SEO pages.</p>
+    </div>
+  </section>
+
+  <!-- Wave + content -->
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="elementor-1393">
+      <div class="elementor-element elementor-element-a80adf4">
+        <div class="e-con-inner">
+          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+            </svg>
+          </div>
+          <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" with active_page='areas_served' %}
+
+        <div class="space-y-6">
+
+          <!-- Flash messages -->
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if msg.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-green-50 text-green-800 border border-green-200{% endif %}">
+              {{ msg }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Add state -->
+          {% if show_add_state_form %}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Add new state</h2>
+            <form method="post" class="space-y-3">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_state">
+              <div class="grid md:grid-cols-3 gap-3">
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-semibold mb-1">State name</label>
+                  <input type="text" name="name" required placeholder="e.g. Indiana" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Abbreviation</label>
+                  <input type="text" name="abbreviation" required maxlength="2" placeholder="IN" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm uppercase">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-1">Slug <span class="text-muted font-normal">(used in URLs, e.g. indiana)</span></label>
+                <input type="text" name="slug" required placeholder="indiana" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono">
+              </div>
+              <div class="flex items-center gap-3 pt-1">
+                <button type="submit" class="btn-primary">Add state</button>
+                <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+              </div>
+            </form>
+          </div>
+          {% else %}
+          <div class="flex justify-end">
+            <a href="?action=add_state" class="btn-primary inline-flex items-center gap-1">+ Add state</a>
+          </div>
+          {% endif %}
+
+          <!-- One card per state -->
+          {% for state in states %}
+          <div class="card-surface p-6 md:p-8">
+            <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">{{ state.name }}</h2>
+                <span class="pill {% if state.is_active %}pill-active{% else %}pill-inactive{% endif %}">
+                  {% if state.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="toggle_state">
+                  <input type="hidden" name="pk" value="{{ state.pk }}">
+                  <button type="submit" class="action-btn">
+                    {% if state.is_active %}Deactivate{% else %}Activate{% endif %}
+                  </button>
+                </form>
+                <a href="?action=edit_state&pk={{ state.pk }}" class="action-btn">Edit SEO fields</a>
+                <form method="post" onsubmit="return confirm('Delete {{ state.name }}? This cannot be undone.')">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_state">
+                  <input type="hidden" name="pk" value="{{ state.pk }}">
+                  <button type="submit" class="action-btn text-red-700 border-red-200 hover:bg-red-50">Delete</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- State SEO edit form (shown when ?action=edit_state&pk=X) -->
+            {% if editing_state and editing_state.pk == state.pk %}
+            <div class="bg-[#f0fafb] border border-[#92dce5]/40 rounded-xl p-5 mb-5">
+              <h3 class="text-lg font-semibold text-[#0f3f46] mb-3">Edit {{ state.name }}</h3>
+              <form id="geo-form-state-{{ state.pk }}" method="post" enctype="multipart/form-data" class="space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_state">
+                <input type="hidden" name="pk" value="{{ state.pk }}">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Hero heading</label>
+                    <input type="text" name="hero_heading" value="{{ state.hero_heading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Hero subheading</label>
+                    <input type="text" name="hero_subheading" value="{{ state.hero_subheading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Hero image</label>
+                  {% if state.hero_image %}
+                  <div class="flex items-center gap-3 mb-2">
+                    <img src="{{ state.hero_image.url }}" alt="Current hero image" class="h-20 w-32 object-cover rounded-lg border border-slate-200">
+                    <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
+                      <input type="checkbox" name="clear_hero_image" value="1"> Remove image
+                    </label>
+                  </div>
+                  {% endif %}
+                  <input type="file" name="hero_image" accept="image/*" class="block text-sm text-slate-600">
+                  <p class="text-xs text-muted mt-1">Recommended: 1400&times;600px or wider. JPG or WebP.</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">SEO title</label>
+                  <input type="text" name="seo_title" value="{{ state.seo_title }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">SEO description</label>
+                  <textarea name="seo_description" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">{{ state.seo_description }}</textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">Services offered</label>
+                  <div class="flex flex-wrap gap-4">
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" name="offers_in_office" {% if state.offers_in_office %}checked{% endif %} class="rounded border-slate-300">
+                      In office
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" name="offers_telehealth" {% if state.offers_telehealth %}checked{% endif %} class="rounded border-slate-300">
+                      Telehealth
+                    </label>
+                  </div>
+                </div>
+                <div class="border-t border-slate-200 pt-3 mt-1">
+                  <label class="block text-sm font-semibold mb-1">Offices serving this area</label>
+                  <p class="text-xs text-slate-500 mb-2">Select which physical offices serve this geographic area.</p>
+                  <script>
+                  window.__geoOffices = window.__geoOffices || {};
+                  window.__geoOffices['{{ state.pk }}'] = [{% for o in state.offices.all %}{"id":"{{ o.pk }}","name":"{{ o.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+                  </script>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="odrop-{{ state.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                      <option value="">— Select an office —</option>
+                      {% for o in all_offices %}<option value="{{ o.pk }}" data-name="{{ o.name|escapejs }}">{{ o.name }}</option>{% endfor %}
+                    </select>
+                    <button type="button" id="oadd-{{ state.pk }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                  </div>
+                  <div id="opills-{{ state.pk }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                  <div id="ohidden-{{ state.pk }}"></div>
+                  <script>
+                  (function(){var uid='{{ state.pk }}',drop=document.getElementById('odrop-'+uid),addBtn=document.getElementById('oadd-'+uid),pills=document.getElementById('opills-'+uid),hidden=document.getElementById('ohidden-'+uid),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='office_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No offices assigned.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});(window.__geoOffices[uid]||[]).forEach(function(o){sel.set(String(o.id),o.name);});render();})();
+                  </script>
+                </div>
+              </form>
+              {% include "accounts/partials/geo_content_blocks.html" with cb_owner_type="state" cb_owner_pk=state.pk cb_owner_obj=state %}
+              <div class="flex items-center gap-3 pt-4 mt-2 border-t border-slate-200">
+                <button type="submit" form="geo-form-state-{{ state.pk }}" class="btn-primary">Save</button>
+                <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Locations tree -->
+            <div class="locations-tree mb-4 space-y-1">
+
+              {% with tree=tree_by_state|get_item:state.pk %}
+
+              {# ---- Counties with their cities ---- #}
+              {% for group in tree.counties %}
+              {% with county=group.county %}
+              <details class="loc-group" {% if editing_location and editing_location.pk == county.pk or editing_location and editing_location.county_id == county.pk or saved_location and saved_location.pk == county.pk or saved_location and saved_location.county_id == county.pk %}open{% endif %}>
+                <summary class="loc-row loc-row--county">
+                  <span class="loc-chevron">▸</span>
+                  <span class="loc-name">{{ county.name }}</span>
+                  <span class="pill text-xs ml-1">County</span>
+                  {% if group.cities %}<span class="pill text-xs ml-1" style="background:rgba(15,63,70,0.08);">{{ group.cities|length }} cit{% if group.cities|length == 1 %}y{% else %}ies{% endif %}</span>{% endif %}
+                  <span class="loc-slug font-mono text-xs text-muted ml-2 hidden md:inline">{{ county.slug }}</span>
+                  <span class="ml-auto flex items-center gap-2">
+                    <span class="pill {% if county.is_active %}pill-active{% else %}pill-inactive{% endif %}">{% if county.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    <a href="?action=edit_location&pk={{ county.pk }}" class="action-btn" onclick="event.stopPropagation()">Edit</a>
+                    <form method="post" class="inline" onclick="event.stopPropagation()">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="toggle_location">
+                      <input type="hidden" name="pk" value="{{ county.pk }}">
+                      <button type="submit" class="action-btn">{% if county.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                    </form>
+                    <form method="post" class="inline" onclick="event.stopPropagation()" onsubmit="return confirm('Delete {{ county.name }}? This cannot be undone.');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_location">
+                      <input type="hidden" name="pk" value="{{ county.pk }}">
+                      <button type="submit" class="action-btn text-red-700 border-red-200 hover:bg-red-50">Delete</button>
+                    </form>
+                  </span>
+                </summary>
+
+                {# County edit form #}
+                {% if editing_location and editing_location.pk == county.pk %}
+                <div class="loc-edit-panel">
+                  <form id="geo-form-loc-{{ county.pk }}" method="post" enctype="multipart/form-data" class="space-y-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_location">
+                    <input type="hidden" name="pk" value="{{ county.pk }}">
+                    <div class="grid md:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Hero heading</label>
+                        <input type="text" name="hero_heading" value="{{ county.hero_heading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Hero subheading</label>
+                        <input type="text" name="hero_subheading" value="{{ county.hero_subheading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Hero image</label>
+                      {% if county.hero_image %}
+                      <div class="flex items-center gap-3 mb-2">
+                        <img src="{{ county.hero_image.url }}" alt="Current hero image" class="h-20 w-32 object-cover rounded-lg border border-slate-200">
+                        <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
+                          <input type="checkbox" name="clear_hero_image" value="1"> Remove image
+                        </label>
+                      </div>
+                      {% endif %}
+                      <input type="file" name="hero_image" accept="image/*" class="block text-sm text-slate-600">
+                      <p class="text-xs text-muted mt-1">Recommended: 1400&times;600px or wider. JPG or WebP.</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">SEO title</label>
+                      <input type="text" name="seo_title" value="{{ county.seo_title }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">SEO description</label>
+                      <textarea name="seo_description" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">{{ county.seo_description }}</textarea>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-2">Services offered</label>
+                      <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" name="offers_in_office" {% if county.offers_in_office %}checked{% endif %} class="rounded border-slate-300">
+                          In office
+                        </label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" name="offers_telehealth" {% if county.offers_telehealth %}checked{% endif %} class="rounded border-slate-300">
+                          Telehealth
+                        </label>
+                      </div>
+                    </div>
+                    <div class="border-t border-slate-200 pt-3 mt-1">
+                      <label class="block text-sm font-semibold mb-1">Offices serving this area</label>
+                      <p class="text-xs text-slate-500 mb-2">Select which physical offices serve this geographic area.</p>
+                      <script>
+                      window.__geoOffices = window.__geoOffices || {};
+                      window.__geoOffices['{{ county.pk }}'] = [{% for o in county.offices.all %}{"id":"{{ o.pk }}","name":"{{ o.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+                      </script>
+                      <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="odrop-{{ county.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                          <option value="">— Select an office —</option>
+                          {% for o in all_offices %}<option value="{{ o.pk }}" data-name="{{ o.name|escapejs }}">{{ o.name }}</option>{% endfor %}
+                        </select>
+                        <button type="button" id="oadd-{{ county.pk }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                      </div>
+                      <div id="opills-{{ county.pk }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                      <div id="ohidden-{{ county.pk }}"></div>
+                      <script>
+                      (function(){var uid='{{ county.pk }}',drop=document.getElementById('odrop-'+uid),addBtn=document.getElementById('oadd-'+uid),pills=document.getElementById('opills-'+uid),hidden=document.getElementById('ohidden-'+uid),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='office_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No offices assigned.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});(window.__geoOffices[uid]||[]).forEach(function(o){sel.set(String(o.id),o.name);});render();})();
+                      </script>
+                    </div>
+                  </form>
+                  {% include "accounts/partials/geo_content_blocks.html" with cb_owner_type="location" cb_owner_pk=county.pk cb_owner_obj=county %}
+                  <div class="flex items-center gap-3 pt-4 mt-2 border-t border-slate-200">
+                    <button type="submit" form="geo-form-loc-{{ county.pk }}" class="btn-primary">Save</button>
+                    <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+                  </div>
+                </div>
+                {% endif %}
+
+                {# Cities under this county #}
+                {% for city in group.cities %}
+                <div class="loc-row loc-row--city">
+                  <span class="loc-indent"></span>
+                  <span class="loc-name">{{ city.name }}</span>
+                  <span class="pill text-xs ml-1">City</span>
+                  <span class="loc-slug font-mono text-xs text-muted ml-2 hidden md:inline">{{ city.slug }}</span>
+                  <span class="ml-auto flex items-center gap-2">
+                    <span class="pill {% if city.is_active %}pill-active{% else %}pill-inactive{% endif %}">{% if city.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    <a href="?action=edit_location&pk={{ city.pk }}" class="action-btn">Edit</a>
+                    <form method="post" class="inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="toggle_location">
+                      <input type="hidden" name="pk" value="{{ city.pk }}">
+                      <button type="submit" class="action-btn">{% if city.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                    </form>
+                    <form method="post" class="inline" onsubmit="return confirm('Delete {{ city.name }}? This cannot be undone.');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_location">
+                      <input type="hidden" name="pk" value="{{ city.pk }}">
+                      <button type="submit" class="action-btn text-red-700 border-red-200 hover:bg-red-50">Delete</button>
+                    </form>
+                  </span>
+                </div>
+                {# City edit form #}
+                {% if editing_location and editing_location.pk == city.pk %}
+                <div class="loc-edit-panel loc-edit-panel--city">
+                  <form id="geo-form-loc-{{ city.pk }}" method="post" enctype="multipart/form-data" class="space-y-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_location">
+                    <input type="hidden" name="pk" value="{{ city.pk }}">
+                    <div class="grid md:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Hero heading</label>
+                        <input type="text" name="hero_heading" value="{{ city.hero_heading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Hero subheading</label>
+                        <input type="text" name="hero_subheading" value="{{ city.hero_subheading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">County <span class="text-muted font-normal">(optional)</span></label>
+                      <select name="county_pk" class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full md:w-auto">
+                        <option value="">— None —</option>
+                        {% for c in counties_by_state|get_item:city.state_id %}
+                        <option value="{{ c.pk }}" {% if city.county_id == c.pk %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Hero image</label>
+                      {% if city.hero_image %}
+                      <div class="flex items-center gap-3 mb-2">
+                        <img src="{{ city.hero_image.url }}" alt="Current hero image" class="h-20 w-32 object-cover rounded-lg border border-slate-200">
+                        <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
+                          <input type="checkbox" name="clear_hero_image" value="1"> Remove image
+                        </label>
+                      </div>
+                      {% endif %}
+                      <input type="file" name="hero_image" accept="image/*" class="block text-sm text-slate-600">
+                      <p class="text-xs text-muted mt-1">Recommended: 1400&times;600px or wider. JPG or WebP.</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">SEO title</label>
+                      <input type="text" name="seo_title" value="{{ city.seo_title }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">SEO description</label>
+                      <textarea name="seo_description" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">{{ city.seo_description }}</textarea>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-2">Services offered</label>
+                      <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" name="offers_in_office" {% if city.offers_in_office %}checked{% endif %} class="rounded border-slate-300">
+                          In office
+                        </label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" name="offers_telehealth" {% if city.offers_telehealth %}checked{% endif %} class="rounded border-slate-300">
+                          Telehealth
+                        </label>
+                      </div>
+                    </div>
+                    <div class="border-t border-slate-200 pt-3 mt-1">
+                      <label class="block text-sm font-semibold mb-1">Offices serving this area</label>
+                      <p class="text-xs text-slate-500 mb-2">Select which physical offices serve this geographic area.</p>
+                      <script>
+                      window.__geoOffices = window.__geoOffices || {};
+                      window.__geoOffices['{{ city.pk }}'] = [{% for o in city.offices.all %}{"id":"{{ o.pk }}","name":"{{ o.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+                      </script>
+                      <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="odrop-{{ city.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                          <option value="">— Select an office —</option>
+                          {% for o in all_offices %}<option value="{{ o.pk }}" data-name="{{ o.name|escapejs }}">{{ o.name }}</option>{% endfor %}
+                        </select>
+                        <button type="button" id="oadd-{{ city.pk }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                      </div>
+                      <div id="opills-{{ city.pk }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                      <div id="ohidden-{{ city.pk }}"></div>
+                      <script>
+                      (function(){var uid='{{ city.pk }}',drop=document.getElementById('odrop-'+uid),addBtn=document.getElementById('oadd-'+uid),pills=document.getElementById('opills-'+uid),hidden=document.getElementById('ohidden-'+uid),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='office_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No offices assigned.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});(window.__geoOffices[uid]||[]).forEach(function(o){sel.set(String(o.id),o.name);});render();})();
+                      </script>
+                    </div>
+                  </form>
+                  {% include "accounts/partials/geo_content_blocks.html" with cb_owner_type="location" cb_owner_pk=city.pk cb_owner_obj=city %}
+                  <div class="flex items-center gap-3 pt-4 mt-2 border-t border-slate-200">
+                    <button type="submit" form="geo-form-loc-{{ city.pk }}" class="btn-primary">Save</button>
+                    <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+                  </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+
+              </details>
+              {% endwith %}
+              {% endfor %}
+
+              {# ---- Unassigned cities ---- #}
+              {% if tree.unassigned %}
+              <details class="loc-group" {% if editing_location and editing_location in tree.unassigned or saved_location and saved_location in tree.unassigned %}open{% endif %}>
+                <summary class="loc-row loc-row--unassigned">
+                  <span class="loc-chevron">▸</span>
+                  <span class="loc-name text-muted">Unassigned cities</span>
+                  <span class="pill text-xs ml-1" style="background:rgba(15,63,70,0.08);">{{ tree.unassigned|length }}</span>
+                </summary>
+                {% for city in tree.unassigned %}
+                <div class="loc-row loc-row--city">
+                  <span class="loc-indent"></span>
+                  <span class="loc-name">{{ city.name }}</span>
+                  <span class="pill text-xs ml-1">City</span>
+                  <span class="loc-slug font-mono text-xs text-muted ml-2 hidden md:inline">{{ city.slug }}</span>
+                  <span class="ml-auto flex items-center gap-2">
+                    <span class="pill {% if city.is_active %}pill-active{% else %}pill-inactive{% endif %}">{% if city.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    <a href="?action=edit_location&pk={{ city.pk }}" class="action-btn">Edit</a>
+                    <form method="post" class="inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="toggle_location">
+                      <input type="hidden" name="pk" value="{{ city.pk }}">
+                      <button type="submit" class="action-btn">{% if city.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                    </form>
+                    <form method="post" class="inline" onsubmit="return confirm('Delete {{ city.name }}? This cannot be undone.');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_location">
+                      <input type="hidden" name="pk" value="{{ city.pk }}">
+                      <button type="submit" class="action-btn text-red-700 border-red-200 hover:bg-red-50">Delete</button>
+                    </form>
+                  </span>
+                </div>
+                {% if editing_location and editing_location.pk == city.pk %}
+                <div class="loc-edit-panel loc-edit-panel--city">
+                  <form id="geo-form-loc-{{ city.pk }}" method="post" enctype="multipart/form-data" class="space-y-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_location">
+                    <input type="hidden" name="pk" value="{{ city.pk }}">
+                    <div class="grid md:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Hero heading</label>
+                        <input type="text" name="hero_heading" value="{{ city.hero_heading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Hero subheading</label>
+                        <input type="text" name="hero_subheading" value="{{ city.hero_subheading }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">County <span class="text-muted font-normal">(optional)</span></label>
+                      <select name="county_pk" class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full md:w-auto">
+                        <option value="">— None —</option>
+                        {% for c in counties_by_state|get_item:city.state_id %}
+                        <option value="{{ c.pk }}" {% if city.county_id == c.pk %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Hero image</label>
+                      {% if city.hero_image %}
+                      <div class="flex items-center gap-3 mb-2">
+                        <img src="{{ city.hero_image.url }}" alt="Current hero image" class="h-20 w-32 object-cover rounded-lg border border-slate-200">
+                        <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
+                          <input type="checkbox" name="clear_hero_image" value="1"> Remove image
+                        </label>
+                      </div>
+                      {% endif %}
+                      <input type="file" name="hero_image" accept="image/*" class="block text-sm text-slate-600">
+                      <p class="text-xs text-muted mt-1">Recommended: 1400&times;600px or wider. JPG or WebP.</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">SEO title</label>
+                      <input type="text" name="seo_title" value="{{ city.seo_title }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">SEO description</label>
+                      <textarea name="seo_description" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">{{ city.seo_description }}</textarea>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-2">Services offered</label>
+                      <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" name="offers_in_office" {% if city.offers_in_office %}checked{% endif %} class="rounded border-slate-300">
+                          In office
+                        </label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" name="offers_telehealth" {% if city.offers_telehealth %}checked{% endif %} class="rounded border-slate-300">
+                          Telehealth
+                        </label>
+                      </div>
+                    </div>
+                    <div class="border-t border-slate-200 pt-3 mt-1">
+                      <label class="block text-sm font-semibold mb-1">Offices serving this area</label>
+                      <p class="text-xs text-slate-500 mb-2">Select which physical offices serve this geographic area.</p>
+                      <script>
+                      window.__geoOffices = window.__geoOffices || {};
+                      window.__geoOffices['{{ city.pk }}'] = [{% for o in city.offices.all %}{"id":"{{ o.pk }}","name":"{{ o.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+                      </script>
+                      <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="odrop-{{ city.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                          <option value="">— Select an office —</option>
+                          {% for o in all_offices %}<option value="{{ o.pk }}" data-name="{{ o.name|escapejs }}">{{ o.name }}</option>{% endfor %}
+                        </select>
+                        <button type="button" id="oadd-{{ city.pk }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                      </div>
+                      <div id="opills-{{ city.pk }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                      <div id="ohidden-{{ city.pk }}"></div>
+                      <script>
+                      (function(){var uid='{{ city.pk }}',drop=document.getElementById('odrop-'+uid),addBtn=document.getElementById('oadd-'+uid),pills=document.getElementById('opills-'+uid),hidden=document.getElementById('ohidden-'+uid),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='office_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No offices assigned.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});(window.__geoOffices[uid]||[]).forEach(function(o){sel.set(String(o.id),o.name);});render();})();
+                      </script>
+                    </div>
+                  </form>
+                  {% include "accounts/partials/geo_content_blocks.html" with cb_owner_type="location" cb_owner_pk=city.pk cb_owner_obj=city %}
+                  <div class="flex items-center gap-3 pt-4 mt-2 border-t border-slate-200">
+                    <button type="submit" form="geo-form-loc-{{ city.pk }}" class="btn-primary">Save</button>
+                    <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+                  </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+              </details>
+              {% endif %}
+
+              {% if not tree.counties and not tree.unassigned %}
+              <p class="text-sm text-muted px-2 py-3">No locations yet. Use the button below to add one.</p>
+              {% endif %}
+
+              {% endwith %}
+            </div>
+
+            <!-- Add location form (toggle) -->
+            {% if add_location_state_pk and add_location_state_pk == state.pk|stringformat:"s" %}
+            <div class="bg-[#f0fafb] border border-[#92dce5]/40 rounded-xl p-5 mt-2">
+              <h3 class="text-base font-semibold text-[#0f3f46] mb-3">Add location to {{ state.name }}</h3>
+              <form method="post" class="flex flex-wrap items-end gap-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_location">
+                <input type="hidden" name="state_pk" value="{{ state.pk }}">
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Name</label>
+                  <input type="text" name="name" required placeholder="e.g. Columbus" class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-48">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Type</label>
+                  <select name="location_type" id="add-loc-type-{{ state.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" onchange="toggleCountyField(this, '{{ state.pk }}')">
+                    <option value="city">City</option>
+                    <option value="county">County</option>
+                  </select>
+                </div>
+                <div id="county-field-{{ state.pk }}">
+                  <label class="block text-sm font-semibold mb-1">County <span class="text-muted font-normal">(optional)</span></label>
+                  <select name="county_pk" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                    <option value="">— None —</option>
+                    {% for county in counties_by_state|get_item:state.pk %}
+                    <option value="{{ county.pk }}">{{ county.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="flex gap-2">
+                  <button type="submit" class="btn-primary">Add</button>
+                  <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+                </div>
+              </form>
+            </div>
+            {% else %}
+            <a href="?action=add_location&state_pk={{ state.pk }}" class="action-btn inline-flex items-center gap-1">
+              + Add location
+            </a>
+            {% endif %}
+          </div>
+          {% empty %}
+          <div class="card-surface p-6">
+            <p class="text-muted text-sm">No states found. Run <code>python manage.py seed_geo</code> to seed the database.</p>
+          </div>
+          {% endfor %}
+
+          <!-- ============================================================
+               Regions
+               ============================================================ -->
+          <div class="card-surface p-6 md:p-8">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div>
+                <h2 class="text-2xl font-semibold text-[#0f3f46] m-0">Regions</h2>
+                <p class="text-sm text-muted mt-1">Named geographic groupings (e.g. "Greater Cincinnati Area") that aggregate availability across multiple states and cities.</p>
+              </div>
+              {% if not show_add_region_form %}
+              <a href="?action=add_region" class="btn-primary inline-flex items-center gap-1">+ Add region</a>
+              {% endif %}
+            </div>
+
+            <!-- Add region form -->
+            {% if show_add_region_form %}
+            <div class="bg-[#f0fafb] border border-[#92dce5]/40 rounded-xl p-5 mb-5">
+              <h3 class="text-lg font-semibold text-[#0f3f46] mb-3">Add new region</h3>
+              <form method="post" class="space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_region">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Region name</label>
+                    <input type="text" name="name" required placeholder="e.g. Greater Cincinnati Area" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold mb-1">Slug <span class="text-muted font-normal">(URL, e.g. greater-cincinnati)</span></label>
+                    <input type="text" name="slug" required placeholder="greater-cincinnati" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono">
+                  </div>
+                </div>
+                <!-- Member states (dropdown + pills) -->
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Member states</label>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="rsdrop-add" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                      <option value="">— Select a state —</option>
+                      {% for state in states %}<option value="{{ state.pk }}" data-name="{{ state.name|escapejs }}">{{ state.name }}</option>{% endfor %}
+                    </select>
+                    <button type="button" id="rsadd-add" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                  </div>
+                  <div id="rspills-add" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                  <div id="rshidden-add"></div>
+                  <script>
+                  (function(){var drop=document.getElementById('rsdrop-add'),addBtn=document.getElementById('rsadd-add'),pills=document.getElementById('rspills-add'),hidden=document.getElementById('rshidden-add'),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='state_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No states added.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});render();})();
+                  </script>
+                </div>
+                <!-- Member locations (dropdown + pills) -->
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Member cities / counties <span class="text-muted font-normal">(optional)</span></label>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="rldrop-add" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                      <option value="">— Select a city / county —</option>
+                      {% for state in states %}{% for loc in state.locations.all %}<option value="{{ loc.pk }}" data-name="{{ loc.name|escapejs }}, {{ state.abbreviation }}">{{ loc.name }}, {{ state.abbreviation }}</option>{% endfor %}{% endfor %}
+                    </select>
+                    <button type="button" id="rladd-add" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                  </div>
+                  <div id="rlpills-add" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                  <div id="rlhidden-add"></div>
+                  <script>
+                  (function(){var drop=document.getElementById('rldrop-add'),addBtn=document.getElementById('rladd-add'),pills=document.getElementById('rlpills-add'),hidden=document.getElementById('rlhidden-add'),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='location_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No locations added.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});render();})();
+                  </script>
+                </div>
+                <!-- Offices (dropdown + pills) -->
+                <div>
+                  <label class="block text-sm font-semibold mb-1">Offices serving this region <span class="text-muted font-normal">(optional)</span></label>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="rodrop-add" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                      <option value="">— Select an office —</option>
+                      {% for o in all_offices %}<option value="{{ o.pk }}" data-name="{{ o.name|escapejs }}">{{ o.name }}</option>{% endfor %}
+                    </select>
+                    <button type="button" id="roadd-add" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                  </div>
+                  <div id="ropills-add" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                  <div id="rohidden-add"></div>
+                  <script>
+                  (function(){var drop=document.getElementById('rodrop-add'),addBtn=document.getElementById('roadd-add'),pills=document.getElementById('ropills-add'),hidden=document.getElementById('rohidden-add'),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='office_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No offices assigned.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});render();})();
+                  </script>
+                </div>
+                <div class="flex items-center gap-3 pt-1">
+                  <button type="submit" class="btn-primary">Add region</button>
+                  <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+                </div>
+              </form>
+            </div>
+            {% endif %}
+
+            <!-- List of regions -->
+            {% if regions %}
+            <div class="space-y-4">
+              {% for region in regions %}
+              <div class="border border-slate-200 rounded-xl overflow-hidden {% if saved_region_pk == region.pk %}ring-2 ring-[#92dce5]{% endif %}">
+                <!-- Region header row -->
+                <div class="flex items-center gap-3 px-4 py-3 flex-wrap">
+                  <span class="font-semibold text-[#0f3f46]">{{ region.name }}</span>
+                  <span class="font-mono text-xs text-muted">/regions/{{ region.slug }}/</span>
+                  <span class="pill {% if region.is_active %}pill-active{% else %}pill-inactive{% endif %}">
+                    {% if region.is_active %}Active{% else %}Inactive{% endif %}
+                  </span>
+                  <span class="text-xs text-muted">
+                    {% with region.states.all as rstates %}{% if rstates %}{{ rstates|length }} state{{ rstates|length|pluralize }}{% endif %}{% endwith %}
+                    {% with region.locations.all as rlocs %}{% if rlocs %} · {{ rlocs|length }} location{{ rlocs|length|pluralize }}{% endif %}{% endwith %}
+                  </span>
+                  <div class="ml-auto flex items-center gap-2 flex-wrap">
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="toggle_region">
+                      <input type="hidden" name="pk" value="{{ region.pk }}">
+                      <button type="submit" class="action-btn">{% if region.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                    </form>
+                    <a href="?action=edit_region&pk={{ region.pk }}" class="action-btn">Edit</a>
+                    <form method="post" onsubmit="return confirm('Delete {{ region.name }}? This cannot be undone.')">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_region">
+                      <input type="hidden" name="pk" value="{{ region.pk }}">
+                      <button type="submit" class="action-btn text-red-700 border-red-200 hover:bg-red-50">Delete</button>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Edit form -->
+                {% if editing_region and editing_region.pk == region.pk %}
+                <div class="bg-[#f0fafb] border-t border-[#92dce5]/40 p-5">
+                  <form id="geo-form-region-{{ region.pk }}" method="post" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_region">
+                    <input type="hidden" name="pk" value="{{ region.pk }}">
+
+                    <div class="grid md:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Region name</label>
+                        <input type="text" name="name" value="{{ region.name }}" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">Slug <span class="text-muted font-normal">(read-only)</span></label>
+                        <input type="text" value="{{ region.slug }}" readonly class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono bg-slate-50 text-slate-500 cursor-not-allowed">
+                      </div>
+                    </div>
+
+                    <!-- Member states (dropdown + pills) -->
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Member states</label>
+                      <script>
+                      window.__regionStates = window.__regionStates || {};
+                      window.__regionStates['{{ region.pk }}'] = [{% for s in editing_region.states.all %}{"id":"{{ s.pk }}","name":"{{ s.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+                      </script>
+                      <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="rsdrop-{{ region.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                          <option value="">— Select a state —</option>
+                          {% for state in states %}<option value="{{ state.pk }}" data-name="{{ state.name|escapejs }}">{{ state.name }}</option>{% endfor %}
+                        </select>
+                        <button type="button" id="rsadd-{{ region.pk }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                      </div>
+                      <div id="rspills-{{ region.pk }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                      <div id="rshidden-{{ region.pk }}"></div>
+                      <script>
+                      (function(){var uid='{{ region.pk }}',drop=document.getElementById('rsdrop-'+uid),addBtn=document.getElementById('rsadd-'+uid),pills=document.getElementById('rspills-'+uid),hidden=document.getElementById('rshidden-'+uid),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='state_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No states added.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});(window.__regionStates[uid]||[]).forEach(function(o){sel.set(String(o.id),o.name);});render();})();
+                      </script>
+                    </div>
+
+                    <!-- Member locations (dropdown + pills) -->
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Member cities / counties <span class="text-muted font-normal">(optional)</span></label>
+                      <script>
+                      window.__regionLocs = window.__regionLocs || {};
+                      window.__regionLocs['{{ region.pk }}'] = [{% for l in editing_region.locations.all %}{"id":"{{ l.pk }}","name":"{{ l.name|escapejs }}, {{ l.state.abbreviation }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+                      </script>
+                      <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="rldrop-{{ region.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                          <option value="">— Select a city / county —</option>
+                          {% for state in states %}{% for loc in state.locations.all %}<option value="{{ loc.pk }}" data-name="{{ loc.name|escapejs }}, {{ state.abbreviation }}">{{ loc.name }}, {{ state.abbreviation }}</option>{% endfor %}{% endfor %}
+                        </select>
+                        <button type="button" id="rladd-{{ region.pk }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                      </div>
+                      <div id="rlpills-{{ region.pk }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                      <div id="rlhidden-{{ region.pk }}"></div>
+                      <script>
+                      (function(){var uid='{{ region.pk }}',drop=document.getElementById('rldrop-'+uid),addBtn=document.getElementById('rladd-'+uid),pills=document.getElementById('rlpills-'+uid),hidden=document.getElementById('rlhidden-'+uid),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='location_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No locations added.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});(window.__regionLocs[uid]||[]).forEach(function(o){sel.set(String(o.id),o.name);});render();})();
+                      </script>
+                    </div>
+
+                    <!-- Offices (dropdown + pills) -->
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Offices serving this region <span class="text-muted font-normal">(optional)</span></label>
+                      <script>
+                      window.__regionOffices = window.__regionOffices || {};
+                      window.__regionOffices['{{ region.pk }}'] = [{% for o in editing_region.offices.all %}{"id":"{{ o.pk }}","name":"{{ o.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}];
+                      </script>
+                      <div style="display:flex;gap:8px;align-items:center;">
+                        <select id="rodrop-{{ region.pk }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1">
+                          <option value="">— Select an office —</option>
+                          {% for o in all_offices %}<option value="{{ o.pk }}" data-name="{{ o.name|escapejs }}">{{ o.name }}</option>{% endfor %}
+                        </select>
+                        <button type="button" id="roadd-{{ region.pk }}" class="btn-primary" style="white-space:nowrap;padding:0.5rem 1rem;font-size:0.875rem;">+ Add</button>
+                      </div>
+                      <div id="ropills-{{ region.pk }}" style="display:flex;flex-wrap:wrap;gap:8px;min-height:1.5rem;margin-top:8px;"></div>
+                      <div id="rohidden-{{ region.pk }}"></div>
+                      <script>
+                      (function(){var uid='{{ region.pk }}',drop=document.getElementById('rodrop-'+uid),addBtn=document.getElementById('roadd-'+uid),pills=document.getElementById('ropills-'+uid),hidden=document.getElementById('rohidden-'+uid),sel=new Map();function render(){pills.innerHTML='';hidden.innerHTML='';drop.querySelectorAll('option').forEach(function(o){o.disabled=false;});sel.forEach(function(name,id){var pill=document.createElement('span');pill.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:0.8rem;font-weight:600;background:#04606B;color:#fff;';var lbl=document.createTextNode(name+' ');var x=document.createElement('button');x.type='button';x.dataset.id=id;x.innerHTML='&times;';x.style.cssText='background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.9rem;font-weight:700;line-height:1;padding:0;';x.addEventListener('click',function(){sel.delete(this.dataset.id);render();});pill.appendChild(lbl);pill.appendChild(x);pills.appendChild(pill);var inp=document.createElement('input');inp.type='hidden';inp.name='office_ids';inp.value=id;hidden.appendChild(inp);var opt=drop.querySelector('option[value="'+id+'"]');if(opt)opt.disabled=true;});if(sel.size===0){pills.innerHTML='<span style="font-size:0.75rem;color:#94a3b8;font-style:italic;">No offices assigned.</span>';}}addBtn.addEventListener('click',function(){var opt=drop.options[drop.selectedIndex];if(!opt||!opt.value)return;sel.set(opt.value,opt.dataset.name||opt.text);drop.value='';render();});(window.__regionOffices[uid]||[]).forEach(function(o){sel.set(String(o.id),o.name);});render();})();
+                      </script>
+                    </div>
+
+                    <!-- SEO fields -->
+                    <div class="grid md:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">SEO title</label>
+                        <input type="text" name="seo_title" value="{{ region.seo_title }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <p class="text-xs text-muted mt-1">Leave blank for auto-generated default.</p>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-semibold mb-1">OG image URL</label>
+                        <input type="text" name="og_image_url" value="{{ region.og_image_url }}" placeholder="https://..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">SEO description</label>
+                      <textarea name="seo_description" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">{{ region.seo_description }}</textarea>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold mb-1">Hero image</label>
+                      {% if region.hero_image %}
+                      <div class="flex items-center gap-3 mb-2">
+                        <img src="{{ region.hero_image.url }}" alt="Current hero image" class="h-20 w-32 object-cover rounded-lg border border-slate-200">
+                        <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
+                          <input type="checkbox" name="clear_hero_image" value="1"> Remove image
+                        </label>
+                      </div>
+                      {% endif %}
+                      <input type="file" name="hero_image" accept="image/*" class="block text-sm text-slate-600">
+                      <p class="text-xs text-muted mt-1">Recommended: 1400&times;600px or wider. JPG or WebP.</p>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-2 border-t border-slate-200">
+                      <button type="submit" class="btn-primary">Save region</button>
+                      <a href="{% url 'accounts:settings_areas_served' %}" class="action-btn">Cancel</a>
+                    </div>
+                  </form>
+                </div>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-muted">No regions yet. Click <strong>+ Add region</strong> to create one.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+function toggleCountyField(select, statePk) {
+  var field = document.getElementById('county-field-' + statePk);
+  if (!field) return;
+  field.style.display = select.value === 'county' ? 'none' : '';
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+(function () {
+  var toolbarOptions = [
+    ['bold', 'italic', 'underline'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['link'],
+    ['clean']
+  ];
+
+  document.querySelectorAll('.quill-wrapper').forEach(function (wrapper) {
+    var textareaId = wrapper.dataset.textarea;
+    var textarea = document.getElementById(textareaId);
+    if (!textarea) return;
+
+    wrapper.style.minHeight = '120px';
+
+    var quill = new Quill(wrapper, {
+      theme: 'snow',
+      modules: { toolbar: toolbarOptions },
+      placeholder: 'Enter body content…'
+    });
+
+    // Pre-fill with existing content
+    if (textarea.value && textarea.value.trim()) {
+      quill.root.innerHTML = textarea.value;
+    }
+
+    // Sync to hidden textarea before any parent form submits
+    var form = textarea.closest('form');
+    if (form) {
+      form.addEventListener('submit', function () {
+        textarea.value = quill.root.innerHTML;
+      });
+    }
+  });
+})();
+
+// ── Draft persistence for location/state edit forms ──────────────────────
+// Saves field values to localStorage on every change so that adding a
+// content block (which causes a page reload) does not lose unsaved edits.
+(function () {
+  var PREFIX = 'geo_draft_';
+  function storageKey(formId) { return PREFIX + formId; }
+
+  function saveDraft(form) {
+    var d = {};
+    form.querySelectorAll(
+      'input:not([type=file]):not([type=submit]):not([name=action]):not([name=pk])' +
+      ':not([name=csrfmiddlewaretoken]):not([name=office_ids]), textarea'
+    ).forEach(function (el) {
+      if (!el.name) return;
+      d[el.name] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    try { localStorage.setItem(storageKey(form.id), JSON.stringify(d)); } catch (e) {}
+  }
+
+  function restoreDraft(form) {
+    var raw;
+    try { raw = localStorage.getItem(storageKey(form.id)); } catch (e) { return; }
+    if (!raw) return;
+    var d;
+    try { d = JSON.parse(raw); } catch (e) { return; }
+    form.querySelectorAll(
+      'input:not([type=file]):not([type=submit]):not([name=action]):not([name=pk])' +
+      ':not([name=csrfmiddlewaretoken]):not([name=office_ids]), textarea'
+    ).forEach(function (el) {
+      if (!el.name || !(el.name in d)) return;
+      if (el.type === 'checkbox') { el.checked = d[el.name]; }
+      else { el.value = d[el.name]; }
+    });
+  }
+
+  function clearDraft(formId) {
+    try { localStorage.removeItem(storageKey(formId)); } catch (e) {}
+  }
+
+  // Restore drafts for any visible edit forms, wire up save/clear listeners
+  document.querySelectorAll('form[id^="geo-form-"]').forEach(function (f) {
+    restoreDraft(f);
+    f.addEventListener('input',  function () { saveDraft(f); });
+    f.addEventListener('change', function () { saveDraft(f); });
+    // Clear draft when the main form itself is submitted (about to be saved to DB)
+    f.addEventListener('submit', function () { clearDraft(f.id); });
+  });
+
+  // Also clear draft after a successful save redirect
+  var sp = new URLSearchParams(location.search);
+  var sl = sp.get('saved_location');
+  var ss = sp.get('saved_state');
+  if (sl) clearDraft('geo-form-loc-' + sl);
+  if (ss) clearDraft('geo-form-state-' + ss);
+})();
+</script>
+{% endblock %}
+
+{% block before_footer %}
+  <div aria-hidden="true" class="w-full bg-brand-deep h-16"></div>
+{% endblock %}

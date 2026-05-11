@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block head_extra %}
+<script type="application/ld+json">{{ schema_json }}</script>
+<style>
+.carousel-track {
+  scrollbar-width: none;
+}
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+.carousel-item {
+  flex: 0 0 100%;
+}
+@media (min-width: 640px) {
+  .carousel-item { flex: 0 0 calc((100% - 1.5rem) / 2); }
+}
+@media (min-width: 1024px) {
+  .carousel-item { flex: 0 0 calc((100% - 2 * 1.5rem) / 3); }
+}
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: #04606B;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  transition: background 150ms;
+  flex-shrink: 0;
+}
+.carousel-btn:hover { background: #0f3f46; }
+.carousel-btn-prev { left: -1.375rem; }
+.carousel-btn-next { right: -1.375rem; }
+@media (max-width: 640px) {
+  .carousel-btn-prev { left: 0; }
+  .carousel-btn-next { right: 0; }
+}
+.carousel-btn-light { background: rgba(255,255,255,0.2) !important; }
+.carousel-btn-light:hover { background: rgba(255,255,255,0.38) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content" class="site-main">
+
+  {# ── Hero ──────────────────────────────────────────────── #}
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-0">
+    <div class="relative max-w-6xl mx-auto px-4 pt-16 pb-24 flex flex-col items-center text-center gap-5">
+      <div class="w-full text-left">
+        <div class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Virtual Therapy</div>
+      </div>
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white m-0 max-w-3xl">{{ office.display_heading }}</h1>
+      <p class="text-lg text-white/85 m-0 max-w-2xl">Online therapy available throughout
+        {% for state in states %}{{ state.name }}{% if not forloop.last %}{% if forloop.revcounter == 2 %} and {% else %}, {% endif %}{% endif %}{% endfor %}.
+        Connect with a licensed therapist from the comfort of home.
+      </p>
+      <div class="flex flex-wrap justify-center gap-3 mt-2">
+        <a href="{{ office.cta_url }}"
+           class="inline-flex items-center gap-2 rounded-xl bg-[#92DCE5] px-5 py-2.5 text-sm font-semibold text-[#0f3f46] shadow-sm transition-colors hover:bg-white"
+           data-schedule-trigger>{{ office.cta_label }}</a>
+      </div>
+    </div>
+  </section>
+
+  {# ── Wave + Info strip ─────────────────────────────────── #}
+  <section class="relative z-20 py-10 md:py-14" style="background:#92DCE5;">
+    <div class="elementor-1393">
+      <div class="elementor-element elementor-element-a80adf4">
+        <div class="e-con-inner">
+          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-6">
+
+        {# Availability #}
+        <div class="bg-[#04606B] rounded-2xl p-6 flex flex-col gap-3">
+          <div class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white m-0">{{ office.office_hours_title|default:"Availability" }}</h3>
+          <p class="text-white/80 text-sm m-0">{{ office.office_hours|default:"By appointment"|linebreaksbr }}</p>
+        </div>
+
+        {# States served #}
+        <div class="bg-[#04606B] rounded-2xl p-6 flex flex-col gap-3">
+          <div class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white m-0">States served</h3>
+          <ul class="m-0 p-0 list-none space-y-1">
+            {% for state in states %}
+              <li><a href="/areas-served/{{ state.slug }}/" class="text-[#92DCE5] text-sm hover:text-white transition-colors">{{ state.name }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        {# How it works #}
+        <div class="bg-[#04606B] rounded-2xl p-6 flex flex-col gap-3">
+          <div class="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white m-0">How it works</h3>
+          <p class="text-white/80 text-sm m-0">Join sessions from any device with a camera and internet connection. Secure, HIPAA-compliant video sessions — no travel required.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  {# ── Therapists ────────────────────────────────────────── #}
+  {% if therapists %}
+  <section class="relative z-20 pt-16 pb-12 md:pt-20 md:pb-16" style="background:#04606B;">
+    <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none" fill="#92DCE5" style="height:30px;">
+        <path d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+      </svg>
+    </div>
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl font-semibold text-white m-0">Telehealth therapists</h2>
+        <p class="text-white/75 mt-2 m-0">Licensed therapists available for online sessions</p>
+      </div>
+      <div class="relative px-8 md:px-10">
+        <button class="carousel-btn carousel-btn-light carousel-btn-prev" aria-label="Previous therapists">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/></svg>
+        </button>
+        <div class="carousel-track flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4">
+          {% for t in therapists %}
+          <div class="carousel-item snap-start">
+            {% include "partials/therapist_card_shared.html" with slug=t.slug photo_url=t.photo_url name=t.profile.display_name accepts_new_clients=t.accepts_new_clients license_text=t.title services=t.services client_focuses=t.focuses %}
+          </div>
+          {% endfor %}
+        </div>
+        <button class="carousel-btn carousel-btn-light carousel-btn-next" aria-label="Next therapists">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Services ──────────────────────────────────────────── #}
+  {% if services %}
+  <section class="relative z-20 pt-16 pb-12 md:pt-20 md:pb-16" style="background:#04606B;">
+    {% if not therapists %}
+    <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none" fill="#92DCE5" style="height:30px;">
+        <path d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+      </svg>
+    </div>
+    {% endif %}
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl font-semibold text-white m-0">Services available via telehealth</h2>
+      </div>
+      <div class="relative px-8 md:px-10">
+        <button class="carousel-btn carousel-btn-light carousel-btn-prev" aria-label="Previous services">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/></svg>
+        </button>
+        <div class="carousel-track flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4">
+          {% for svc in services %}
+          <div class="carousel-item snap-start">
+            <a href="/telehealth/services/{{ svc.slug }}/" class="group flex flex-col h-full rounded-lg ring-1 ring-slate-200 hover:ring-slate-300 bg-white shadow-sm hover:shadow-md transition overflow-hidden no-underline">
+              {% if svc.image_url %}
+                <div class="h-40 w-full bg-cover bg-center" style="background-image: url('{{ svc.image_url|escape }}');"></div>
+              {% endif %}
+              <div class="p-5 flex flex-col grow">
+                <h3 class="text-xl font-medium text-[#005F6B] m-0">{{ svc.title }}</h3>
+                {% if svc.excerpt %}
+                  <div class="prose prose-sm text-slate-700 mt-3 line-clamp-5">{{ svc.excerpt|safe }}</div>
+                {% endif %}
+                <div class="mt-auto pt-4">
+                  <span class="inline-flex items-center rounded-md bg-[#3C9C64] px-3 py-1.5 text-sm font-medium text-white transition-colors group-hover:bg-[#92DCE5] group-hover:text-[#005F6B]">Learn more</span>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="carousel-btn carousel-btn-light carousel-btn-next" aria-label="Next services">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── States served ──────────────────────────────────────── #}
+  {% if states %}
+  <section class="relative z-20 pt-14 md:pt-16 pb-12 md:pb-14" style="background:#92DCE5;">
+    {% if therapists or services %}
+    <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none" fill="#04606B" style="height:30px;">
+        <path d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+      </svg>
+    </div>
+    {% endif %}
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="text-2xl font-bold text-[#04606B] mb-6 m-0">States where telehealth is available</h2>
+      <div class="flex flex-wrap gap-2">
+        {% for state in states %}
+          <a href="/areas-served/{{ state.slug }}/" class="inline-flex rounded-full border border-[#04606B]/20 bg-white px-4 py-1.5 text-sm text-[#04606B] font-medium hover:bg-[#92DCE5]/20 transition-colors">{{ state.name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+</main>
+
+<script>
+(function () {
+  document.querySelectorAll('.carousel-btn-prev, .carousel-btn-next').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var track = btn.closest('div').querySelector('.carousel-track');
+      if (!track) return;
+      var item = track.querySelector('.carousel-item');
+      if (!item) return;
+      var gap = 24;
+      var itemW = item.offsetWidth + gap;
+      if (btn.classList.contains('carousel-btn-prev')) {
+        track.scrollBy({ left: -itemW, behavior: 'smooth' });
+      } else {
+        track.scrollBy({ left: itemW, behavior: 'smooth' });
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}
