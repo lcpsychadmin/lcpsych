@@ -28,6 +28,14 @@ class Post(models.Model):
     )
 
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
+    therapist_author = models.ForeignKey(
+        'profiles.TherapistProfile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='authored_posts',
+        help_text='The therapist profile to credit and feature in the "About the Author" section.',
+    )
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True)
     body = HTMLField()

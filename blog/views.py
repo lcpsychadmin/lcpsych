@@ -135,12 +135,24 @@ class PostCreateView(LoginRequiredMixin, View):
 class PostEditView(LoginRequiredMixin, View):
     template_name = 'blog/post_form.html'
 
+    def _is_restricted(self, request: HttpRequest, post) -> bool:
+        """Returns True when the current user is not allowed to publish or change
+        the therapist_author — i.e. a therapist_author is assigned and this user
+        is neither staff nor that assigned therapist."""
+        if request.user.is_staff:
+            return False
+        if not post.therapist_author_id:
+            return False
+        tp = getattr(request.user, 'therapist_profile', None)
+        return tp is None or tp.pk != post.therapist_author_id
+
     def get(self, request: HttpRequest, pk: int) -> HttpResponse:
         lookup = {'pk': pk}
         if not request.user.is_staff:
             lookup['author'] = request.user
         post = get_object_or_404(Post, **lookup)
-        form = PostForm(instance=post)
+        restricted = self._is_restricted(request, post)
+        form = PostForm(instance=post, restrict_publish=restricted, restrict_author=restricted)
         return render(request, self.template_name, {'form': form, 'editing': True, 'post_obj': post})
 
     def post(self, request: HttpRequest, pk: int) -> HttpResponse:
@@ -148,10 +160,16 @@ class PostEditView(LoginRequiredMixin, View):
         if not request.user.is_staff:
             lookup['author'] = request.user
         post = get_object_or_404(Post, **lookup)
-        form = PostForm(request.POST, request.FILES, instance=post)
+        restricted = self._is_restricted(request, post)
+        form = PostForm(request.POST, request.FILES, instance=post, restrict_publish=restricted, restrict_author=restricted)
         if form.is_valid():
             updated = form.save(commit=False)
             updated.author = request.user
+            # Belt-and-suspenders: explicitly restore locked fields even if
+            # someone bypassed the disabled widget via a crafted POST.
+            if restricted:
+                updated.status = post.status
+                updated.therapist_author_id = post.therapist_author_id
             updated.save()
             form.save_m2m()
             form.save_new_categories(updated)
@@ -165,7 +183,16 @@ class PostDetailView(View):
     template_name = 'blog/post_detail.html'
 
     def get(self, request: HttpRequest, slug: str) -> HttpResponse:
-        post = get_object_or_404(Post, slug=slug)
+        post = get_object_or_404(
+            Post.objects.select_related(
+                'therapist_author',
+                'therapist_author__license_type',
+            ).prefetch_related(
+                'therapist_author__services',
+                'therapist_author__locations',
+            ),
+            slug=slug,
+        )
         if post.status != Post.STATUS_PUBLISHED:
             if not request.user.is_authenticated or post.author != request.user:
                 raise Http404()

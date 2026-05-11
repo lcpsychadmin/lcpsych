@@ -3,9 +3,20 @@ from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 
 from .models import Post, Category
+from profiles.models import TherapistProfile
 
 
 class PostForm(forms.ModelForm):
+    therapist_author = forms.ModelChoiceField(
+        queryset=TherapistProfile.objects.filter(
+            is_published=True
+        ).order_by('last_name', 'first_name'),
+        required=False,
+        empty_label='— No specific author —',
+        widget=forms.Select(attrs={'class': 'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm'}),
+        label='Therapist author',
+        help_text='Assigns a therapist profile for the "About the Author" section.',
+    )
     categories = forms.ModelMultipleChoiceField(
         queryset=Category.objects.all().order_by('name'),
         required=False,
@@ -18,18 +29,28 @@ class PostForm(forms.ModelForm):
     )
     class Meta:
         model = Post
-        fields = ['title', 'slug', 'status', 'publish_at', 'body', 'seo_title', 'seo_description', 'feature_image', 'categories']
+        fields = ['title', 'slug', 'therapist_author', 'status', 'publish_at', 'body', 'seo_title', 'seo_description', 'feature_image', 'categories']
         widgets = {
             'body': forms.Textarea(attrs={'rows': 20}),
             'publish_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
         }
 
     def __init__(self, *args, **kwargs):
+        restrict_publish = kwargs.pop('restrict_publish', False)
+        restrict_author = kwargs.pop('restrict_author', False)
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.publish_at:
             self.initial['publish_at'] = self.instance.publish_at.strftime('%Y-%m-%dT%H:%M')
         if self.instance and self.instance.pk:
             self.initial['categories'] = self.instance.categories.all()
+            if self.instance.therapist_author_id:
+                self.initial['therapist_author'] = self.instance.therapist_author_id
+        if restrict_publish:
+            self.fields['status'].disabled = True
+            self.fields['status'].help_text = 'Only the assigned therapist author can publish this post.'
+        if restrict_author:
+            self.fields['therapist_author'].disabled = True
+            self.fields['therapist_author'].help_text = 'Only the assigned therapist author can change this field.'
 
     def clean_slug(self):
         slug = self.cleaned_data.get('slug') or ''

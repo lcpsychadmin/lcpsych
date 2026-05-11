@@ -233,6 +233,15 @@
 
                 <div class="rounded-xl border border-[#d8eef1] bg-[#f7fcfd] p-4 space-y-3">
                   <div>
+                    <label class="block text-sm font-semibold mb-1">Therapist author</label>
+                    {{ form.therapist_author }}
+                    <p class="text-xs text-slate-500 mt-1">When set, an "About the Author" section appears at the bottom of the post with bio, services, location, and a schedule CTA.</p>
+                    {{ form.therapist_author.errors }}
+                  </div>
+                </div>
+
+                <div class="rounded-xl border border-[#d8eef1] bg-[#f7fcfd] p-4 space-y-3">
+                  <div>
                     <label class="block text-sm font-semibold mb-1">Slug</label>
                     {{ form.slug }}
                     <p class="text-xs text-slate-500 mt-1">Used in the URL (blog/your-slug). Must be unique.</p>
