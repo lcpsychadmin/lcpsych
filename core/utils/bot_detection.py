@@ -94,8 +94,10 @@ def bot_ua_exclude_q() -> Q:
 # Behavioral bot detection
 # ---------------------------------------------------------------------------
 
-# Event types that a real visitor produces beyond just scrolling
-_HUMAN_EVENT_TYPES = frozenset(("page_view", "click", "form_submit", "heartbeat", "hover_intent"))
+# Event types that a real visitor produces beyond just scrolling.
+# Note: page_view is intentionally excluded — bots also fire it on pagehide/visibilitychange.
+# Only interaction-based events that require genuine user engagement count as human signals.
+_HUMAN_EVENT_TYPES = frozenset(("click", "form_submit", "heartbeat", "hover_intent"))
 
 
 def is_bot_session(event_types: list[str], paths: list[str]) -> bool:
