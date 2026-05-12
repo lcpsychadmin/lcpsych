@@ -57,6 +57,9 @@ urlpatterns = [
         template_name='robots.txt',
         content_type='text/plain'
     ), name='robots_txt'),
+    # Legacy WordPress URL patterns — return 410 Gone
+    path('team-member/<slug:slug>/', core_views.gone_410, name='team_member_gone'),
+    path('team-member/', core_views.gone_410, name='team_member_list_gone'),
     # Geo routes — the StateSlugConverter ensures only valid state slugs match,
     # so these patterns never shadow other single-segment URLs (about-us, etc.)
     path('', include('geo.urls')),

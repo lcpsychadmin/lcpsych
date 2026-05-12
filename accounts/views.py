@@ -3653,7 +3653,7 @@ class LoginView(DjangoLoginView):
 
 class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
     """
-    Admin page for submitting dead URLs to Google Search Console URL Removals API.
+    Admin page for checking whether URLs return 410 Gone.
     Accessible at /accounts/settings/url-removal/
     """
 
@@ -3663,15 +3663,11 @@ class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
         return is_admin(self.request.user)
 
     def get(self, request: HttpRequest) -> HttpResponse:
-        import os
-        return render(request, self.template_name, {
-            "active_page": "url_removal",
-            "gsc_site_url": os.environ.get("GSC_SITE_URL", "not configured"),
-        })
+        return render(request, self.template_name, {"active_page": "url_removal"})
 
     def post(self, request: HttpRequest) -> HttpResponse:
-        import os
-        from core.views_url_removal import _get_access_token, _submit_url_removal
+        import urllib.request
+        import urllib.error
 
         raw: str = request.POST.get("urls", "")
         urls = [
@@ -3681,29 +3677,27 @@ class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
         ]
 
         results: list[dict] = []
-        error: str | None = None
 
-        if urls:
-            site_url = os.environ.get("GSC_SITE_URL", "").rstrip("/")
-            if not site_url:
-                error = "GSC_SITE_URL is not configured on this server."
-            else:
-                try:
-                    access_token = _get_access_token()
-                    for url in urls:
-                        results.append(_submit_url_removal(access_token, site_url, url))
-                except RuntimeError as exc:
-                    error = str(exc)
+        for url in urls:
+            try:
+                req = urllib.request.Request(url, method="HEAD")
+                req.add_header("User-Agent", "LCPsych-StatusChecker/1.0")
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    status = resp.status
+            except urllib.error.HTTPError as exc:
+                status = exc.code
+            except Exception as exc:
+                results.append({"url": url, "status": None, "error": str(exc)})
+                continue
+            results.append({"url": url, "status": status, "error": None})
 
-        successes = sum(1 for r in results if r.get("success"))
-        failures = len(results) - successes
+        ok = sum(1 for r in results if r.get("status") == 410)
+        not_ok = len(results) - ok
 
         return render(request, self.template_name, {
             "active_page": "url_removal",
-            "gsc_site_url": os.environ.get("GSC_SITE_URL", "not configured"),
             "submitted_urls": raw,
             "results": results,
-            "successes": successes,
-            "failures": failures,
-            "error": error,
+            "ok": ok,
+            "not_ok": not_ok,
         })

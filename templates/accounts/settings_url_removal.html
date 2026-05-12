@@ -30,8 +30,8 @@
 <main id="content">
   <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
     <div class="max-w-[1100px] mx-auto px-4 text-center">
-      <h1 class="text-4xl leading-tight font-semibold m-0">URL removal</h1>
-      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Submit dead URLs to Google Search Console for temporary removal from search results.</p>
+      <h1 class="text-4xl leading-tight font-semibold m-0">410 checker</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Verify that dead URLs are returning a proper 410 Gone response.</p>
     </div>
   </section>
 
@@ -62,10 +62,10 @@
 
           {# ── Input form ── #}
           <div class="card-surface p-6 md:p-8">
-            <h2 class="text-2xl font-semibold text-[#0f3f46] mt-0 mb-1">Submit URLs for removal</h2>
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mt-0 mb-1">Check URLs</h2>
             <p class="text-slate-600 text-sm mb-5">
               Paste one full URL per line (e.g. <code class="bg-slate-100 px-1 rounded text-xs">https://www.lcpsych.com/old-page/</code>).
-              Each URL will be submitted to Google Search Console as a <strong>Temporary Hide</strong> request.
+              Each URL will be fetched and its HTTP status code recorded.
               Blank lines and lines starting with <code class="bg-slate-100 px-1 rounded text-xs">#</code> are ignored.
             </p>
 
@@ -86,7 +86,7 @@
               >{{ submitted_urls|default:'' }}</textarea>
 
               <div class="flex items-center gap-3">
-                <button type="submit" class="btn-primary">Submit to Google Search Console</button>
+                <button type="submit" class="btn-primary">Check status codes</button>
                 {% if results %}
                 <span class="text-slate-500 text-sm">Scroll down to see results.</span>
                 {% endif %}
@@ -100,21 +100,23 @@
             <h2 class="text-2xl font-semibold text-[#0f3f46] mt-0 mb-4">Results</h2>
 
             <div class="summary-bar">
-              <span>{{ results|length }} submitted</span>
-              {% if successes %}<span class="ok">✓ {{ successes }} accepted</span>{% endif %}
-              {% if failures %}<span class="fail">✗ {{ failures }} failed</span>{% endif %}
+              <span>{{ results|length }} checked</span>
+              {% if ok %}<span class="ok">✓ {{ ok }} returning 410</span>{% endif %}
+              {% if not_ok %}<span class="fail">✗ {{ not_ok }} not 410</span>{% endif %}
             </div>
 
             <div>
               {% for r in results %}
-              <div class="result-row {% if r.success %}ok{% else %}fail{% endif %}">
-                <span class="result-badge {% if r.success %}ok{% else %}fail{% endif %}">
-                  {% if r.success %}OK{% else %}FAIL{% endif %}
+              <div class="result-row {% if r.status == 410 %}ok{% else %}fail{% endif %}">
+                <span class="result-badge {% if r.status == 410 %}ok{% else %}fail{% endif %}">
+                  {% if r.status %}{{ r.status }}{% else %}ERR{% endif %}
                 </span>
                 <div>
                   <div class="result-url">{{ r.url }}</div>
-                  {% if not r.success %}
+                  {% if r.error %}
                   <div class="result-error">{{ r.error }}</div>
+                  {% elif r.status != 410 %}
+                  <div class="result-error">Expected 410 — got {{ r.status }}</div>
                   {% endif %}
                 </div>
               </div>
@@ -127,10 +129,11 @@
           <div class="card-surface p-6 md:p-8">
             <h2 class="text-xl font-semibold text-[#0f3f46] mt-0 mb-3">How it works</h2>
             <ul class="text-slate-600 text-sm space-y-2 list-disc list-inside">
-              <li>Each URL is submitted to the <strong>Google Search Console URL Removals API</strong> as a <em>Temporary Hide</em> (removes the URL from search results for ~6 months).</li>
-              <li>The server uses the <code class="bg-slate-100 px-1 rounded">GOOGLE_CLIENT_EMAIL</code> service account credentials configured in environment variables.</li>
-              <li>URLs must be within the <code class="bg-slate-100 px-1 rounded">GSC_SITE_URL</code> property (<strong>{{ gsc_site_url }}</strong>).</li>
-              <li>For permanent removal, delete or redirect the page first, then wait for Googlebot to recrawl.</li>
+              <li>Each URL is fetched via a <strong>HEAD request</strong> from this server and the HTTP status code is recorded.</li>
+              <li><strong>410 Gone</strong> — correct. Google will de-index the page permanently.</li>
+              <li><strong>404 Not Found</strong> — needs fixing. Return a 410 instead so Google removes it faster.</li>
+              <li><strong>200 OK</strong> — page still live. Remove or archive the content first.</li>
+              <li>Once a URL returns 410, submit it manually in <a href="https://search.google.com/search-console/removals" target="_blank" rel="noopener" class="text-[#3C9C64] underline">Google Search Console → Removals</a> for faster de-indexing.</li>
             </ul>
           </div>
 
