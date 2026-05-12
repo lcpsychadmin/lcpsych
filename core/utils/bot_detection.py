@@ -88,3 +88,26 @@ def bot_ua_exclude_q() -> Q:
         events = AnalyticsEvent.objects.filter(...).exclude(bot_ua_exclude_q())
     """
     return reduce(lambda a, b: a | b, (Q(user_agent__icontains=p) for p in _BOT_PATTERNS))
+
+
+# ---------------------------------------------------------------------------
+# Behavioral bot detection
+# ---------------------------------------------------------------------------
+
+# Event types that a real visitor produces beyond just scrolling
+_HUMAN_EVENT_TYPES = frozenset(("page_view", "click", "form_submit", "heartbeat", "hover_intent"))
+
+
+def is_bot_session(event_types: list[str], paths: list[str]) -> bool:
+    """Return ``True`` if the session looks like a headless bot.
+
+    Criteria (all must be true):
+    - Only 1 distinct path visited (single-page session)
+    - No human-signal events (no page_view, click, form_submit, heartbeat, hover_intent)
+    - At least 2 events recorded (ruling out empty/partial sessions)
+    """
+    if len(event_types) < 2:
+        return False
+    if len(set(paths)) > 1:
+        return False
+    return not any(et in _HUMAN_EVENT_TYPES for et in event_types)

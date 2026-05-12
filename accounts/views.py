@@ -74,7 +74,7 @@ from core.models import (
 from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTypeForm
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
 from blog.models import Post
-from core.utils.bot_detection import bot_ua_exclude_q
+from core.utils.bot_detection import bot_ua_exclude_q, is_bot_session
 
 
 logger = logging.getLogger(__name__)
@@ -1371,8 +1371,13 @@ class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
                     "page_views": 0,
                     "clicks": 0,
                     "time_on_page_ms": row.get("duration_ms") or 0,
+                    "_event_types": [],
+                    "_paths": [],
                 }
                 session_map[session_key] = session
+
+            session["_event_types"].append(event_type)
+            session["_paths"].append(row.get("path") or "")
 
             if created and session.get("last_seen") and created > session["last_seen"]:
                 session["last_seen"] = created
@@ -1398,6 +1403,8 @@ class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         sessions = []
         for session in session_map.values():
+            if is_bot_session(session.pop("_event_types", []), session.pop("_paths", [])):
+                continue
             last_seen_dt = session.get("last_seen") or now
             first_seen_dt = session.get("first_seen") or now
             session["last_seen"] = timezone.localtime(last_seen_dt).isoformat()
@@ -1667,6 +1674,7 @@ class LocationSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
                 "person_key",
                 "created",
                 "path",
+                "event_type",
                 "label",
                 "country_code",
                 "region",
@@ -1696,9 +1704,13 @@ class LocationSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
                     "device_os": row.get("device_os") or "Other",
                     "device_type": row.get("device_type") or "Desktop",
                     "event_count": 0,
+                    "_event_types": [],
+                    "_paths": [],
                 }
                 session_map[session_key] = session
 
+            session["_event_types"].append(row.get("event_type") or "")
+            session["_paths"].append(row.get("path") or "")
             session["event_count"] = int(session.get("event_count", 0)) + 1
 
             if created and session.get("last_seen") and created > session["last_seen"]:
@@ -1716,6 +1728,8 @@ class LocationSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         sessions: list[dict[str, Any]] = []
         for session in session_map.values():
+            if is_bot_session(session.pop("_event_types", []), session.pop("_paths", [])):
+                continue
             first_seen_dt = session.get("first_seen") or timezone.now()
             last_seen_dt = session.get("last_seen") or timezone.now()
             session["first_seen"] = timezone.localtime(first_seen_dt, timezone=tzinfo).isoformat()
