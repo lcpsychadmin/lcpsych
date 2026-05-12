@@ -2,6 +2,7 @@ from django.urls import path, re_path
 from django.views.generic import RedirectView
 from . import views
 from .feeds import LatestPostsFeed
+from .views_url_removal import url_removal
 
 app_name = "core"
 
@@ -10,6 +11,7 @@ urlpatterns = [
     path('contact/', RedirectView.as_view(pattern_name='core:contact_us', permanent=True)),
     path('_preview/', views.import_preview, name='import_preview'),
     path('api/analytics/', views.analytics_event, name='analytics_event'),
+    path('api/url-removal/', url_removal, name='url_removal'),
     path('blog/', views.post_list, name='post_list'),
     path('blog/feed/', LatestPostsFeed(), name='post_feed'),
     path('blog/<slug:slug>/', views.post_detail, name='post_detail'),

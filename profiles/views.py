@@ -300,8 +300,7 @@ def therapist_area_page(
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        from django.http import Http404
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     location = None
     if location_slug:
@@ -310,8 +309,7 @@ def therapist_area_page(
                 state=state, slug=location_slug, is_active=True
             )
         except GeoLocation.DoesNotExist:
-            from django.http import Http404
-            raise Http404
+            return HttpResponse("Gone", status=410)
 
         # Redirect city-under-county to canonical 4-segment URL
         if location.location_type == GeoLocation.CITY and location.county_id:
@@ -335,8 +333,7 @@ def therapist_area_page(
         in_area = therapist_locations.filter(state=state).exists()
 
     if not in_area:
-        from django.http import Http404
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     all_services = profile.services.all()
     offices = OfficeLocation.objects.filter(therapists=profile, is_active=True).order_by("order", "name")
@@ -381,29 +378,25 @@ def therapist_city_page(
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        from django.http import Http404
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         county = GeoLocation.objects.get(
             state=state, slug=county_slug, location_type=GeoLocation.COUNTY, is_active=True
         )
     except GeoLocation.DoesNotExist:
-        from django.http import Http404
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         location = GeoLocation.objects.select_related("county").get(
             state=state, slug=city_slug, county=county, is_active=True
         )
     except GeoLocation.DoesNotExist:
-        from django.http import Http404
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     therapist_locations = get_locations_for_therapist(profile)
     if not therapist_locations.filter(pk=location.pk).exists():
-        from django.http import Http404
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     all_services = profile.services.all()
     offices = OfficeLocation.objects.filter(therapists=profile, is_active=True).order_by("order", "name")

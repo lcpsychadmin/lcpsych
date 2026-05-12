@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}URL Removal (GSC) | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border-radius: 1.25rem; box-shadow: 0 15px 40px rgba(0, 48, 57, 0.05); border: 1px solid rgba(146, 220, 229, 0.35); }
+.btn-primary { background: #3C9C64; color: #fff; border-radius: 0.75rem; padding: 0.65rem 1.6rem; font-weight: 600; border: 0; transition: background 0.2s ease, color 0.2s ease; cursor: pointer; }
+.btn-primary:hover,
+.btn-primary:focus-visible { background: #92DCE5; color: #005F6B; outline: none; box-shadow: 0 0 0 4px rgba(146, 220, 229, 0.45); }
+.btn-danger { background: #c0392b; color: #fff; border-radius: 0.75rem; padding: 0.65rem 1.6rem; font-weight: 600; border: 0; transition: background 0.2s ease; cursor: pointer; }
+.btn-danger:hover,
+.btn-danger:focus-visible { background: #e74c3c; outline: none; box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.3); }
+.result-row { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.55rem 0.75rem; border-radius: 0.5rem; font-size: 0.9rem; margin-bottom: 0.35rem; }
+.result-row.ok { background: rgba(60, 156, 100, 0.1); border: 1px solid rgba(60, 156, 100, 0.3); }
+.result-row.fail { background: rgba(192, 57, 43, 0.08); border: 1px solid rgba(192, 57, 43, 0.3); }
+.result-badge { flex-shrink: 0; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 0.12rem 0.55rem; }
+.result-badge.ok { background: #3C9C64; color: #fff; }
+.result-badge.fail { background: #c0392b; color: #fff; }
+.result-url { word-break: break-all; color: #0f3f46; font-weight: 500; }
+.result-error { color: #8b0000; font-size: 0.82rem; margin-top: 0.15rem; }
+.alert-error { background: rgba(192, 57, 43, 0.08); border: 1px solid rgba(192, 57, 43, 0.35); border-radius: 0.65rem; padding: 0.75rem 1rem; color: #7a1010; font-size: 0.9rem; }
+.summary-bar { display: flex; gap: 1rem; font-size: 0.88rem; font-weight: 600; color: #0f3f46; margin-bottom: 1rem; }
+.summary-bar .ok { color: #3C9C64; }
+.summary-bar .fail { color: #c0392b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="content">
+  <section class="relative overflow-hidden z-10 bg-brand-deep text-white pb-16 pt-16">
+    <div class="max-w-[1100px] mx-auto px-4 text-center">
+      <h1 class="text-4xl leading-tight font-semibold m-0">URL removal</h1>
+      <p class="mt-3 mx-auto max-w-[760px] text-white/90 text-lg">Submit dead URLs to Google Search Console for temporary removal from search results.</p>
+    </div>
+  </section>
+
+  <section class="relative z-20 py-10 md:py-14 bg-brand-accent">
+    <div class="elementor-1393">
+      <div class="elementor-element elementor-element-a80adf4">
+        <div class="e-con-inner">
+          <div class="elementor-shape elementor-shape-top" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+              <path class="elementor-shape-fill" d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3C267.7,18.8,269.7,18,269.6,18z"/>
+            </svg>
+          </div>
+          <div class="elementor-shape elementor-shape-bottom" aria-hidden="true" data-negative="false">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+              <path class="elementor-shape-fill" d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-[1200px] mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" %}
+
+        <div class="space-y-6">
+
+          {# ── Input form ── #}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mt-0 mb-1">Submit URLs for removal</h2>
+            <p class="text-slate-600 text-sm mb-5">
+              Paste one full URL per line (e.g. <code class="bg-slate-100 px-1 rounded text-xs">https://www.lcpsych.com/old-page/</code>).
+              Each URL will be submitted to Google Search Console as a <strong>Temporary Hide</strong> request.
+              Blank lines and lines starting with <code class="bg-slate-100 px-1 rounded text-xs">#</code> are ignored.
+            </p>
+
+            {% if error %}
+            <div class="alert-error mb-5">
+              <strong>Error:</strong> {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+              {% csrf_token %}
+              <textarea
+                name="urls"
+                rows="10"
+                placeholder="https://www.lcpsych.com/dead-page/&#10;https://www.lcpsych.com/another-gone-url/"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#92DCE5] focus:border-[#92DCE5] resize-y"
+                spellcheck="false"
+              >{{ submitted_urls|default:'' }}</textarea>
+
+              <div class="flex items-center gap-3">
+                <button type="submit" class="btn-primary">Submit to Google Search Console</button>
+                {% if results %}
+                <span class="text-slate-500 text-sm">Scroll down to see results.</span>
+                {% endif %}
+              </div>
+            </form>
+          </div>
+
+          {# ── Results ── #}
+          {% if results %}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mt-0 mb-4">Results</h2>
+
+            <div class="summary-bar">
+              <span>{{ results|length }} submitted</span>
+              {% if successes %}<span class="ok">✓ {{ successes }} accepted</span>{% endif %}
+              {% if failures %}<span class="fail">✗ {{ failures }} failed</span>{% endif %}
+            </div>
+
+            <div>
+              {% for r in results %}
+              <div class="result-row {% if r.success %}ok{% else %}fail{% endif %}">
+                <span class="result-badge {% if r.success %}ok{% else %}fail{% endif %}">
+                  {% if r.success %}OK{% else %}FAIL{% endif %}
+                </span>
+                <div>
+                  <div class="result-url">{{ r.url }}</div>
+                  {% if not r.success %}
+                  <div class="result-error">{{ r.error }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {# ── Info card ── #}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mt-0 mb-3">How it works</h2>
+            <ul class="text-slate-600 text-sm space-y-2 list-disc list-inside">
+              <li>Each URL is submitted to the <strong>Google Search Console URL Removals API</strong> as a <em>Temporary Hide</em> (removes the URL from search results for ~6 months).</li>
+              <li>The server uses the <code class="bg-slate-100 px-1 rounded">GOOGLE_CLIENT_EMAIL</code> service account credentials configured in environment variables.</li>
+              <li>URLs must be within the <code class="bg-slate-100 px-1 rounded">GSC_SITE_URL</code> property (<strong>{{ gsc_site_url }}</strong>).</li>
+              <li>For permanent removal, delete or redirect the page first, then wait for Googlebot to recrawl.</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}

@@ -32,6 +32,8 @@ from core.utils import get_offices
 from django.db import models
 from django.db.models import Case, IntegerField, Q, When
 
+_410 = HttpResponse("Gone", status=410)
+
 
 def state_page(request: HttpRequest, state_slug: str) -> HttpResponse:
     """
@@ -43,7 +45,7 @@ def state_page(request: HttpRequest, state_slug: str) -> HttpResponse:
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     content_blocks = list(
         state.content_blocks.filter(state=state).order_by("order").values("heading", "body")
@@ -178,14 +180,14 @@ def location_page(
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         location = GeoLocation.objects.select_related("county").get(
             state=state, slug=location_slug, is_active=True
         )
     except GeoLocation.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     # If this city has a county parent, redirect to the canonical 3-segment URL
     if location.location_type == GeoLocation.CITY and location.county_id:
@@ -200,12 +202,12 @@ def city_under_county_page(
 ) -> HttpResponse:
     """
     Render a city page nested under its county, e.g. /kentucky/boone-county/florence/
-    Returns 404 if the county or city is not found / inactive.
+    Returns 410 if the county or city is not found / inactive.
     """
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         county = GeoLocation.objects.get(
@@ -213,14 +215,14 @@ def city_under_county_page(
             location_type=GeoLocation.COUNTY, is_active=True,
         )
     except GeoLocation.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         location = GeoLocation.objects.get(
             state=state, slug=city_slug, county=county, is_active=True
         )
     except GeoLocation.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     return _location_page_impl(request, state, state_slug, location, city_slug)
 
@@ -344,7 +346,7 @@ def state_service_page(request: HttpRequest, state_slug: str, service_slug: str)
     """
     Intersectional page: a service offered in a specific state.
     URL: /<state_slug>/services/<service_slug>/
-    Returns 404 if no published therapist in this state offers the service.
+    Returns 410 if no published therapist in this state offers the service.
     """
     from core.models import Service
     from geo.utils.availability import get_therapists_for_area_and_service
@@ -352,16 +354,16 @@ def state_service_page(request: HttpRequest, state_slug: str, service_slug: str)
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         service = Service.objects.get(slug=service_slug)
     except Service.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     therapists_qs = get_therapists_for_area_and_service(state, service)
     if not therapists_qs.exists():
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     from core.views import _build_therapist_cards
     therapist_cards = _build_therapist_cards(therapists_qs)
@@ -384,21 +386,21 @@ def location_service_page(
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         location = GeoLocation.objects.get(state=state, slug=location_slug, is_active=True)
     except GeoLocation.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         service = Service.objects.get(slug=service_slug)
     except Service.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     therapists_qs = get_therapists_for_area_and_service(location, service)
     if not therapists_qs.exists():
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     from core.views import _build_therapist_cards
     therapist_cards = _build_therapist_cards(therapists_qs)
@@ -420,7 +422,7 @@ def city_county_service_page(
     try:
         state = GeoState.objects.get(slug=state_slug, is_active=True)
     except GeoState.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         county = GeoLocation.objects.get(
@@ -428,23 +430,23 @@ def city_county_service_page(
             location_type=GeoLocation.COUNTY, is_active=True,
         )
     except GeoLocation.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         location = GeoLocation.objects.get(
             state=state, slug=city_slug, county=county, is_active=True
         )
     except GeoLocation.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         service = Service.objects.get(slug=service_slug)
     except Service.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     therapists_qs = get_therapists_for_area_and_service(location, service)
     if not therapists_qs.exists():
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     from core.views import _build_therapist_cards
     therapist_cards = _build_therapist_cards(therapists_qs)
@@ -462,12 +464,12 @@ def region_page(request: HttpRequest, region_slug: str) -> HttpResponse:
     """
     Hub page for a named region, e.g. /regions/greater-cincinnati/
     Displays the same full-homepage layout as state/location pages.
-    Returns 404 if the region slug is not found or inactive.
+    Returns 410 if the region slug is not found or inactive.
     """
     try:
         region = GeoRegion.objects.get(slug=region_slug, is_active=True)
     except GeoRegion.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     metadata = get_region_metadata(region_slug)
 
@@ -514,24 +516,24 @@ def region_service_page(request: HttpRequest, region_slug: str, service_slug: st
     """
     Intersectional page: a service offered in a region.
     URL: /regions/<region_slug>/services/<service_slug>/
-    Returns 404 if no published therapist in this region offers the service.
+    Returns 410 if no published therapist in this region offers the service.
     """
     try:
         region = GeoRegion.objects.get(slug=region_slug, is_active=True)
     except GeoRegion.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         service = Service.objects.get(slug=service_slug)
     except Service.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     from profiles.models import TherapistProfile
     therapists_qs = TherapistProfile.objects.filter(
         is_published=True, services=service
     ).distinct()
     if not therapists_qs.exists():
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     from core.views import _build_therapist_cards
     therapist_cards = _build_therapist_cards(therapists_qs)
@@ -579,7 +581,7 @@ def region_therapist_page(
     """
     Intersectional page: a specific therapist serving a region.
     URL: /regions/<region_slug>/therapists/<therapist_slug>/
-    Returns 404 if the therapist is not in this region.
+    Returns 410 if the region or therapist slug is not valid.
     """
     from profiles.models import TherapistProfile
     from core.models import OfficeLocation as OfficeLocationModel
@@ -587,12 +589,12 @@ def region_therapist_page(
     try:
         region = GeoRegion.objects.get(slug=region_slug, is_active=True)
     except GeoRegion.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     try:
         profile = TherapistProfile.objects.get(slug=therapist_slug, is_published=True)
     except TherapistProfile.DoesNotExist:
-        raise Http404
+        return HttpResponse("Gone", status=410)
 
     area_name = region.name
     all_services = profile.services.all()

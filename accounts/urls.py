@@ -26,6 +26,7 @@ urlpatterns = [
     path("settings/social-posting/test/", views.SocialPlatformTestView.as_view(), name="settings_social_posting_test"),
     path("settings/social-posting/preview/", views.SocialPreviewView.as_view(), name="settings_social_posting_preview"),
     path("settings/social-posting/send-test/", views.SocialSendTestPostView.as_view(), name="settings_social_posting_send_test"),
+    path("settings/url-removal/", views.UrlRemovalView.as_view(), name="settings_url_removal"),
     path("settings/visitor-stats/active.json", views.ActiveSessionsApiView.as_view(), name="settings_visitor_active"),
     path(
         "settings/visitor-stats/active/<str:session_key>.json",

@@ -3077,12 +3077,16 @@ class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def _context(self, form: ServiceForm | None = None, editing: Service | None = None, block_formset=None) -> dict:
         services = Service.objects.order_by("order", "title")
+        all_therapists = TherapistProfile.objects.select_related("user").order_by("last_name", "first_name")
+        assigned_ids = set(editing.therapists.values_list("pk", flat=True)) if editing else set()
         return {
             "form": form or ServiceForm(),
             "editing": editing,
             "services": services,
             "block_formset": block_formset or ServiceContentBlockFormSet(instance=editing),
             "active_page": "services",
+            "all_therapists": all_therapists,
+            "assigned_therapist_ids": assigned_ids,
         }
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -3112,6 +3116,10 @@ class ManageServicesView(LoginRequiredMixin, UserPassesTestMixin, View):
             block_formset = ServiceContentBlockFormSet(request.POST, instance=service)
             if block_formset.is_valid():
                 block_formset.save()
+            # Update therapist assignments (only when editing; new services use profile page)
+            if object_id:
+                therapist_ids = [int(i) for i in request.POST.getlist("therapist_ids") if i.isdigit()]
+                service.therapists.set(therapist_ids)
             verb = "updated" if editing else "created"
             messages.success(request, f"Service '{service.title}' {verb}.")
             return redirect("accounts:services")
@@ -3641,3 +3649,61 @@ class LoginView(DjangoLoginView):
             return reverse("profiles:profile_edit")
 
         return reverse("core:home")
+
+
+class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    Admin page for submitting dead URLs to Google Search Console URL Removals API.
+    Accessible at /accounts/settings/url-removal/
+    """
+
+    template_name = "accounts/settings_url_removal.html"
+
+    def test_func(self):
+        return is_admin(self.request.user)
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        import os
+        return render(request, self.template_name, {
+            "active_page": "url_removal",
+            "gsc_site_url": os.environ.get("GSC_SITE_URL", "not configured"),
+        })
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        import os
+        from core.views_url_removal import _get_access_token, _submit_url_removal
+
+        raw: str = request.POST.get("urls", "")
+        urls = [
+            line.strip()
+            for line in raw.splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+
+        results: list[dict] = []
+        error: str | None = None
+
+        if urls:
+            site_url = os.environ.get("GSC_SITE_URL", "").rstrip("/")
+            if not site_url:
+                error = "GSC_SITE_URL is not configured on this server."
+            else:
+                try:
+                    access_token = _get_access_token()
+                    for url in urls:
+                        results.append(_submit_url_removal(access_token, site_url, url))
+                except RuntimeError as exc:
+                    error = str(exc)
+
+        successes = sum(1 for r in results if r.get("success"))
+        failures = len(results) - successes
+
+        return render(request, self.template_name, {
+            "active_page": "url_removal",
+            "gsc_site_url": os.environ.get("GSC_SITE_URL", "not configured"),
+            "submitted_urls": raw,
+            "results": results,
+            "successes": successes,
+            "failures": failures,
+            "error": error,
+        })

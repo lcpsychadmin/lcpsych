@@ -97,6 +97,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'core.middleware.CanonicalDomainMiddleware',
+    'core.middleware.GeoSlug410Middleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -285,6 +286,13 @@ AZURE_AD_REDIRECT_URI = env('AZURE_AD_REDIRECT_URI', default=f"{BASE_URL}/accoun
 AZURE_AD_SCOPES = env.list('AZURE_AD_SCOPES', default=['openid', 'profile', 'email'])
 AZURE_AD_AUTHORITY = f"https://login.microsoftonline.com/{AZURE_AD_TENANT_ID}" if AZURE_AD_TENANT_ID else ''
 AZURE_AD_ENABLED = bool(AZURE_AD_TENANT_ID and AZURE_AD_CLIENT_ID and AZURE_AD_CLIENT_SECRET and AZURE_AD_REDIRECT_URI)
+
+# Google Search Console URL Removals API
+# See core/views_url_removal.py for usage.
+URL_REMOVAL_TOKEN = env('URL_REMOVAL_TOKEN', default='')
+GOOGLE_CLIENT_EMAIL = env('GOOGLE_CLIENT_EMAIL', default='')
+GOOGLE_PRIVATE_KEY = env('GOOGLE_PRIVATE_KEY', default='').replace('\\n', '\n')
+GSC_SITE_URL = env('GSC_SITE_URL', default='https://www.lcpsych.com')
 
 # Auth redirects
 LOGIN_URL = '/accounts/azure/login/' if AZURE_AD_ENABLED else '/accounts/login/'

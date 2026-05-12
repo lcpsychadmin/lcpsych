@@ -187,6 +187,58 @@
                 <button type="button" id="add-block-btn" class="action-btn mt-3">+ Add another block</button>
               </div>
 
+              {% if editing %}
+              <hr class="section-divider">
+
+              {# Therapist assignments #}
+              <div>
+                <h3 class="text-lg font-semibold text-[#0f3f46] mb-1">Therapist assignments</h3>
+                <p class="help-text mb-3">Add therapists who offer this service. Changes here are reflected on each therapist's profile.</p>
+
+                {# Hidden inputs submitted with the form — managed by JS #}
+                <div id="therapist-hidden-inputs">
+                  {% for tp in all_therapists %}
+                    {% if tp.pk in assigned_therapist_ids %}
+                      <input type="hidden" name="therapist_ids" value="{{ tp.pk }}" data-therapist-id="{{ tp.pk }}">
+                    {% endif %}
+                  {% endfor %}
+                </div>
+
+                {# Pill list of assigned therapists #}
+                <div id="therapist-pills" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">
+                  {% for tp in all_therapists %}
+                    {% if tp.pk in assigned_therapist_ids %}
+                      <span class="therapist-pill" data-therapist-id="{{ tp.pk }}"
+                            style="display:inline-flex;align-items:center;gap:0.375rem;border-radius:9999px;padding:0.25rem 0.75rem;font-size:0.875rem;font-weight:500;background:#eef9fb;border:1px solid #92DCE5;color:#0f3f46;">
+                        {{ tp.first_name }} {{ tp.last_name }}{% if not tp.is_published %}&nbsp;<span style="color:#94a3b8;font-weight:400;font-size:0.75rem;">(unpublished)</span>{% endif %}
+                        <button type="button" class="remove-therapist-btn" aria-label="Remove"
+                                style="background:none;border:none;cursor:pointer;color:#04606B;font-size:1rem;line-height:1;padding:0 0 0 2px;">&times;</button>
+                      </span>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+
+                {# Dropdown + Add button #}
+                {% if all_therapists %}
+                  <div class="flex items-center gap-2">
+                    <select id="therapist-add-select" class="input-basic" style="max-width:320px;">
+                      <option value="">— Select a therapist —</option>
+                      {% for tp in all_therapists %}
+                        <option value="{{ tp.pk }}"
+                                data-label="{{ tp.first_name }} {{ tp.last_name }}{% if not tp.is_published %} (unpublished){% endif %}"
+                                {% if tp.pk in assigned_therapist_ids %}disabled class="text-slate-400"{% endif %}>
+                          {{ tp.first_name }} {{ tp.last_name }}{% if not tp.is_published %} (unpublished){% endif %}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    <button type="button" id="therapist-add-btn" class="action-btn">Add</button>
+                  </div>
+                {% else %}
+                  <p class="text-sm text-slate-500">No therapist profiles exist yet.</p>
+                {% endif %}
+              </div>
+              {% endif %}
+
               <div class="flex flex-wrap items-center gap-3 pt-2">
                 <button type="submit" class="btn-primary">{% if editing %}Save changes{% else %}Create service{% endif %}</button>
                 {% if editing %}
@@ -302,6 +354,56 @@
       if (showBtn) showBtn.style.display = '';
     });
   }
+  // ── Therapist dropdown + pill UI ──
+  const therapistSelect = document.getElementById('therapist-add-select');
+  const therapistAddBtn = document.getElementById('therapist-add-btn');
+  const therapistPills = document.getElementById('therapist-pills');
+  const therapistHiddenInputs = document.getElementById('therapist-hidden-inputs');
+  if (therapistSelect && therapistAddBtn && therapistPills && therapistHiddenInputs) {
+    therapistAddBtn.addEventListener('click', function () {
+      const opt = therapistSelect.options[therapistSelect.selectedIndex];
+      if (!opt || !opt.value) return;
+      const id = opt.value;
+      const label = opt.getAttribute('data-label');
+      // Add hidden input
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'therapist_ids';
+      hidden.value = id;
+      hidden.setAttribute('data-therapist-id', id);
+      therapistHiddenInputs.appendChild(hidden);
+      // Add pill
+      const pill = document.createElement('span');
+      pill.className = 'therapist-pill';
+      pill.setAttribute('data-therapist-id', id);
+      pill.style.cssText = 'display:inline-flex;align-items:center;gap:0.375rem;border-radius:9999px;padding:0.25rem 0.75rem;font-size:0.875rem;font-weight:500;background:#eef9fb;border:1px solid #92DCE5;color:#0f3f46;';
+      pill.innerHTML = label + ' <button type="button" class="remove-therapist-btn" aria-label="Remove" style="background:none;border:none;cursor:pointer;color:#04606B;font-size:1rem;line-height:1;padding:0 0 0 2px;">&times;</button>';
+      therapistPills.appendChild(pill);
+      pill.querySelector('.remove-therapist-btn').addEventListener('click', function () { removeTherapist(id, pill); });
+      // Disable option in dropdown
+      opt.disabled = true;
+      opt.classList.add('text-slate-400');
+      therapistSelect.value = '';
+    });
+    // Wire up remove buttons for pre-rendered pills
+    therapistPills.querySelectorAll('.remove-therapist-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const pill = btn.closest('.therapist-pill');
+        removeTherapist(pill.getAttribute('data-therapist-id'), pill);
+      });
+    });
+    function removeTherapist(id, pillEl) {
+      // Remove hidden input
+      const inp = therapistHiddenInputs.querySelector('[data-therapist-id="' + id + '"]');
+      if (inp) inp.remove();
+      // Remove pill
+      if (pillEl) pillEl.remove();
+      // Re-enable dropdown option
+      const opt = therapistSelect.querySelector('option[value="' + id + '"]');
+      if (opt) { opt.disabled = false; opt.classList.remove('text-slate-400'); }
+    }
+  }
+
   const container = document.getElementById('block-formset-container');
   const addBtn = document.getElementById('add-block-btn');
   if (!container || !addBtn) return;
