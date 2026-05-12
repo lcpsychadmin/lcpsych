@@ -3683,10 +3683,12 @@ class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
         action = request.POST.get("action", "check")
 
         if action == "add":
-            url = request.POST.get("url", "").strip()
-            if url:
-                path = urlparse(url).path or "/"
-                Gone410URL.objects.get_or_create(path=path)
+            paths = request.POST.getlist("path")
+            for p in paths:
+                p = p.strip()
+                if p:
+                    Gone410URL.objects.get_or_create(path=p)
+            if paths:
                 cache.delete("gone_410_paths")
             from django.shortcuts import redirect
             from django.urls import reverse

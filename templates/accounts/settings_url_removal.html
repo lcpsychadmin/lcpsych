@@ -112,35 +112,44 @@
               {% if not_ok %}<span class="fail">✗ {{ not_ok }} not 410</span>{% endif %}
             </div>
 
-            <div>
-              {% for r in results %}
-              <div class="result-row {% if r.status == 410 %}ok{% else %}fail{% endif %}" style="align-items:center;">
-                <span class="result-badge {% if r.status == 410 %}ok{% else %}fail{% endif %}">
-                  {% if r.status %}{{ r.status }}{% else %}ERR{% endif %}
-                </span>
-                <div style="flex:1;min-width:0;">
-                  <div class="result-url">{{ r.url }}</div>
-                  {% if r.error %}
-                  <div class="result-error">{{ r.error }}</div>
-                  {% elif r.status != 410 %}
-                  <div class="result-error">Expected 410 — got {{ r.status }}</div>
+            <form method="post" id="add-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add">
+
+              <div id="results-list">
+                {% for r in results %}
+                <div class="result-row {% if r.status == 410 %}ok{% else %}fail{% endif %}" style="align-items:center;">
+                  {% if r.status != 410 and not r.error and not r.in_list %}
+                  <input type="checkbox" name="path" value="{{ r.path }}" checked
+                    style="width:1rem;height:1rem;accent-color:#3C9C64;flex-shrink:0;cursor:pointer;"
+                    title="Include in 410 list">
+                  {% else %}
+                  <span style="width:1rem;flex-shrink:0;"></span>
                   {% endif %}
-                </div>
-                {% if r.status != 410 and not r.error %}
+                  <span class="result-badge {% if r.status == 410 %}ok{% else %}fail{% endif %}">
+                    {% if r.status %}{{ r.status }}{% else %}ERR{% endif %}
+                  </span>
+                  <div style="flex:1;min-width:0;">
+                    <div class="result-url">{{ r.url }}</div>
+                    {% if r.error %}
+                    <div class="result-error">{{ r.error }}</div>
+                    {% elif r.status != 410 %}
+                    <div class="result-error">Expected 410 — got {{ r.status }}</div>
+                    {% endif %}
+                  </div>
                   {% if r.in_list %}
                   <span class="tag-inlist">In 410 list</span>
-                  {% else %}
-                  <form method="post" style="margin:0;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add">
-                    <input type="hidden" name="url" value="{{ r.url }}">
-                    <button type="submit" class="btn-sm-add">+ 410 list</button>
-                  </form>
                   {% endif %}
-                {% endif %}
+                </div>
+                {% endfor %}
               </div>
-              {% endfor %}
-            </div>
+
+              {% if not_ok %}
+              <div style="margin-top:1rem;">
+                <button type="submit" class="btn-primary">Add checked to 410 list</button>
+              </div>
+              {% endif %}
+            </form>
           </div>
           {% endif %}
 
