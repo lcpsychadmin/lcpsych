@@ -2203,26 +2203,24 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by("day")
         )
 
-        # New sessions: person_keys active in this window whose global first-ever event
-        # falls within the selected date range. Indicates first-time visitors.
-        person_keys_in_window = list(events.values_list("person_key", flat=True).distinct())
+        # New sessions: persons whose very first event (across all time) falls within the
+        # selected date range. Single aggregating query — no intermediate Python list.
         new_sessions_by_day: dict[date, int] = {}
-        if person_keys_in_window:
-            first_seen_qs = (
-                AnalyticsEvent.objects
-                .filter(is_authenticated=False)
-                .filter(Q(country_code="US") | Q(country_code=""))
-                .exclude(bot_ua_exclude_q())
-                .annotate(person_key=person_expr)
-                .filter(person_key__in=person_keys_in_window)
-                .values("person_key")
-                .annotate(first_seen=Min("created"))
-            )
-            for row in first_seen_qs:
-                fs = row["first_seen"]
-                if fs and start_dt <= fs < end_dt:
-                    day_key = timezone.localtime(fs, timezone=tzinfo).date()
-                    new_sessions_by_day[day_key] = new_sessions_by_day.get(day_key, 0) + 1
+        first_seen_qs = (
+            AnalyticsEvent.objects
+            .filter(is_authenticated=False)
+            .filter(Q(country_code="US") | Q(country_code=""))
+            .exclude(bot_ua_exclude_q())
+            .annotate(person_key=person_expr)
+            .values("person_key")
+            .annotate(first_seen=Min("created"))
+            .filter(first_seen__gte=start_dt, first_seen__lt=end_dt)
+        )
+        for row in first_seen_qs:
+            fs = row["first_seen"]
+            if fs:
+                day_key = timezone.localtime(fs, timezone=tzinfo).date()
+                new_sessions_by_day[day_key] = new_sessions_by_day.get(day_key, 0) + 1
         total_new_sessions = sum(new_sessions_by_day.values())
 
         daily_map: dict[date, dict[str, int]] = {}
