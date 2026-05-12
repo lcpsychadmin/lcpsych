@@ -98,6 +98,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'core.middleware.CanonicalDomainMiddleware',
     'core.middleware.GeoSlug410Middleware',
+    'core.middleware.Custom410Middleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

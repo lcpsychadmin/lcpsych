@@ -3653,7 +3653,8 @@ class LoginView(DjangoLoginView):
 
 class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
     """
-    Admin page for checking whether URLs return 410 Gone.
+    Admin page for checking whether URLs return 410 Gone, and managing a
+    custom 410 list served by Custom410Middleware.
     Accessible at /accounts/settings/url-removal/
     """
 
@@ -3662,10 +3663,45 @@ class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return is_admin(self.request.user)
 
+    def _render(self, request, **extra):
+        from core.models import Gone410URL
+        ctx = {
+            "active_page": "url_removal",
+            "list_entries": list(Gone410URL.objects.all()),
+        }
+        ctx.update(extra)
+        return render(request, self.template_name, ctx)
+
     def get(self, request: HttpRequest) -> HttpResponse:
-        return render(request, self.template_name, {"active_page": "url_removal"})
+        return self._render(request)
 
     def post(self, request: HttpRequest) -> HttpResponse:
+        from urllib.parse import urlparse
+        from django.core.cache import cache
+        from core.models import Gone410URL
+
+        action = request.POST.get("action", "check")
+
+        if action == "add":
+            url = request.POST.get("url", "").strip()
+            if url:
+                path = urlparse(url).path or "/"
+                Gone410URL.objects.get_or_create(path=path)
+                cache.delete("gone_410_paths")
+            from django.shortcuts import redirect
+            from django.urls import reverse
+            return redirect(reverse("accounts:settings_url_removal"))
+
+        if action == "remove":
+            path = request.POST.get("path", "").strip()
+            if path:
+                Gone410URL.objects.filter(path=path).delete()
+                cache.delete("gone_410_paths")
+            from django.shortcuts import redirect
+            from django.urls import reverse
+            return redirect(reverse("accounts:settings_url_removal"))
+
+        # action == "check"
         import urllib.request
         import urllib.error
 
@@ -3676,9 +3712,11 @@ class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
             if line.strip() and not line.strip().startswith("#")
         ]
 
-        results: list[dict] = []
+        list_paths = set(Gone410URL.objects.values_list("path", flat=True))
 
+        results: list[dict] = []
         for url in urls:
+            path = urlparse(url).path or "/"
             try:
                 req = urllib.request.Request(url, method="HEAD")
                 req.add_header("User-Agent", "LCPsych-StatusChecker/1.0")
@@ -3687,17 +3725,16 @@ class UrlRemovalView(LoginRequiredMixin, UserPassesTestMixin, View):
             except urllib.error.HTTPError as exc:
                 status = exc.code
             except Exception as exc:
-                results.append({"url": url, "status": None, "error": str(exc)})
+                results.append({"url": url, "path": path, "status": None, "error": str(exc), "in_list": path in list_paths})
                 continue
-            results.append({"url": url, "status": status, "error": None})
+            results.append({"url": url, "path": path, "status": status, "error": None, "in_list": path in list_paths})
 
         ok = sum(1 for r in results if r.get("status") == 410)
         not_ok = len(results) - ok
 
-        return render(request, self.template_name, {
-            "active_page": "url_removal",
-            "submitted_urls": raw,
-            "results": results,
-            "ok": ok,
-            "not_ok": not_ok,
-        })
+        return self._render(request,
+            submitted_urls=raw,
+            results=results,
+            ok=ok,
+            not_ok=not_ok,
+        )

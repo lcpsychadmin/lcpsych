@@ -84,3 +84,33 @@ class GeoSlug410Middleware:
             return HttpResponse("Gone", status=410)
 
         return None  # All other Http404s remain standard 404s
+
+
+class Custom410Middleware:
+    """
+    Returns 410 Gone for any path stored in the Gone410URL table.
+    Paths are cached in memory for 60 seconds to avoid a DB hit on every request.
+    """
+
+    _CACHE_KEY = "gone_410_paths"
+    _CACHE_TTL = 60
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def _get_paths(self):
+        from django.core.cache import cache
+        paths = cache.get(self._CACHE_KEY)
+        if paths is None:
+            try:
+                from core.models import Gone410URL
+                paths = set(Gone410URL.objects.values_list("path", flat=True))
+            except Exception:
+                paths = set()
+            cache.set(self._CACHE_KEY, paths, self._CACHE_TTL)
+        return paths
+
+    def __call__(self, request):
+        if request.path_info in self._get_paths():
+            return HttpResponse(status=410)
+        return self.get_response(request)

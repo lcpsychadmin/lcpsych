@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}URL Removal (GSC) | L+C Psych{% endblock %}
+{% block title %}410 Checker | L+C Psych{% endblock %}
 
 {% block head_extra %}
 {% include "accounts/partials/settings_nav_styles.html" %}
@@ -23,6 +23,13 @@
 .summary-bar { display: flex; gap: 1rem; font-size: 0.88rem; font-weight: 600; color: #0f3f46; margin-bottom: 1rem; }
 .summary-bar .ok { color: #3C9C64; }
 .summary-bar .fail { color: #c0392b; }
+.btn-sm-add { background: #3C9C64; color: #fff; border-radius: 0.5rem; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 600; border: 0; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.btn-sm-add:hover { background: #2d7a4f; }
+.btn-sm-remove { background: transparent; color: #c0392b; border: 1px solid #c0392b; border-radius: 0.5rem; padding: 0.15rem 0.55rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-sm-remove:hover { background: #c0392b; color: #fff; }
+.tag-inlist { background: rgba(60,156,100,0.15); color: #2d7a4f; border-radius: 999px; font-size: 0.72rem; font-weight: 700; padding: 0.12rem 0.55rem; flex-shrink: 0; }
+.list-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.75rem; border-radius: 0.5rem; background: rgba(146,220,229,0.08); border: 1px solid rgba(146,220,229,0.3); font-size: 0.88rem; margin-bottom: 0.3rem; }
+.list-row-path { word-break: break-all; color: #0f3f46; font-weight: 500; flex: 1; }
 </style>
 {% endblock %}
 
@@ -107,11 +114,11 @@
 
             <div>
               {% for r in results %}
-              <div class="result-row {% if r.status == 410 %}ok{% else %}fail{% endif %}">
+              <div class="result-row {% if r.status == 410 %}ok{% else %}fail{% endif %}" style="align-items:center;">
                 <span class="result-badge {% if r.status == 410 %}ok{% else %}fail{% endif %}">
                   {% if r.status %}{{ r.status }}{% else %}ERR{% endif %}
                 </span>
-                <div>
+                <div style="flex:1;min-width:0;">
                   <div class="result-url">{{ r.url }}</div>
                   {% if r.error %}
                   <div class="result-error">{{ r.error }}</div>
@@ -119,19 +126,54 @@
                   <div class="result-error">Expected 410 — got {{ r.status }}</div>
                   {% endif %}
                 </div>
+                {% if r.status != 410 and not r.error %}
+                  {% if r.in_list %}
+                  <span class="tag-inlist">In 410 list</span>
+                  {% else %}
+                  <form method="post" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="url" value="{{ r.url }}">
+                    <button type="submit" class="btn-sm-add">+ 410 list</button>
+                  </form>
+                  {% endif %}
+                {% endif %}
               </div>
               {% endfor %}
             </div>
           </div>
           {% endif %}
 
+          {# ── 410 list ── #}
+          <div class="card-surface p-6 md:p-8">
+            <h2 class="text-2xl font-semibold text-[#0f3f46] mt-0 mb-1">410 list</h2>
+            <p class="text-slate-600 text-sm mb-4">These paths are served as 410 Gone by the site for any URL not already handled by a hardcoded route.</p>
+            {% if list_entries %}
+            <div>
+              {% for entry in list_entries %}
+              <div class="list-row">
+                <span class="list-row-path">{{ entry.path }}</span>
+                <form method="post" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove">
+                  <input type="hidden" name="path" value="{{ entry.path }}">
+                  <button type="submit" class="btn-sm-remove">Remove</button>
+                </form>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-slate-400 text-sm italic">No paths added yet. Run a check above and use the &ldquo;+ 410 list&rdquo; button on any non-410 result.</p>
+            {% endif %}
+          </div>
+
           {# ── Info card ── #}
           <div class="card-surface p-6 md:p-8">
             <h2 class="text-xl font-semibold text-[#0f3f46] mt-0 mb-3">How it works</h2>
             <ul class="text-slate-600 text-sm space-y-2 list-disc list-inside">
-              <li>Each URL is fetched via a <strong>HEAD request</strong> from this server and the HTTP status code is recorded.</li>
+              <li>Each URL is fetched via a <strong>HEAD request</strong> and its HTTP status code recorded.</li>
               <li><strong>410 Gone</strong> — correct. Google will de-index the page permanently.</li>
-              <li><strong>404 Not Found</strong> — needs fixing. Return a 410 instead so Google removes it faster.</li>
+              <li><strong>404 Not Found</strong> — click <em>+ 410 list</em> to make the server return 410 for that path automatically.</li>
               <li><strong>200 OK</strong> — page still live. Remove or archive the content first.</li>
               <li>Once a URL returns 410, submit it manually in <a href="https://search.google.com/search-console/removals" target="_blank" rel="noopener" class="text-[#3C9C64] underline">Google Search Console → Removals</a> for faster de-indexing.</li>
             </ul>

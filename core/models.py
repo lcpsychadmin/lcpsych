@@ -809,3 +809,14 @@ class OfficeLocation(Timestamped):
 			"postalCode": self.address_zip,
 			"addressCountry": "US",
 		}
+
+class Gone410URL(models.Model):
+    """A URL path that should return 410 Gone, managed via the admin UI."""
+    path = models.CharField(max_length=500, unique=True)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["path"]
+
+    def __str__(self):
+        return self.path
