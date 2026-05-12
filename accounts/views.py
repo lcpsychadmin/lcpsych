@@ -13,7 +13,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.core.mail import send_mail
 from django.core.cache import cache
-from django.db.models import Avg, Case, Count, FloatField, Q, Value, CharField, When
+from django.db.models import Avg, Case, Count, FloatField, Min, Q, Value, CharField, When
 from django.db.models.functions import Cast, Concat, TruncDate, ExtractWeekDay
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -2203,15 +2203,40 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by("day")
         )
 
+        # New sessions: person_keys active in this window whose global first-ever event
+        # falls within the selected date range. Indicates first-time visitors.
+        person_keys_in_window = list(events.values_list("person_key", flat=True).distinct())
+        new_sessions_by_day: dict[date, int] = {}
+        if person_keys_in_window:
+            first_seen_qs = (
+                AnalyticsEvent.objects
+                .filter(is_authenticated=False)
+                .filter(Q(country_code="US") | Q(country_code=""))
+                .exclude(bot_ua_exclude_q())
+                .annotate(person_key=person_expr)
+                .filter(person_key__in=person_keys_in_window)
+                .values("person_key")
+                .annotate(first_seen=Min("created"))
+            )
+            for row in first_seen_qs:
+                fs = row["first_seen"]
+                if fs and start_dt <= fs < end_dt:
+                    day_key = timezone.localtime(fs, timezone=tzinfo).date()
+                    new_sessions_by_day[day_key] = new_sessions_by_day.get(day_key, 0) + 1
+        total_new_sessions = sum(new_sessions_by_day.values())
+
         daily_map: dict[date, dict[str, int]] = {}
         for row in page_views_by_day:
-            daily_map[row["day"]] = {"page_views": row["count"], "sessions": 0, "cta_clicks": 0}
+            daily_map[row["day"]] = {"page_views": row["count"], "sessions": 0, "cta_clicks": 0, "new_sessions": 0}
         for row in sessions_by_day:
-            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0, "cta_clicks": 0})
+            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0, "cta_clicks": 0, "new_sessions": 0})
             existing["sessions"] = row["sessions"]
         for row in cta_clicks_by_day:
-            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0, "cta_clicks": 0})
+            existing = daily_map.setdefault(row["day"], {"page_views": 0, "sessions": 0, "cta_clicks": 0, "new_sessions": 0})
             existing["cta_clicks"] = row["cta_clicks"]
+        for day_key, count in new_sessions_by_day.items():
+            existing = daily_map.setdefault(day_key, {"page_views": 0, "sessions": 0, "cta_clicks": 0, "new_sessions": 0})
+            existing["new_sessions"] = count
 
         chart_by_day = []
         max_value = 0
@@ -2225,6 +2250,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                     "day": day_key,
                     "page_views": row["page_views"],
                     "sessions": row["sessions"],
+                    "new_sessions": row["new_sessions"],
                     "page_views_pct": round((row["page_views"] / max_value) * 100, 1),
                     "sessions_pct": round((row["sessions"] / max_value) * 100, 1),
                 }
@@ -2236,6 +2262,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
                 "day_label": _fmt_day(entry["day"]),
                 "page_views": entry["page_views"],
                 "sessions": entry["sessions"],
+                "new_sessions": entry["new_sessions"],
                 "cta_clicks": daily_map.get(entry["day"], {}).get("cta_clicks", 0),
             }
             for entry in chart_by_day
@@ -2317,6 +2344,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "avg_time_ms": int(avg_time_ms),
             "avg_time_label": avg_time_label,
             "unique_sessions": unique_sessions,
+            "total_new_sessions": total_new_sessions,
             "by_day": table_by_day,
             "by_weekday": by_weekday,
             "chart_by_day": chart_by_day,
