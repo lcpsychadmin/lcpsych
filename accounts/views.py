@@ -1321,6 +1321,7 @@ class ActiveSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         events = (
             AnalyticsEvent.objects.filter(is_authenticated=False, created__gte=cutoff)
+            .filter(Q(country_code="US") | Q(country_code=""))
             .exclude(bot_ua_exclude_q())
             .annotate(person_key=person_expr, device_os=device_os_expr, device_type=device_type_expr)
             .order_by("session_id", "-created")
@@ -1624,6 +1625,8 @@ class LocationSessionsApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         events = AnalyticsEvent.objects.filter(is_authenticated=False, created__gte=start_dt, created__lt=end_dt)
         if country_code:
             events = events.filter(country_code=country_code)
+        else:
+            events = events.filter(Q(country_code="US") | Q(country_code=""))
         if region:
             events = events.filter(region=region)
         if city:
@@ -1806,7 +1809,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         end_dt = timezone.make_aware(datetime.combine(end_date + timedelta(days=1), time.min), timezone=tzinfo)
 
         all_events = AnalyticsEvent.objects.filter(created__gte=start_dt, created__lt=end_dt)
-        events = all_events.filter(is_authenticated=False).exclude(bot_ua_exclude_q())
+        events = all_events.filter(is_authenticated=False).filter(Q(country_code="US") | Q(country_code="")).exclude(bot_ua_exclude_q())
 
         person_expr = Case(
             When(~Q(ip_hash="") & ~Q(user_agent=""), then=Concat("ip_hash", Value("|"), "user_agent")),
