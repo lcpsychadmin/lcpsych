@@ -91,6 +91,8 @@ INSTALLED_APPS = [
     'profiles',
     'blog',
     'geo',
+    'seo_intel',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -105,6 +107,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'seo_intel.middleware.DeadURLLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'lcpsych.urls'
@@ -312,3 +315,31 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+
+# ---------------------------------------------------------------------------
+# Celery
+# ---------------------------------------------------------------------------
+# Broker: Redis (set REDIS_URL on Heroku via: heroku addons:create heroku-redis:mini)
+# Falls back to an in-memory broker for local dev when REDIS_URL is not set
+# (tasks run synchronously via CELERY_TASK_ALWAYS_EAGER — convenient for testing).
+REDIS_URL = env('REDIS_URL', default='')
+
+if REDIS_URL:
+    CELERY_BROKER_URL = REDIS_URL
+    CELERY_RESULT_BACKEND = REDIS_URL
+else:
+    # Local fallback: run tasks synchronously so manage.py commands still work
+    # without a Redis server.
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    CELERY_BROKER_URL = 'memory://'
+    CELERY_RESULT_BACKEND = 'cache+memory://'
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# SEO Intel admin email recipient (override via SEO_INTEL_ADMIN_EMAIL env var)
+SEO_INTEL_ADMIN_EMAIL = env('SEO_INTEL_ADMIN_EMAIL', default=DEFAULT_FROM_EMAIL)

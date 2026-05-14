@@ -65,6 +65,7 @@ urlpatterns = [
     path('', include('geo.urls')),
     # Place profiles before core to avoid being shadowed by core catch-all
     path('', include('profiles.urls')),
+    path('', include('seo_intel.urls')),
     path('', include('core.urls')),
 ]
 
