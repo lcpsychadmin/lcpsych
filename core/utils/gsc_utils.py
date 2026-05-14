@@ -13,12 +13,16 @@ Required env vars (same as URL removals):
 from __future__ import annotations
 
 import json
+import logging
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date
 
-_SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
+logger = logging.getLogger(__name__)
+
+_SCOPES = ["https://www.googleapis.com/auth/webmasters"]
 _SEARCH_ANALYTICS_ENDPOINT = (
     "https://searchconsole.googleapis.com/webmasters/v3/sites/{site}/searchAnalytics/query"
 )
@@ -65,10 +69,9 @@ def fetch_top_queries(
 
     try:
         access_token = _get_access_token()
-    except Exception:
+    except Exception as exc:
+        logger.error("GSC: failed to obtain access token: %s", exc)
         return []
-
-    import urllib.parse
 
     encoded_site = urllib.parse.quote(site_url, safe="")
     endpoint = _SEARCH_ANALYTICS_ENDPOINT.format(site=encoded_site)
@@ -96,7 +99,12 @@ def fetch_top_queries(
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError):
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        logger.error("GSC: HTTP %s from Search Analytics API: %s", exc.code, body)
+        return []
+    except (urllib.error.URLError, json.JSONDecodeError) as exc:
+        logger.error("GSC: request error: %s", exc)
         return []
 
     rows = data.get("rows") or []
