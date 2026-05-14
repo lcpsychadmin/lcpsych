@@ -1,0 +1,115 @@
+"""
+core/utils/gsc_utils.py
+-----------------------
+Helpers for querying the Google Search Console Search Analytics API
+using the service-account credentials already configured for URL removals.
+
+Required env vars (same as URL removals):
+  GOOGLE_CLIENT_EMAIL
+  GOOGLE_PRIVATE_KEY
+  GSC_SITE_URL  (e.g. https://www.lcpsych.com)
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import urllib.error
+import urllib.request
+from datetime import date
+
+_SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
+_SEARCH_ANALYTICS_ENDPOINT = (
+    "https://searchconsole.googleapis.com/webmasters/v3/sites/{site}/searchAnalytics/query"
+)
+
+
+def _get_access_token() -> str:
+    from google.oauth2 import service_account  # type: ignore
+    import google.auth.transport.requests as google_requests  # type: ignore
+
+    private_key = os.environ.get("GOOGLE_PRIVATE_KEY", "").replace("\\n", "\n")
+    client_email = os.environ.get("GOOGLE_CLIENT_EMAIL", "")
+    if not private_key or not client_email:
+        raise RuntimeError(
+            "GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY env vars must be set."
+        )
+
+    credentials = service_account.Credentials.from_service_account_info(
+        {
+            "type": "service_account",
+            "private_key": private_key,
+            "client_email": client_email,
+            "token_uri": "https://oauth2.googleapis.com/token",
+        },
+        scopes=_SCOPES,
+    )
+    credentials.refresh(google_requests.Request())
+    return credentials.token  # type: ignore[return-value]
+
+
+def fetch_top_queries(
+    start_date: date,
+    end_date: date,
+    row_limit: int = 25,
+) -> list[dict]:
+    """Return top organic search queries for the given date range.
+
+    Each dict has keys: query, clicks, impressions, ctr, position.
+    Returns an empty list if credentials are missing or the API call fails.
+    GSC data typically lags ~2–3 days behind the current date.
+    """
+    site_url = os.environ.get("GSC_SITE_URL", "")
+    if not site_url:
+        return []
+
+    try:
+        access_token = _get_access_token()
+    except Exception:
+        return []
+
+    import urllib.parse
+
+    encoded_site = urllib.parse.quote(site_url, safe="")
+    endpoint = _SEARCH_ANALYTICS_ENDPOINT.format(site=encoded_site)
+
+    body = json.dumps(
+        {
+            "startDate": start_date.isoformat(),
+            "endDate": end_date.isoformat(),
+            "dimensions": ["query"],
+            "rowLimit": row_limit,
+            "orderBy": [{"fieldName": "clicks", "sortOrder": "DESCENDING"}],
+        }
+    ).encode("utf-8")
+
+    req = urllib.request.Request(
+        endpoint,
+        data=body,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError):
+        return []
+
+    rows = data.get("rows") or []
+    results = []
+    for row in rows:
+        keys = row.get("keys", [])
+        results.append(
+            {
+                "query": keys[0] if keys else "",
+                "clicks": row.get("clicks", 0),
+                "impressions": row.get("impressions", 0),
+                "ctr": round((row.get("ctr") or 0) * 100, 1),
+                "position": round(row.get("position") or 0, 1),
+            }
+        )
+    return results

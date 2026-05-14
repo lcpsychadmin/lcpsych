@@ -959,6 +959,38 @@
 
           <div class="card-surface p-6">
             <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Top Google search queries</h2>
+              <span class="badge-muted">Google Search Console · clicks &amp; impressions</span>
+            </div>
+            {% if gsc_top_queries %}
+            <div class="overflow-x-auto">
+              <div class="table-scroll">
+                <table class="table-basic text-sm w-full">
+                <thead class="text-[#0f3f46]">
+                  <tr><th>Query</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg position</th></tr>
+                </thead>
+                <tbody>
+                  {% for row in gsc_top_queries %}
+                  <tr>
+                    <td class="font-mono text-xs">{{ row.query }}</td>
+                    <td class="font-semibold text-[#0f3f46]">{{ row.clicks }}</td>
+                    <td>{{ row.impressions }}</td>
+                    <td>{{ row.ctr }}%</td>
+                    <td>{{ row.position }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                </table>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">GSC data typically lags 2–3 days. Showing top 25 queries by clicks for the selected date range.</p>
+            {% else %}
+            <p class="text-slate-500 text-sm">No GSC data available for this period — credentials may not be configured or the date range may be too recent.</p>
+            {% endif %}
+          </div>
+
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
               <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Top locations</h2>
               <span class="badge-muted">By sessions</span>
             </div>

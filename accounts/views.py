@@ -75,6 +75,7 @@ from profiles.forms import AdminTherapistProfileForm, ClientFocusForm, LicenseTy
 from profiles.models import ClientFocus, LicenseType, TherapistProfile
 from blog.models import Post
 from core.utils.bot_detection import bot_ua_exclude_q, is_bot_session
+from core.utils.gsc_utils import fetch_top_queries
 from core.utils.referrer_utils import parse_referrer
 
 
@@ -2337,6 +2338,8 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         for row in top_clicks:
             row["page_title"] = _path_to_title(row.get("path") or "")
 
+        gsc_top_queries = fetch_top_queries(start_date, end_date)
+
         current_host = request.get_host()
         landing_referrers = list(
             events.exclude(
@@ -2390,6 +2393,7 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "top_pages": top_pages,
             "top_clicks": top_clicks,
             "landing_referrers": landing_referrers,
+            "gsc_top_queries": gsc_top_queries,
             "avg_scroll": int(avg_scroll),
             "locations": locations,
             "device_os_stats": device_os_stats,
