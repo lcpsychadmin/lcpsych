@@ -76,7 +76,7 @@ from profiles.models import ClientFocus, LicenseType, TherapistProfile
 from blog.models import Post
 from core.utils.bot_detection import bot_ua_exclude_q, is_bot_session
 from core.utils.gsc_utils import fetch_top_queries
-from core.utils.referrer_utils import parse_referrer
+
 
 
 logger = logging.getLogger(__name__)
@@ -2208,61 +2208,26 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
         # New sessions: persons whose very first event (across all time) falls within the
         # selected date range. Single aggregating query — no intermediate Python list.
         new_sessions_by_day: dict[date, int] = {}
+        # Only count new sessions where a referrer is present — direct traffic
+        # (no referrer) is excluded as it most likely represents returning users.
         first_seen_qs = (
             AnalyticsEvent.objects
             .filter(is_authenticated=False)
             .filter(Q(country_code="US") | Q(country_code=""))
             .exclude(bot_ua_exclude_q())
+            .exclude(referrer="")
+            .exclude(referrer__isnull=True)
             .annotate(person_key=person_expr)
             .values("person_key")
             .annotate(first_seen=Min("created"))
             .filter(first_seen__gte=start_dt, first_seen__lt=end_dt)
         )
-        new_person_key_to_first_seen: dict[str, object] = {}
         for row in first_seen_qs:
             fs = row["first_seen"]
             if fs:
                 day_key = timezone.localtime(fs, timezone=tzinfo).date()
                 new_sessions_by_day[day_key] = new_sessions_by_day.get(day_key, 0) + 1
-                new_person_key_to_first_seen[row["person_key"]] = fs
         total_new_sessions = sum(new_sessions_by_day.values())
-
-        # Referrers for new sessions: fetch the referrer from each new visitor's
-        # very first event by matching (person_key, created) exactly.
-        new_session_referrers: list[dict] = []
-        if new_person_key_to_first_seen:
-            first_seen_times = list(set(new_person_key_to_first_seen.values()))
-            first_event_rows = (
-                AnalyticsEvent.objects
-                .filter(is_authenticated=False)
-                .annotate(person_key=person_expr)
-                .filter(created__in=first_seen_times)
-                .values("person_key", "referrer", "created")
-            )
-            person_key_to_referrer: dict[str, str] = {}
-            for evt in first_event_rows:
-                pk = evt["person_key"]
-                if pk in new_person_key_to_first_seen and evt["created"] == new_person_key_to_first_seen[pk]:
-                    if pk not in person_key_to_referrer:
-                        person_key_to_referrer[pk] = evt["referrer"] or ""
-            # Aggregate by parsed domain/search engine
-            referrer_counts: dict[tuple, int] = {}
-            for ref_url in person_key_to_referrer.values():
-                parsed = parse_referrer(ref_url)
-                key = (parsed["domain"] or "", parsed["search_engine"], parsed["search_query"])
-                referrer_counts[key] = referrer_counts.get(key, 0) + 1
-            new_session_referrers = sorted(
-                [
-                    {
-                        "domain": k[0] or "Direct / none",
-                        "search_engine": k[1],
-                        "search_query": k[2],
-                        "count": v,
-                    }
-                    for k, v in referrer_counts.items()
-                ],
-                key=lambda x: -x["count"],
-            )
 
         daily_map: dict[date, dict[str, int]] = {}
         for row in page_views_by_day:
@@ -2386,7 +2351,6 @@ class VisitorStatsView(LoginRequiredMixin, UserPassesTestMixin, View):
             "avg_time_label": avg_time_label,
             "unique_sessions": unique_sessions,
             "total_new_sessions": total_new_sessions,
-            "new_session_referrers": new_session_referrers,
             "by_day": table_by_day,
             "by_weekday": by_weekday,
             "chart_by_day": chart_by_day,

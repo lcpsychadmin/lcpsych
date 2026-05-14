@@ -914,51 +914,6 @@
 
           <div class="card-surface p-6">
             <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
-              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">New visitor sources</h2>
-              <span class="badge-muted">Where first-time visitors came from</span>
-            </div>
-            {% if new_session_referrers %}
-            <div class="overflow-x-auto">
-              <div class="table-scroll">
-                <table class="table-basic text-sm w-full">
-                <thead class="text-[#0f3f46]">
-                  <tr><th>Source</th><th>Search query</th><th>New visitors</th></tr>
-                </thead>
-                <tbody>
-                  {% for row in new_session_referrers %}
-                  <tr>
-                    <td>
-                      {% if row.search_engine %}
-                        <span class="font-medium">{{ row.search_engine }}</span>
-                        <span class="text-slate-400 text-xs ml-1">({{ row.domain }})</span>
-                      {% else %}
-                        {{ row.domain }}
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if row.search_query %}
-                        <span class="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">{{ row.search_query }}</span>
-                      {% elif row.search_engine %}
-                        <span class="text-slate-400 text-xs italic">not passed by {{ row.search_engine }}</span>
-                      {% else %}
-                        <span class="text-slate-300">—</span>
-                      {% endif %}
-                    </td>
-                    <td class="font-semibold text-[#0f3f46]">{{ row.count }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-                </table>
-              </div>
-            </div>
-            <p class="text-xs text-slate-400 mt-3">Note: Google, Bing, and most search engines no longer include the search query in the referrer URL due to HTTPS privacy policies. The query column will be blank for most organic search traffic.</p>
-            {% else %}
-            <p class="text-slate-500 text-sm">No new visitor data for this period.</p>
-            {% endif %}
-          </div>
-
-          <div class="card-surface p-6">
-            <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
               <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Top Google search queries</h2>
               <span class="badge-muted">Google Search Console · clicks &amp; impressions</span>
             </div>
