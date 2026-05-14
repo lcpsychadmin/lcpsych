@@ -1,13 +1,22 @@
 """
 core/utils/gsc_utils.py
 -----------------------
-Helpers for querying the Google Search Console Search Analytics API
-using the service-account credentials already configured for URL removals.
+Helpers for querying the Google Search Console Search Analytics API.
 
-Required env vars (same as URL removals):
-  GOOGLE_CLIENT_EMAIL
-  GOOGLE_PRIVATE_KEY
-  GSC_SITE_URL  (e.g. https://www.lcpsych.com)
+Supports two auth methods (tried in order):
+1. OAuth2 refresh token (preferred — works with a real Google account that has
+   Search Console access):
+     GSC_OAUTH_CLIENT_ID
+     GSC_OAUTH_CLIENT_SECRET
+     GSC_OAUTH_REFRESH_TOKEN
+
+2. Service account (fallback — requires the SA to be granted GSC property access,
+   which the UI currently doesn't support for SA emails):
+     GOOGLE_CLIENT_EMAIL
+     GOOGLE_PRIVATE_KEY
+
+Both also require:
+     GSC_SITE_URL  (e.g. https://www.lcpsych.com)
 """
 
 from __future__ import annotations
@@ -22,13 +31,39 @@ from datetime import date
 
 logger = logging.getLogger(__name__)
 
-_SCOPES = ["https://www.googleapis.com/auth/webmasters"]
+_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly"
 _SEARCH_ANALYTICS_ENDPOINT = (
     "https://searchconsole.googleapis.com/webmasters/v3/sites/{site}/searchAnalytics/query"
 )
 
 
 def _get_access_token() -> str:
+    """Return a short-lived access token using whichever credentials are available."""
+    # --- Method 1: OAuth2 refresh token (preferred) ---
+    client_id = os.environ.get("GSC_OAUTH_CLIENT_ID", "")
+    client_secret = os.environ.get("GSC_OAUTH_CLIENT_SECRET", "")
+    refresh_token = os.environ.get("GSC_OAUTH_REFRESH_TOKEN", "")
+    if client_id and client_secret and refresh_token:
+        body = urllib.parse.urlencode({
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token",
+        }).encode()
+        req = urllib.request.Request(
+            "https://oauth2.googleapis.com/token",
+            data=body,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        token = data.get("access_token")
+        if not token:
+            raise RuntimeError(f"OAuth2 token exchange failed: {data}")
+        return token
+
+    # --- Method 2: Service account ---
     from google.oauth2 import service_account  # type: ignore
     import google.auth.transport.requests as google_requests  # type: ignore
 
@@ -36,7 +71,9 @@ def _get_access_token() -> str:
     client_email = os.environ.get("GOOGLE_CLIENT_EMAIL", "")
     if not private_key or not client_email:
         raise RuntimeError(
-            "GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY env vars must be set."
+            "No GSC credentials configured. Set GSC_OAUTH_CLIENT_ID / "
+            "GSC_OAUTH_CLIENT_SECRET / GSC_OAUTH_REFRESH_TOKEN, or "
+            "GOOGLE_CLIENT_EMAIL / GOOGLE_PRIVATE_KEY."
         )
 
     credentials = service_account.Credentials.from_service_account_info(
@@ -46,7 +83,7 @@ def _get_access_token() -> str:
             "client_email": client_email,
             "token_uri": "https://oauth2.googleapis.com/token",
         },
-        scopes=_SCOPES,
+        scopes=[_SCOPE],
     )
     credentials.refresh(google_requests.Request())
     return credentials.token  # type: ignore[return-value]
