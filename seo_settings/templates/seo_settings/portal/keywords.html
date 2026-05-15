@@ -116,9 +116,16 @@
 
             {# Results area #}
             <div id="ai-results-wrap" class="hidden">
-              <div class="flex items-center justify-between mb-2">
+              <div class="flex flex-wrap items-center gap-3 justify-between mb-2">
                 <p class="text-xs font-bold text-slate-600 uppercase tracking-wide" id="ai-results-count"></p>
-                <button type="button" id="ai-add-all-btn" class="seo-btn seo-btn-primary seo-btn-sm hidden" onclick="addCheckedKeywords()">Add selected</button>
+                <div class="flex items-center gap-3 ml-auto">
+                  <label class="flex items-center gap-1.5 cursor-pointer select-none" title="Only show keywords at or above this priority score">
+                    <span class="text-xs font-semibold text-slate-600">Min score</span>
+                    <input type="number" id="ai-min-score" min="0" max="100" placeholder="—"
+                           class="form-input w-16 text-xs py-0.5" oninput="applyScoreFilter()">
+                  </label>
+                  <button type="button" id="ai-add-all-btn" class="seo-btn seo-btn-primary seo-btn-sm hidden" onclick="addCheckedKeywords()">Add selected</button>
+                </div>
               </div>
               <div id="ai-results-list" class="space-y-2"></div>
               <p id="ai-results-status" class="text-xs text-slate-500 mt-2"></p>
@@ -255,20 +262,31 @@ function renderAISuggestions(items) {
     return;
   }
 
-  count.textContent = items.length + ' suggestion' + (items.length !== 1 ? 's' : '');
+  var totalCount = items.length;
   addAllBtn.classList.remove('hidden');
 
   items.forEach(function(item, idx) {
     var colorCls = CAT_COLORS[item.category] || 'bg-slate-100 text-slate-700';
+    var score = item.score != null ? item.score : 0;
+    var scoreCls = score >= 70 ? 'bg-emerald-100 text-emerald-800'
+                 : score >= 40 ? 'bg-amber-100 text-amber-800'
+                 : 'bg-slate-100 text-slate-500';
+    var bd = item.score_breakdown || {};
+    var scoreTitle = bd.search_demand != null
+      ? 'Priority: ' + score + '/100\nDemand: ' + bd.search_demand + ' | Competitor: ' + bd.competitor_pressure + ' | LC Presence: ' + bd.lc_presence + ' | Local: ' + bd.local_intent + ' | Commercial: ' + bd.commercial_intent
+      : 'Priority score: ' + score;
+    var scoreHtml = '<span class="text-xs font-bold px-2 py-0.5 rounded-full cursor-help ' + scoreCls + '" title="' + scoreTitle + '">\u2b06\ufe0f ' + score + '</span>';
     var row = document.createElement('div');
     row.className = 'flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50';
     row.id = 'ai-row-' + idx;
+    row.setAttribute('data-score', score);
     row.innerHTML = [
       '<input type="checkbox" class="ai-check mt-0.5 accent-[#0f3f46]" data-idx="' + idx + '" checked>',
       '<div class="flex-1 min-w-0">',
         '<div class="flex flex-wrap items-center gap-2">',
           '<span class="font-semibold text-sm text-[#0f3f46]">' + escHtml(item.keyword) + '</span>',
           '<span class="text-xs font-semibold px-2 py-0.5 rounded-full ' + colorCls + '">' + escHtml(item.category) + '</span>',
+          scoreHtml,
         '</div>',
         item.reason ? '<p class="text-xs text-slate-500 mt-0.5">' + escHtml(item.reason) + '</p>' : '',
       '</div>',
@@ -277,7 +295,34 @@ function renderAISuggestions(items) {
     list.appendChild(row);
   });
 
+  // Reset filter and apply initial count
+  document.getElementById('ai-min-score').value = '';
+  updateSuggestionCount(totalCount, totalCount, 0);
   wrap.classList.remove('hidden');
+}
+
+function applyScoreFilter() {
+  var minRaw = document.getElementById('ai-min-score').value.trim();
+  var minScore = minRaw !== '' ? parseInt(minRaw, 10) : null;
+  var rows = document.querySelectorAll('#ai-results-list > div[data-score]');
+  var visible = 0;
+  var total = rows.length;
+  rows.forEach(function(row) {
+    var score = parseInt(row.getAttribute('data-score'), 10);
+    var show = minScore === null || score >= minScore;
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  updateSuggestionCount(visible, total, minScore);
+}
+
+function updateSuggestionCount(visible, total, minScore) {
+  var count = document.getElementById('ai-results-count');
+  if (minScore !== null && minScore > 0 && visible < total) {
+    count.textContent = visible + ' of ' + total + ' suggestion' + (total !== 1 ? 's' : '') + ' (score ≥ ' + minScore + ')';
+  } else {
+    count.textContent = total + ' suggestion' + (total !== 1 ? 's' : '');
+  }
 }
 
 function escHtml(s) {
