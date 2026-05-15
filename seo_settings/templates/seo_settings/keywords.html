@@ -1,0 +1,254 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Keyword Seed Manager | Admin{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmXJYDGQKHKaJN6nIGMbFpBP7sMv"
+        crossorigin="anonymous"></script>
+<style>
+  #mgr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #212529; line-height: 1.5; }
+  #mgr *, #mgr *::before, #mgr *::after { box-sizing: border-box; }
+  #mgr .table { font-size: 13px; }
+  #mgr .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: #6c757d; margin-bottom: 10px; }
+  #mgr .toggle-btn { cursor: pointer; border: none; background: none; padding: 0; font-size: 1.15rem; line-height: 1; }
+  #mgr .toggle-btn[data-active="true"]  { color: #198754; }
+  #mgr .toggle-btn[data-active="false"] { color: #adb5bd; }
+  #mgr .delete-btn { cursor: pointer; border: none; background: none; color: #dc3545; padding: 0; font-size: 1.05rem; }
+  #mgr .delete-btn:hover { color: #a71d2a; }
+  #mgr .stat-pill { background: #f8f9fa; border-radius: 999px; padding: 2px 12px; font-size: 11px; font-weight: 600; color: #495057; }
+  #mgr .add-panel { border: 1px solid #dee2e6; border-radius: 8px; }
+  #mgr .field-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+  #mgr .field-row input[type=text], #mgr .field-row select { border: 1px solid #ced4da; border-radius: 4px; padding: 5px 10px; font-size: 13px; }
+  #mgr .field-row label { font-size: 12px; font-weight: 600; color: #495057; margin-bottom: 3px; display: block; }
+  #mgr .errorlist { list-style: none; padding: 0; margin: 4px 0 0; }
+  #mgr .errorlist li { font-size: 11px; color: #dc3545; }
+  #mgr .badge.cat-service  { background: #cfe2ff; color: #052c65; }
+  #mgr .badge.cat-testing  { background: #d1e7dd; color: #0a3622; }
+  #mgr .badge.cat-modality { background: #fff3cd; color: #664d03; }
+  #mgr .badge.cat-location { background: #f8d7da; color: #58151c; }
+  #mgr a.filter-tab.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}" >{% trans 'Home' %}</a>
+  &rsaquo; SEO Intelligence
+  &rsaquo; Keyword Seed Manager
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>Keyword Seed Manager</h1>{% endblock %}
+
+{% block content %}
+<div id="mgr">
+
+  {% if messages %}
+  <div class="mb-3">
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 px-3" style="font-size:13px;" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="font-size:10px;"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+    <span class="stat-pill"><i class="bi bi-tags me-1"></i>{{ total_count }} total keyword{{ total_count|pluralize }}</span>
+    {% if category_filter %}<span class="stat-pill">{{ filtered_count }} in this category</span>{% endif %}
+    <div class="ms-auto d-flex gap-2">
+      <a href="{{ export_url }}" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-download me-1"></i>Export CSV{% if category_filter %} (filtered){% endif %}
+      </a>
+      <button class="btn btn-sm btn-outline-primary" type="button"
+              data-bs-toggle="collapse" data-bs-target="#bulk-import-panel">
+        <i class="bi bi-upload me-1"></i>Bulk Import
+      </button>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="?" class="btn btn-sm btn-outline-secondary filter-tab{% if not category_filter %} active{% endif %}">
+      All <span class="badge bg-secondary ms-1" style="font-size:10px;">{{ total_count }}</span>
+    </a>
+    {% for tab in category_tabs %}
+    <a href="?category={{ tab.code }}"
+       class="btn btn-sm btn-outline-secondary filter-tab{% if tab.active %} active{% endif %}">
+      {{ tab.label }}
+      <span class="badge {% if tab.active %}bg-light text-dark{% else %}bg-secondary{% endif %} ms-1" style="font-size:10px;">{{ tab.count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="add-panel bg-white p-3 mb-4">
+    <p class="section-label mb-2">Add keyword</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="field-row">
+        <div>
+          <label for="{{ add_form.keyword.id_for_label }}">Keyword</label>
+          {{ add_form.keyword }}
+          {% if add_form.keyword.errors %}<ul class="errorlist">{% for e in add_form.keyword.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div>
+          <label for="{{ add_form.category.id_for_label }}">Category</label>
+          {{ add_form.category }}
+          {% if add_form.category.errors %}<ul class="errorlist">{% for e in add_form.category.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div class="d-flex align-items-end" style="padding-bottom:2px;">
+          <div class="form-check me-2">
+            {{ add_form.active }}
+            <label class="form-check-label" for="{{ add_form.active.id_for_label }}" style="font-size:12px;">Active</label>
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add
+          </button>
+        </div>
+      </div>
+      {% if add_form.non_field_errors %}
+      <p class="text-danger mt-1" style="font-size:11px;">{{ add_form.non_field_errors }}</p>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="collapse mb-4" id="bulk-import-panel">
+    <div class="add-panel bg-light p-3">
+      <p class="section-label mb-2">Bulk import — paste keywords, one per line</p>
+      <p style="font-size:12px;color:#6c757d;margin-bottom:10px;">
+        All keywords will be assigned the selected category.
+        Duplicates (same keyword + category) are skipped.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="bulk_import">
+        <div class="mb-2">
+          <label style="font-size:12px;font-weight:600;display:block;margin-bottom:3px;">Assign category</label>
+          <select name="bulk_category"
+                  style="border:1px solid #ced4da;border-radius:4px;padding:5px 10px;font-size:13px;">
+            {% for tab in category_tabs %}
+            <option value="{{ tab.code }}"{% if category_filter == tab.code %} selected{% endif %}>{{ tab.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <textarea name="keywords_text" rows="10"
+                  style="width:100%;max-width:560px;font-family:monospace;font-size:12px;border:1px solid #ced4da;border-radius:4px;padding:8px;"
+                  placeholder="therapy for anxiety&#10;CBT for depression&#10;couples counseling near me"></textarea>
+        <div class="mt-2">
+          <button type="submit" class="btn btn-sm btn-success">
+            <i class="bi bi-cloud-upload me-1"></i>Import
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <p class="section-label">
+    {% if category_filter %}{{ category_filter|capfirst }} keywords ({{ filtered_count }})
+    {% else %}All keywords ({{ total_count }}){% endif %}
+  </p>
+
+  {% if keywords %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Keyword</th>
+            <th>Category</th>
+            <th class="text-center">Active</th>
+            <th class="text-end" style="width:110px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for kw in keywords %}
+          <tr id="row-{{ kw.pk }}">
+            <td>{{ kw.keyword }}</td>
+            <td>
+              <span class="badge cat-{{ kw.category }}" style="font-size:10px;">{{ kw.get_category_display }}</span>
+            </td>
+            <td class="text-center">
+              <button class="toggle-btn"
+                      data-pk="{{ kw.pk }}"
+                      data-active="{{ kw.active|yesno:'true,false' }}"
+                      title="Toggle active"
+                      onclick="toggleKwActive(this)">
+                <i class="{% if kw.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+              </button>
+            </td>
+            <td class="text-end">
+              <a href="{% url 'admin:seo_settings_keywordseed_change' kw.pk %}"
+                 class="btn btn-outline-secondary btn-sm me-1"
+                 style="font-size:11px;padding:2px 8px;">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button class="delete-btn"
+                      data-pk="{{ kw.pk }}"
+                      data-keyword="{{ kw.keyword|truncatechars:40 }}"
+                      title="Delete"
+                      onclick="deleteKeyword(this)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm p-4 text-center text-muted" style="font-size:13px;">
+    <i class="bi bi-tags fs-2 mb-2 d-block"></i>
+    No keywords found{% if category_filter %} in this category{% endif %}. Add one above.
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+(function () {
+  function getCsrf() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  function post(url, onSuccess, onError) {
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { d.success ? onSuccess(d) : onError(d.error || 'Error'); })
+    .catch(function (e) { onError(e.message); });
+  }
+  window.toggleKwActive = function (btn) {
+    var pk = btn.dataset.pk;
+    post('/admin/seo_settings/keywordseed/toggle/' + pk + '/',
+      function (d) {
+        btn.dataset.active = d.active ? 'true' : 'false';
+        btn.style.color = d.active ? '#198754' : '#adb5bd';
+        btn.querySelector('i').className = d.active ? 'bi bi-toggle-on' : 'bi bi-toggle-off';
+      },
+      function (err) { alert('Toggle failed: ' + err); }
+    );
+  };
+  window.deleteKeyword = function (btn) {
+    var pk = btn.dataset.pk;
+    if (!confirm('Delete "' + btn.dataset.keyword + '"? This cannot be undone.')) return;
+    post('/admin/seo_settings/keywordseed/delete-ajax/' + pk + '/',
+      function () { var r = document.getElementById('row-' + pk); if (r) r.remove(); },
+      function (err) { alert('Delete failed: ' + err); }
+    );
+  };
+})();
+</script>
+{% endblock %}

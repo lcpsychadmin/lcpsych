@@ -1,0 +1,206 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Content Gap Analytics | Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmXJYDGQKHKaJN6nIGMbFpBP7sMv"
+        crossorigin="anonymous"></script>
+<style>
+  #seo-analytics { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #212529; line-height: 1.5; }
+  #seo-analytics *, #seo-analytics *::before, #seo-analytics *::after { box-sizing: border-box; }
+  #seo-analytics .table { font-size: 12px; }
+  #seo-analytics .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: #6c757d; margin-bottom: 12px; }
+  #seo-analytics .stat-pill { background: #f8f9fa; border-radius: 999px; padding: 2px 12px; font-size: 11px; font-weight: 600; color: #495057; }
+  .analytics-action-result { font-size:11px; padding:3px 8px; border-radius:4px; margin-top:4px; }
+  .analytics-action-result.ok  { background:#d1e7dd; color:#0a3622; }
+  .analytics-action-result.err { background:#f8d7da; color:#58151c; }
+  #seo-analytics .filter-bar { background: #f8f9fa; border-radius: 8px; padding: 14px 18px; }
+  #seo-analytics .presence-yes { color: #198754; font-weight: 600; }
+  #seo-analytics .presence-no  { color: #adb5bd; }
+  #seo-analytics .vol-bar { display: inline-block; height: 6px; background: #0d6efd; border-radius: 3px; vertical-align: middle; }
+  #seo-analytics .action-text { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; SEO Intelligence
+  &rsaquo; Content Gap Analytics
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>Content Gap Analytics</h1>{% endblock %}
+
+{% block content %}
+<div id="seo-analytics">
+
+  {# ── Toolbar: filters + export ───────────────────────────────────── #}
+  <div class="filter-bar mb-4">
+    <form method="get" class="d-flex flex-wrap align-items-end gap-3">
+
+      <div>
+        <label class="form-label mb-1" style="font-size:11px;font-weight:600;">Status</label>
+        <select name="resolved" class="form-select form-select-sm" style="min-width:130px;">
+          <option value=""    {% if filter_resolved == '' %}selected{% endif %}>All</option>
+          <option value="0"   {% if filter_resolved == '0' %}selected{% endif %}>Open</option>
+          <option value="1"   {% if filter_resolved == '1' %}selected{% endif %}>Resolved</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label mb-1" style="font-size:11px;font-weight:600;">Competitor presence</label>
+        <select name="competitor_presence" class="form-select form-select-sm" style="min-width:150px;">
+          <option value=""  {% if filter_competitor_presence == '' %}selected{% endif %}>Any</option>
+          <option value="1" {% if filter_competitor_presence == '1' %}selected{% endif %}>Yes</option>
+          <option value="0" {% if filter_competitor_presence == '0' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label mb-1" style="font-size:11px;font-weight:600;">LC Psych presence</label>
+        <select name="lcpsych_presence" class="form-select form-select-sm" style="min-width:150px;">
+          <option value=""  {% if filter_lcpsych_presence == '' %}selected{% endif %}>Any</option>
+          <option value="1" {% if filter_lcpsych_presence == '1' %}selected{% endif %}>Yes</option>
+          <option value="0" {% if filter_lcpsych_presence == '0' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+
+      <div class="d-flex gap-2 align-items-end">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        <a href="?" class="btn btn-sm btn-outline-secondary">Reset</a>
+      </div>
+
+      <div class="ms-auto d-flex align-items-end">
+        <a href="{{ export_url }}" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-download me-1"></i>Export CSV
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+  {# ── Result count ────────────────────────────────────────────────── #}
+  <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+    <span class="stat-pill"><i class="bi bi-bar-chart-line me-1"></i>{{ total }} record{{ total|pluralize }}</span>
+    {% if total > 200 %}
+    <span class="text-muted" style="font-size:11px;">Showing first 200</span>
+    {% endif %}
+    <div class="ms-auto d-flex gap-2">
+      <button type="button" id="act-gap-btn" class="btn btn-sm btn-outline-success"
+              onclick="analyticsAction('{{ action_urls.run_gap }}','act-gap')" style="font-size:11px;">
+        <i class="bi bi-play-circle me-1"></i>Run Gap Analysis
+      </button>
+    </div>
+  </div>
+  <div id="act-gap-result" class="analytics-action-result" style="display:none;"></div>
+
+  {# ── Main table ──────────────────────────────────────────────────── #}
+  {% if records %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Keyword</th>
+            <th class="text-end">Search vol.</th>
+            <th class="text-center">Competitor</th>
+            <th class="text-center">LC Psych</th>
+            <th>Recommended action</th>
+            <th class="text-center">Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rec in records %}
+          {% with max_vol=10000 %}
+          <tr>
+            <td class="fw-semibold">{{ rec.keyword }}</td>
+            <td class="text-end">
+              <span>{{ rec.search_volume }}</span>
+              <span class="vol-bar ms-1"
+                    style="width:{{ rec.search_volume|default:0 }}px;max-width:60px;min-width:2px;"
+                    title="{{ rec.search_volume }} monthly searches"></span>
+            </td>
+            <td class="text-center">
+              {% if rec.competitor_presence %}
+              <span class="presence-yes"><i class="bi bi-check-circle-fill"></i></span>
+              {% else %}
+              <span class="presence-no"><i class="bi bi-dash-circle"></i></span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if rec.lcpsych_presence %}
+              <span class="presence-yes"><i class="bi bi-check-circle-fill"></i></span>
+              {% else %}
+              <span class="presence-no"><i class="bi bi-dash-circle"></i></span>
+              {% endif %}
+            </td>
+            <td class="action-text" title="{{ rec.recommended_action }}">{{ rec.recommended_action|default:"—" }}</td>
+            <td class="text-center">
+              {% if rec.resolved %}
+              <span class="badge bg-success" style="font-size:10px;">Resolved</span>
+              {% else %}
+              <span class="badge bg-warning text-dark" style="font-size:10px;">Open</span>
+              {% endif %}
+            </td>
+            <td class="text-muted" style="white-space:nowrap;">
+              {% if rec.timestamp %}{{ rec.timestamp|date:"M j, Y" }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm p-4 text-center text-muted" style="font-size:13px;">
+    <i class="bi bi-bar-chart-line fs-2 mb-2 d-block"></i>
+    No content gap records match the current filters.
+  </div>
+  {% endif %}
+
+</div>{# #seo-analytics #}
+
+<script>
+(function () {
+  function getCsrf() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  window.analyticsAction = function (url, key) {
+    var btn = document.getElementById(key + '-btn');
+    var box = document.getElementById(key + '-result');
+    if (btn) btn.disabled = true;
+    if (box) { box.style.display = 'none'; box.className = 'analytics-action-result'; }
+    fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!box) return;
+        box.style.display = 'block';
+        if (d.status === 'ok') { box.classList.add('ok'); box.textContent = '\u2713 Done'; }
+        else { box.classList.add('err'); box.textContent = '\u2717 ' + (d.message || 'Error'); }
+      })
+      .catch(function (e) { if (box) { box.style.display='block'; box.classList.add('err'); box.textContent='\u2717 '+e.message; } })
+      .finally(function () { if (btn) btn.disabled = false; });
+  };
+  window.analyticsActionConfirm = function (url, key, msg) {
+    if (!window.confirm(msg + '\n\nThis cannot be undone.')) return;
+    analyticsAction(url, key);
+  };
+}());
+</script>
+{% endblock %}

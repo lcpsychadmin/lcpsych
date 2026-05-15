@@ -1,0 +1,711 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}SEO Settings | Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmXJYDGQKHKaJN6nIGMbFpBP7sMv"
+        crossorigin="anonymous"></script>
+<style>
+  #seo-settings {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #212529;
+    line-height: 1.5;
+  }
+  #seo-settings *, #seo-settings *::before, #seo-settings *::after { box-sizing: border-box; }
+
+  /* ── Status strip ────────────────────────────────────────────────── */
+  #seo-settings .status-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    min-width: 190px;
+    border-left: 4px solid;
+    font-size: 13px;
+  }
+  #seo-settings .status-card.on  { border-color: #198754; background: #d1e7dd; }
+  #seo-settings .status-card.off { border-color: #adb5bd; background: #f8f9fa; }
+  #seo-settings .status-dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  }
+  #seo-settings .status-card.on  .status-dot { background: #198754; }
+  #seo-settings .status-card.off .status-dot { background: #adb5bd; }
+  #seo-settings .status-name { font-weight: 600; color: #212529; }
+  #seo-settings .status-val  { font-size: 11px; color: #6c757d; margin-top: 1px; }
+  #seo-settings .status-card.on .status-val { color: #0a3622; }
+
+  /* ── Accordion ───────────────────────────────────────────────────── */
+  #seo-settings .accordion-button { font-weight: 600; font-size: 14px; }
+  #seo-settings .accordion-button i.bi { font-size: 1rem; }
+  #seo-settings .accordion-button:not(.collapsed) { color: #0d6efd; background: #f0f6ff; }
+  #seo-settings .section-title-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+
+  /* ── Form fields ─────────────────────────────────────────────────── */
+  #seo-settings .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    display: block;
+    margin-bottom: 4px;
+  }
+  #seo-settings .field-help {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 3px;
+  }
+  #seo-settings .field-errors {
+    font-size: 11px;
+    color: #dc3545;
+    margin-top: 3px;
+    list-style: none;
+    padding: 0;
+  }
+  #seo-settings input[type="text"],
+  #seo-settings input[type="url"] {
+    display: block;
+    width: 100%;
+    max-width: 520px;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background: #fff;
+    color: #212529;
+    line-height: 1.5;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  #seo-settings input[type="text"]:focus,
+  #seo-settings input[type="url"]:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(13,110,253,.15);
+  }
+  #seo-settings textarea {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    padding: 8px 10px;
+    font-family: monospace;
+    font-size: 11px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background: #fff;
+    color: #212529;
+    line-height: 1.5;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  #seo-settings textarea:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(13,110,253,.15);
+  }
+  #seo-settings .form-check-input { cursor: pointer; }
+  #seo-settings .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #fff;
+    gap: 16px;
+  }
+  #seo-settings .toggle-row:not(:last-child) { margin-bottom: 8px; }
+  #seo-settings .toggle-label { font-size: 13px; font-weight: 500; color: #212529; }
+  #seo-settings .toggle-desc  { font-size: 11px; color: #6c757d; margin-top: 1px; }
+
+  /* ── Stat pills ──────────────────────────────────────────────────── */
+  #seo-settings .stat-pill {
+    background: #f8f9fa;
+    border-radius: 999px;
+    padding: 3px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #495057;
+    display: inline-block;
+  }
+
+  /* ── Schedule table ──────────────────────────────────────────────── */
+  #seo-settings .schedule-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  #seo-settings .schedule-row:last-child { border-bottom: none; }
+  #seo-settings .schedule-icon { color: #6c757d; font-size: 1.1rem; width: 22px; text-align: center; }
+  #seo-settings .schedule-task { font-size: 13px; font-weight: 600; color: #212529; }
+  #seo-settings .schedule-time { font-size: 11px; color: #6c757d; }
+
+  /* ── Action result banners ───────────────────────────────────────── */
+  .action-result {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .action-result.ok  { background: #d1e7dd; color: #0a3622; }
+  .action-result.err { background: #f8d7da; color: #58151c; }
+
+  /* ── Category badge colours ──────────────────────────────────────── */
+  #seo-settings .cat-service  { background: #cfe2ff; color: #052c65; }
+  #seo-settings .cat-testing  { background: #d1e7dd; color: #0a3622; }
+  #seo-settings .cat-modality { background: #fff3cd; color: #664d03; }
+  #seo-settings .cat-location { background: #f8d7da; color: #58151c; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; SEO Intelligence
+  &rsaquo; Settings
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>SEO Settings</h1>{% endblock %}
+
+{% block content %}
+<div id="seo-settings">
+
+  {# ── Django messages ─────────────────────────────────────────────── #}
+  {% if messages %}
+  <div class="mb-4">
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 px-3"
+         style="font-size:13px;" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"
+              aria-label="Close" style="font-size:10px;"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Module status strip ─────────────────────────────────────────── #}
+  <div class="d-flex flex-wrap gap-3 mb-4">
+    {% for label, enabled in status_modules %}
+    <div class="status-card {% if enabled %}on{% else %}off{% endif %}">
+      <div class="status-dot"></div>
+      <div>
+        <div class="status-name">{{ label }}</div>
+        <div class="status-val">{% if enabled %}Enabled{% else %}Disabled{% endif %}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Form ────────────────────────────────────────────────────────── #}
+  <form method="post" id="seo-settings-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:13px;">
+      {% blocktrans count form.errors.items|length as counter %}
+        Please correct the error below.
+      {% plural %}
+        Please correct the {{ counter }} errors below.
+      {% endblocktrans %}
+    </div>
+    {% endif %}
+
+    <div class="accordion" id="settings-accordion">
+
+      {# ================================================================ #}
+      {# SECTION 1 — Feature Toggles                                      #}
+      {# ================================================================ #}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="h-toggles">
+          <button class="accordion-button" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#c-toggles"
+                  aria-expanded="true" aria-controls="c-toggles">
+            <i class="bi bi-toggles2 me-2"></i>
+            Feature Toggles
+            <span class="ms-auto me-3 section-title-badge
+              {% if global_settings.enable_search_console or global_settings.enable_internal_search_tracking or global_settings.enable_dead_url_logging or global_settings.enable_competitor_scraping or global_settings.enable_gap_analysis %}
+                bg-success text-white
+              {% else %}
+                bg-secondary text-white
+              {% endif %}">
+              {{ status_modules|length }} modules
+            </span>
+          </button>
+        </h2>
+        <div id="c-toggles" class="accordion-collapse collapse show"
+             aria-labelledby="h-toggles" data-bs-parent="#settings-accordion">
+          <div class="accordion-body">
+            <p class="text-muted mb-3" style="font-size:12px;">
+              Enable or disable each SEO intelligence module. Changes take effect immediately after saving.
+            </p>
+
+            {# Search Console #}
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">
+                  <i class="bi bi-bar-chart-fill text-primary me-1"></i>
+                  Search Console
+                </div>
+                <div class="toggle-desc">Pull impressions, clicks, and query data from Google Search Console.</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                {{ form.enable_search_console }}
+              </div>
+            </div>
+
+            {# Internal Search #}
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">
+                  <i class="bi bi-search text-info me-1"></i>
+                  Internal Search Tracking
+                </div>
+                <div class="toggle-desc">Log on-site search queries to identify what visitors are looking for.</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                {{ form.enable_internal_search_tracking }}
+              </div>
+            </div>
+
+            {# Dead URLs #}
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">
+                  <i class="bi bi-link-45deg text-danger me-1"></i>
+                  Dead URL / 404 Logging
+                </div>
+                <div class="toggle-desc">Record every 404 response to find broken internal or external links.</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                {{ form.enable_dead_url_logging }}
+              </div>
+            </div>
+
+            {# Competitor Scraping #}
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">
+                  <i class="bi bi-trophy-fill text-warning me-1"></i>
+                  Competitor SERP Scraping
+                </div>
+                <div class="toggle-desc">Track competitor rankings for your keyword seeds in Google search results.</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                {{ form.enable_competitor_scraping }}
+              </div>
+            </div>
+
+            {# Gap Analysis #}
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">
+                  <i class="bi bi-diagram-3 text-success me-1"></i>
+                  Content Gap Analysis
+                </div>
+                <div class="toggle-desc">Compare competitor keyword presence against your own to surface content gaps.</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                {{ form.enable_gap_analysis }}
+              </div>
+            </div>
+
+            {% if form.enable_search_console.errors or form.enable_internal_search_tracking.errors or form.enable_dead_url_logging.errors or form.enable_competitor_scraping.errors or form.enable_gap_analysis.errors %}
+            <div class="mt-2">
+              {% for field in toggle_fields %}
+              {% if field.errors %}
+              <ul class="field-errors">{% for e in field.errors %}<li>{{ field.label }}: {{ e }}</li>{% endfor %}</ul>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# ================================================================ #}
+      {# SECTION 2 — API Keys & Google Credentials                        #}
+      {# ================================================================ #}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="h-apikeys">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#c-apikeys"
+                  aria-expanded="false" aria-controls="c-apikeys">
+            <i class="bi bi-key-fill me-2"></i>
+            API Keys &amp; Google Credentials
+            {% if global_settings.google_client_email %}
+            <span class="ms-auto me-3 section-title-badge bg-success text-white">Configured</span>
+            {% else %}
+            <span class="ms-auto me-3 section-title-badge bg-warning text-dark">Not configured</span>
+            {% endif %}
+          </button>
+        </h2>
+        <div id="c-apikeys" class="accordion-collapse collapse{% if form.errors %} show{% endif %}"
+             aria-labelledby="h-apikeys" data-bs-parent="#settings-accordion">
+          <div class="accordion-body">
+
+            {# Search Console property URL #}
+            <div class="mb-3">
+              <label class="field-label" for="{{ form.search_console_property_url.id_for_label }}">
+                <i class="bi bi-house-door me-1 text-muted"></i>
+                {{ form.search_console_property_url.label }}
+              </label>
+              {{ form.search_console_property_url }}
+              {% if form.search_console_property_url.help_text %}
+              <p class="field-help">{{ form.search_console_property_url.help_text }}</p>
+              {% endif %}
+              {% if form.search_console_property_url.errors %}
+              <ul class="field-errors">{% for e in form.search_console_property_url.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+              {% endif %}
+            </div>
+
+            {# Google client email #}
+            <div class="mb-3">
+              <label class="field-label" for="{{ form.google_client_email.id_for_label }}">
+                <i class="bi bi-person-badge me-1 text-muted"></i>
+                {{ form.google_client_email.label }}
+              </label>
+              {{ form.google_client_email }}
+              {% if form.google_client_email.errors %}
+              <ul class="field-errors">{% for e in form.google_client_email.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+              {% endif %}
+            </div>
+
+            {# Google private key #}
+            <div class="mb-3">
+              <label class="field-label" for="{{ form.google_private_key.id_for_label }}">
+                <i class="bi bi-lock-fill me-1 text-muted"></i>
+                {{ form.google_private_key.label }}
+              </label>
+              {{ form.google_private_key }}
+              {% if form.google_private_key.help_text %}
+              <p class="field-help">{{ form.google_private_key.help_text }}</p>
+              {% endif %}
+              {% if form.google_private_key.errors %}
+              <ul class="field-errors">{% for e in form.google_private_key.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+              {% endif %}
+            </div>
+
+            {# URL removal token #}
+            <div class="mb-4">
+              <label class="field-label" for="{{ form.url_removal_token.id_for_label }}">
+                <i class="bi bi-shield-lock me-1 text-muted"></i>
+                {{ form.url_removal_token.label }}
+              </label>
+              {{ form.url_removal_token }}
+              {% if form.url_removal_token.help_text %}
+              <p class="field-help">{{ form.url_removal_token.help_text }}</p>
+              {% endif %}
+              {% if form.url_removal_token.errors %}
+              <ul class="field-errors">{% for e in form.url_removal_token.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+              {% endif %}
+            </div>
+
+            {# Test buttons #}
+            <div class="border-top pt-3 mt-2">
+              <p class="text-muted mb-3" style="font-size:12px;">
+                Test the <strong>currently saved</strong> credentials — save your changes above before testing.
+              </p>
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <button type="button" id="test-api-btn" class="btn btn-sm btn-outline-primary"
+                        onclick="apiAction('{% url "admin:seo_settings_seoglobalsettings_test_google_api" %}', 'test-api')">
+                  <i class="bi bi-google me-1"></i> Test Google API
+                </button>
+                <button type="button" id="test-gsc-btn" class="btn btn-sm btn-outline-primary"
+                        onclick="apiAction('{% url "admin:seo_settings_seoglobalsettings_test_search_console" %}', 'test-gsc')">
+                  <i class="bi bi-diagram-2 me-1"></i> Test Search Console
+                </button>
+              </div>
+              <div id="test-api-result" class="action-result"></div>
+              <div id="test-gsc-result" class="action-result"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ================================================================ #}
+      {# SECTION 3 — Competitor Settings                                  #}
+      {# ================================================================ #}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="h-competitors">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#c-competitors"
+                  aria-expanded="false" aria-controls="c-competitors">
+            <i class="bi bi-globe2 me-2"></i>
+            Competitor Settings
+            <span class="ms-auto me-3 section-title-badge bg-light text-dark border">
+              {{ competitor_count }} domain{{ competitor_count|pluralize }}
+            </span>
+          </button>
+        </h2>
+        <div id="c-competitors" class="accordion-collapse collapse"
+             aria-labelledby="h-competitors" data-bs-parent="#settings-accordion">
+          <div class="accordion-body">
+
+            {# Stats row #}
+            <div class="d-flex flex-wrap gap-3 mb-4">
+              <div class="stat-pill">
+                <i class="bi bi-globe me-1"></i>
+                {{ competitor_count }} total domain{{ competitor_count|pluralize }}
+              </div>
+              <div class="stat-pill text-success">
+                <i class="bi bi-check-circle me-1"></i>
+                {{ active_competitor_count }} active
+              </div>
+              {% if competitor_count and active_competitor_count %}
+              <div class="stat-pill text-muted">
+                {{ competitor_count|add:"-"|add:active_competitor_count|default:"0" }}
+                inactive
+              </div>
+              {% endif %}
+              {% if not global_settings.enable_competitor_scraping %}
+              <div class="stat-pill text-warning">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Scraping disabled — enable in Feature Toggles
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <a href="{% url 'admin:seo_settings_competitordomain_manager' %}"
+                 class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil-square me-1"></i> Manage Domains
+              </a>
+              <button type="button" id="run-scrape-btn" class="btn btn-sm btn-outline-warning"
+                      onclick="apiAction('{% url "admin:seo_settings_seoglobalsettings_run_competitor_scrape" %}', 'run-scrape')">
+                <i class="bi bi-play-circle-fill me-1"></i> Run Competitor Scrape Now
+              </button>
+            </div>
+            <div id="run-scrape-result" class="action-result"></div>
+            <p class="text-muted mt-3 mb-0" style="font-size:11px;">
+              <i class="bi bi-info-circle me-1"></i>
+              Triggers the <code>scrape_competitor_serp</code> Celery task immediately.
+              Results will appear in the Competitor SERPs analytics dashboard.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+      {# ================================================================ #}
+      {# SECTION 4 — Keyword Seeds                                        #}
+      {# ================================================================ #}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="h-keywords">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#c-keywords"
+                  aria-expanded="false" aria-controls="c-keywords">
+            <i class="bi bi-tags-fill me-2"></i>
+            Keyword Seeds
+            <span class="ms-auto me-3 section-title-badge bg-light text-dark border">
+              {{ keyword_count }} keyword{{ keyword_count|pluralize }}
+            </span>
+          </button>
+        </h2>
+        <div id="c-keywords" class="accordion-collapse collapse"
+             aria-labelledby="h-keywords" data-bs-parent="#settings-accordion">
+          <div class="accordion-body">
+
+            {# Per-category breakdown #}
+            <div class="d-flex flex-wrap gap-3 mb-4">
+              <div class="stat-pill">
+                <i class="bi bi-tags me-1"></i>
+                {{ keyword_count }} total keyword{{ keyword_count|pluralize }}
+              </div>
+              {% for stat in keyword_stats %}
+              <div class="d-flex align-items-center gap-1">
+                <span class="badge cat-{{ stat.code }}" style="font-size:10px;">{{ stat.label }}</span>
+                <span style="font-size:12px;color:#6c757d;">{{ stat.active }}&thinsp;/&thinsp;{{ stat.total }}</span>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <a href="{% url 'admin:seo_settings_keywordseed_manager' %}"
+                 class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil-square me-1"></i> Manage Keywords
+              </a>
+              <a href="{% url 'admin:seo_settings_keywordseed_manager' %}?category=service"
+                 class="btn btn-sm btn-outline-light text-dark border">
+                <i class="bi bi-filter me-1"></i> Filter by Category
+              </a>
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:11px;">
+              <i class="bi bi-info-circle me-1"></i>
+              Keyword seeds drive competitor SERP scraping. Add seeds across all categories
+              for comprehensive coverage. Counts show active&thinsp;/&thinsp;total.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+      {# ================================================================ #}
+      {# SECTION 5 — Automation Schedule                                  #}
+      {# ================================================================ #}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="h-schedule">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#c-schedule"
+                  aria-expanded="false" aria-controls="c-schedule">
+            <i class="bi bi-clock-history me-2"></i>
+            Automation Schedule
+            <span class="ms-auto me-3 section-title-badge bg-primary text-white">Weekly</span>
+          </button>
+        </h2>
+        <div id="c-schedule" class="accordion-collapse collapse"
+             aria-labelledby="h-schedule" data-bs-parent="#settings-accordion">
+          <div class="accordion-body">
+
+            <p class="text-muted mb-3" style="font-size:12px;">
+              The SEO intelligence pipeline runs automatically every Monday via Celery Beat.
+              Tasks run in sequence with staggered start times. Use the manual triggers below
+              to run tasks on demand.
+            </p>
+
+            {# Schedule rows #}
+            <div class="mb-4 ps-1">
+              <div class="schedule-row">
+                <span class="schedule-icon"><i class="bi bi-bar-chart-fill text-primary"></i></span>
+                <div class="flex-fill">
+                  <div class="schedule-task">Pull GSC Data</div>
+                  <div class="schedule-time">Monday 06:00 UTC &mdash; pulls Search Console search analytics</div>
+                </div>
+                <span class="badge {% if global_settings.enable_search_console %}bg-success{% else %}bg-secondary{% endif %}">
+                  {% if global_settings.enable_search_console %}Active{% else %}Disabled{% endif %}
+                </span>
+              </div>
+              <div class="schedule-row">
+                <span class="schedule-icon"><i class="bi bi-trophy-fill text-warning"></i></span>
+                <div class="flex-fill">
+                  <div class="schedule-task">Scrape Competitor SERPs</div>
+                  <div class="schedule-time">Monday 06:10 UTC &mdash; tracks competitor rankings for keyword seeds</div>
+                </div>
+                <span class="badge {% if global_settings.enable_competitor_scraping %}bg-success{% else %}bg-secondary{% endif %}">
+                  {% if global_settings.enable_competitor_scraping %}Active{% else %}Disabled{% endif %}
+                </span>
+              </div>
+              <div class="schedule-row">
+                <span class="schedule-icon"><i class="bi bi-diagram-3 text-success"></i></span>
+                <div class="flex-fill">
+                  <div class="schedule-task">Analyse Content Gaps</div>
+                  <div class="schedule-time">Monday 06:30 UTC &mdash; runs after both data tasks complete</div>
+                </div>
+                <span class="badge {% if global_settings.enable_gap_analysis %}bg-success{% else %}bg-secondary{% endif %}">
+                  {% if global_settings.enable_gap_analysis %}Active{% else %}Disabled{% endif %}
+                </span>
+              </div>
+            </div>
+
+            {# Manual triggers #}
+            <div class="border-top pt-3">
+              <p class="text-muted mb-2" style="font-size:12px;">
+                <strong>Manual triggers</strong> — queue tasks immediately via Celery:
+              </p>
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <button type="button" id="run-scrape-btn-2" class="btn btn-sm btn-outline-warning"
+                        onclick="apiAction('{% url "admin:seo_settings_seoglobalsettings_run_competitor_scrape" %}', 'run-scrape-2')">
+                  <i class="bi bi-play-circle-fill me-1"></i> Run Competitor Scrape
+                </button>
+                <button type="button" id="run-gap-btn" class="btn btn-sm btn-outline-success"
+                        onclick="apiAction('{% url "admin:seo_settings_seoglobalsettings_run_gap_analysis" %}', 'run-gap')">
+                  <i class="bi bi-play-circle-fill me-1"></i> Run Gap Analysis
+                </button>
+              </div>
+              <div id="run-scrape-2-result" class="action-result"></div>
+              <div id="run-gap-result" class="action-result"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>{# /accordion #}
+
+    {# ── Save row ──────────────────────────────────────────────────── #}
+    <div class="d-flex align-items-center gap-3 mt-4 pt-3 border-top">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-floppy-fill me-1"></i> Save Settings
+      </button>
+      {% if global_settings.updated_at %}
+      <span class="text-muted" style="font-size:12px;">
+        <i class="bi bi-clock me-1"></i>
+        Last saved: {{ global_settings.updated_at|date:"N j, Y \a\t g:i A" }}
+      </span>
+      {% endif %}
+    </div>
+
+  </form>
+
+</div>{# #seo-settings #}
+
+<script>
+(function () {
+  /* ── CSRF helper ────────────────────────────────────────────────── */
+  function getCsrf() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  /* ── Generic AJAX action handler ────────────────────────────────── */
+  window.apiAction = function (url, resultKey) {
+    var btn  = document.querySelector('[onclick*="' + resultKey + '"]');
+    var box  = document.getElementById(resultKey + '-result');
+    if (!box) return;
+
+    box.style.display = 'none';
+    box.className = 'action-result';
+    if (btn) { btn.disabled = true; }
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      box.style.display = 'block';
+      if (d.success) {
+        box.classList.add('ok');
+        box.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>' + (d.message || 'Success');
+      } else {
+        box.classList.add('err');
+        box.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>' + (d.error || 'Unknown error');
+      }
+    })
+    .catch(function (e) {
+      box.style.display = 'block';
+      box.classList.add('err');
+      box.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Request failed: ' + e.message;
+    })
+    .finally(function () { if (btn) btn.disabled = false; });
+  };
+
+  /* ── Open API Keys section automatically when it has errors ─────── */
+  var apiCollapse = document.getElementById('c-apikeys');
+  if (apiCollapse && apiCollapse.classList.contains('show')) {
+    var btn = document.querySelector('[data-bs-target="#c-apikeys"]');
+    if (btn) btn.classList.remove('collapsed');
+  }
+}());
+</script>
+{% endblock %}

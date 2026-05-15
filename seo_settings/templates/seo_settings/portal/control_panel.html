@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}SEO Intelligence — Control Panel | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.module-card { border-left: 4px solid #cbd5e1; }
+.module-card.on { border-left-color: #3C9C64; }
+.stat-num { font-size: 1.9rem; font-weight: 700; line-height: 1; color: #0f3f46; }
+.pill { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.18rem 0.55rem; border-radius: 9999px; }
+.pill-on { background: #d1fae5; color: #065f46; }
+.pill-off { background: #f1f5f9; color: #64748b; }
+.seo-btn { display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 0.75rem; padding: 0.5rem 1.1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-danger { background: #dc2626; color: #fff; }
+.seo-btn-danger:hover { background: #b91c1c; }
+.action-tag { font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 0.4rem; margin-top: 0.3rem; display: inline-block; }
+.action-tag-ok { background: #d1fae5; color: #065f46; }
+.action-tag-err { background: #fee2e2; color: #991b1b; }
+.dot { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 9999px; }
+.seo-btn:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+.htmx-request .btn-label { display: none; }
+.htmx-request .btn-spinner { display: inline; }
+.btn-spinner { display: none; }
+</style>
+<script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg max-w-2xl mx-auto">Monitor search performance, track competitors, and close content gaps.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if 'error' in msg.tags %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# Module Status #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Module Status</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {% for mod in modules %}
+              <div class="module-card {% if mod.enabled %}on{% endif %} rounded-lg p-4 bg-slate-50 border border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-semibold text-[#0f3f46] text-sm">{{ mod.name }}</span>
+                  <span class="pill {% if mod.enabled %}pill-on{% else %}pill-off{% endif %}">{% if mod.enabled %}ON{% else %}OFF{% endif %}</span>
+                </div>
+                <div class="stat-num">{{ mod.stat }}</div>
+                <div class="text-xs text-slate-500 mt-1">{{ mod.stat_label }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          {# Run Tasks #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-1">Run Tasks</h2>
+            <p class="text-slate-500 text-sm mb-4">Trigger data pulls and analysis jobs manually. Jobs run synchronously — allow a moment to complete.</p>
+            <div class="flex flex-wrap gap-3">
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-primary"
+                        hx-post="{% url 'seo_intel:action_run_sc' %}"
+                        hx-swap="none"
+                        hx-confirm="Pull latest Search Console data?"
+                        hx-indicator="#spinner-run-sc"
+                        data-action-id="run-sc">
+                  <span class="btn-label">Pull Search Console</span>
+                  <span class="btn-spinner" id="spinner-run-sc">Running&#8230;</span>
+                </button>
+                <div id="res-run-sc" class="action-tag" style="display:none"></div>
+              </div>
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-primary"
+                        hx-post="{% url 'seo_intel:action_run_scrape' %}"
+                        hx-swap="none"
+                        hx-confirm="Run competitor SERP scrape?"
+                        hx-indicator="#spinner-run-scrape"
+                        data-action-id="run-scrape">
+                  <span class="btn-label">Scrape Competitors</span>
+                  <span class="btn-spinner" id="spinner-run-scrape">Running&#8230;</span>
+                </button>
+                <div id="res-run-scrape" class="action-tag" style="display:none"></div>
+              </div>
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-primary"
+                        hx-post="{% url 'seo_intel:action_run_gap' %}"
+                        hx-swap="none"
+                        hx-confirm="Run content gap analysis?"
+                        hx-indicator="#spinner-run-gap"
+                        data-action-id="run-gap">
+                  <span class="btn-label">Run Gap Analysis</span>
+                  <span class="btn-spinner" id="spinner-run-gap">Running&#8230;</span>
+                </button>
+                <div id="res-run-gap" class="action-tag" style="display:none"></div>
+              </div>
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-primary"
+                        hx-post="{% url 'seo_intel:action_run_serpapi' %}"
+                        hx-swap="none"
+                        hx-confirm="Run SerpAPI scraper for up to 5 active keyword seeds?"
+                        hx-indicator="#spinner-run-serpapi"
+                        data-action-id="run-serpapi">
+                  <span class="btn-label">Run SerpAPI Scraper</span>
+                  <span class="btn-spinner" id="spinner-run-serpapi">Running&#8230;</span>
+                </button>
+                <div id="res-run-serpapi" class="action-tag" style="display:none"></div>
+              </div>
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-primary"
+                        hx-post="{% url 'seo_intel:action_score_keywords' %}"
+                        hx-swap="none"
+                        hx-confirm="Score all keyword seeds now?"
+                        hx-indicator="#spinner-score-keywords"
+                        data-action-id="score-keywords">
+                  <span class="btn-label">Score Keywords</span>
+                  <span class="btn-spinner" id="spinner-score-keywords">Running&#8230;</span>
+                </button>
+                <div id="res-score-keywords" class="action-tag" style="display:none"></div>
+              </div>
+            </div>
+          </div>
+
+          {# Clear Data #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-1">Clear Data</h2>
+            <p class="text-slate-500 text-sm mb-4">Permanently delete collected data. <strong>This cannot be undone.</strong></p>
+            <div class="flex flex-wrap gap-3">
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-danger"
+                        hx-post="{% url 'seo_intel:action_clear_dead' %}"
+                        hx-swap="none"
+                        hx-confirm="Delete ALL dead URL hits? This cannot be undone."
+                        hx-indicator="#spinner-clear-dead"
+                        data-action-id="clear-dead">
+                  <span class="btn-label">Clear Dead URLs</span>
+                  <span class="btn-spinner" id="spinner-clear-dead">Clearing&#8230;</span>
+                </button>
+                <div id="res-clear-dead" class="action-tag" style="display:none"></div>
+              </div>
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-danger"
+                        hx-post="{% url 'seo_intel:action_clear_internal' %}"
+                        hx-swap="none"
+                        hx-confirm="Delete ALL internal search logs? This cannot be undone."
+                        hx-indicator="#spinner-clear-internal"
+                        data-action-id="clear-internal">
+                  <span class="btn-label">Clear Internal Searches</span>
+                  <span class="btn-spinner" id="spinner-clear-internal">Clearing&#8230;</span>
+                </button>
+                <div id="res-clear-internal" class="action-tag" style="display:none"></div>
+              </div>
+              <div class="flex flex-col items-start">
+                <button class="seo-btn seo-btn-danger"
+                        hx-post="{% url 'seo_intel:action_clear_serps' %}"
+                        hx-swap="none"
+                        hx-confirm="Delete ALL competitor SERP results? This cannot be undone."
+                        hx-indicator="#spinner-clear-serps"
+                        data-action-id="clear-serps">
+                  <span class="btn-label">Clear Competitor SERPs</span>
+                  <span class="btn-spinner" id="spinner-clear-serps">Clearing&#8230;</span>
+                </button>
+                <div id="res-clear-serps" class="action-tag" style="display:none"></div>
+              </div>
+            </div>
+          </div>
+
+          {# Configuration Status #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-3">Configuration Status</h2>
+            <div class="space-y-2 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="dot {% if creds_configured %}bg-green-500{% else %}bg-slate-300{% endif %}"></span>
+                {% if creds_configured %}
+                  <span class="font-medium text-green-800">OAuth2 credentials configured</span>
+                {% else %}
+                  <span class="text-slate-600">OAuth2 credentials not set (GSC_OAUTH_CLIENT_ID / GSC_OAUTH_REFRESH_TOKEN)</span>
+                {% endif %}
+                <a href="{% url 'seo_intel:settings' %}" class="ml-auto text-[#0f3f46] underline text-xs">Configure →</a>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="dot {% if property_configured %}bg-green-500{% else %}bg-slate-300{% endif %}"></span>
+                {% if property_configured %}
+                  <span class="font-medium text-green-800">Search Console property: {{ global_settings.search_console_property_url }}</span>
+                {% else %}
+                  <span class="text-slate-600">Search Console property URL not set</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          {# Quick Links #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-3">Quick Links</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <a href="{% url 'seo_intel:analytics_sc' %}" class="block px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm font-medium text-[#0f3f46] hover:bg-[#e6f6f3] hover:border-[#92DCE5] transition-all">Search Console</a>
+              <a href="{% url 'seo_intel:analytics_internal' %}" class="block px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm font-medium text-[#0f3f46] hover:bg-[#e6f6f3] hover:border-[#92DCE5] transition-all">Internal Search</a>
+              <a href="{% url 'seo_intel:analytics_dead_urls' %}" class="block px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm font-medium text-[#0f3f46] hover:bg-[#e6f6f3] hover:border-[#92DCE5] transition-all">Dead URLs</a>
+              <a href="{% url 'seo_intel:analytics_gaps' %}" class="block px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm font-medium text-[#0f3f46] hover:bg-[#e6f6f3] hover:border-[#92DCE5] transition-all">Content Gaps</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+// Configure HTMX to send the Django CSRF token with every request.
+document.body.addEventListener('htmx:configRequest', function (evt) {
+  var m = document.cookie.match(/csrftoken=([^;]+)/);
+  if (m) evt.detail.headers['X-CSRFToken'] = decodeURIComponent(m[1]);
+});
+
+// Show status tag after each HTMX action completes.
+document.addEventListener('htmx:afterRequest', function (evt) {
+  var btn = evt.target;
+  var id = btn.dataset && btn.dataset.actionId;
+  if (!id) return;
+
+  var el = document.getElementById('res-' + id);
+  if (!el) return;
+
+  try {
+    var data = JSON.parse(evt.detail.xhr.responseText);
+    el.style.display = 'inline-block';
+    if (data.status === 'ok') {
+      el.className = 'action-tag action-tag-ok';
+      el.textContent = 'Done \u2713';
+    } else {
+      el.className = 'action-tag action-tag-err';
+      el.textContent = 'Error: ' + (data.message || 'failed');
+    }
+  } catch (e) {
+    el.style.display = 'inline-block';
+    el.className = 'action-tag action-tag-err';
+    el.textContent = 'Unexpected response';
+  }
+});
+
+// Clear stale status tag and show spinner text before each request.
+document.addEventListener('htmx:beforeRequest', function (evt) {
+  var btn = evt.target;
+  var id = btn.dataset && btn.dataset.actionId;
+  if (!id) return;
+  var el = document.getElementById('res-' + id);
+  if (el) el.style.display = 'none';
+});
+
+// Handle network-level send failures.
+document.addEventListener('htmx:sendError', function (evt) {
+  var btn = evt.target;
+  var id = btn.dataset && btn.dataset.actionId;
+  if (!id) return;
+  var el = document.getElementById('res-' + id);
+  if (el) {
+    el.style.display = 'inline-block';
+    el.className = 'action-tag action-tag-err';
+    el.textContent = 'Network error';
+  }
+});
+</script>
+{% endblock %}

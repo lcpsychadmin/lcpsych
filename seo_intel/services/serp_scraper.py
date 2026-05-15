@@ -1,38 +1,25 @@
 """
 seo_intel/services/serp_scraper.py
 ------------------------------------
-Query the **Google Custom Search JSON API** to capture top-10 organic results
-for a keyword and store them in CompetitorSERPResult.
+Query the **SerpApi** to capture top-10 organic Google results for a keyword
+and store them in CompetitorSERPResult.
 
-Why the Custom Search API instead of scraping google.com?
+Why SerpApi instead of scraping google.com directly?
   - Direct HTML scraping of google.com violates Google's ToS and is
     immediately blocked by CAPTCHAs in automated contexts.
-  - The Custom Search JSON API is the Google-approved programmatic search
-    interface. Results are structured JSON — no HTML parsing required for
-    the URLs/titles, though BeautifulSoup is still used to strip the <b>
-    highlight tags Google includes in snippet text.
+  - SerpApi is a paid proxy service that returns structured JSON results
+    from a real Google SERP — no HTML parsing required.
 
 Setup (one-time)
 ----------------
-1. In Google Cloud Console (project: lc-psychological-services):
-   Enable "Custom Search API":
-     APIs & Services → Library → search "Custom Search API" → Enable
+1. Sign up at https://serpapi.com/ (100 free searches/month on the free plan).
 
-2. Create an API key (if you don't already have one):
-     APIs & Services → Credentials → Create credentials → API key
-   Restrict it to the Custom Search API for safety.
+2. Copy your API key from the dashboard.
 
-3. Create a Programmable Search Engine configured to search the entire web:
-     https://programmablesearchengine.google.com/
-   - Click "Add" → give it any name
-   - Under "Sites to search" choose "Search the entire web"
-   - Copy the Search engine ID (cx value)
+3. Set env var (Heroku):
+     heroku config:set SERPAPI_KEY=<your-api-key> --app lcpsych-prod
 
-4. Set env vars (Heroku):
-     heroku config:set GOOGLE_CSE_API_KEY=<your-api-key> --app lcpsych-prod
-     heroku config:set GOOGLE_CSE_ID=<your-cx-id>       --app lcpsych-prod
-
-Free tier: 100 queries/day. Paid: $5 per 1,000 additional queries.
+Free tier: 100 searches/month. Paid plans start at ~$50/month for 5,000.
 
 Public API:
 -----------
@@ -47,7 +34,6 @@ import os
 import time
 
 import requests
-from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
@@ -74,25 +60,19 @@ class SerpRow:
 # Internal helpers
 # ------------------------------------------------------------------
 
-_CSE_ENDPOINT = "https://www.googleapis.com/customsearch/v1"
+_SERPAPI_ENDPOINT = "https://serpapi.com/search"
 
 
-def _get_credentials() -> tuple[str, str]:
-    """Return (api_key, cx_id) or raise RuntimeError if not configured."""
-    api_key = os.environ.get("GOOGLE_CSE_API_KEY", "")
-    cx_id = os.environ.get("GOOGLE_CSE_ID", "")
-    if not api_key or not cx_id:
+def _get_api_key() -> str:
+    """Return the SerpApi key or raise RuntimeError if not configured."""
+    api_key = os.environ.get("SERPAPI_KEY", "")
+    if not api_key:
         raise RuntimeError(
-            "Google Custom Search credentials not configured.\n"
-            "Set GOOGLE_CSE_API_KEY and GOOGLE_CSE_ID environment variables.\n"
-            "See module docstring for setup instructions."
+            "SerpApi key not configured.\n"
+            "Set SERPAPI_KEY environment variable.\n"
+            "Sign up at https://serpapi.com/ (100 free searches/month)."
         )
-    return api_key, cx_id
-
-
-def _strip_html(text: str) -> str:
-    """Remove HTML tags (e.g. <b> highlights) from a snippet string."""
-    return BeautifulSoup(text, "html.parser").get_text(separator=" ").strip()
+    return api_key
 
 
 # ------------------------------------------------------------------
@@ -106,18 +86,14 @@ def scrape_keyword(
     request_timeout: int = 15,
 ) -> list[SerpRow]:
     """
-    Fetch up to `num_results` organic results for `keyword` from the
-    Google Custom Search JSON API.
-
-    The API returns at most 10 results per request. If num_results > 10
-    a second request is made (uses an additional daily quota unit).
+    Fetch up to `num_results` organic results for `keyword` via SerpApi.
 
     Parameters
     ----------
     keyword:
         The search query string.
     num_results:
-        How many results to return (default 10, max capped at 20).
+        How many results to return (default 10, max capped at 10).
     request_timeout:
         HTTP timeout in seconds.
 
@@ -127,47 +103,34 @@ def scrape_keyword(
 
     Raises
     ------
-    RuntimeError  — credentials not configured
+    RuntimeError  — SERPAPI_KEY not configured
     requests.HTTPError — API returned a non-2xx status
     """
-    api_key, cx_id = _get_credentials()
-    num_results = min(num_results, 20)  # API supports start=1..91, keep simple
+    api_key = _get_api_key()
+    num_results = min(num_results, 10)
+
+    params = {
+        "api_key": api_key,
+        "engine": "google",
+        "q": keyword,
+        "num": num_results,
+        "safe": "active",
+        "output": "json",
+    }
+    resp = requests.get(_SERPAPI_ENDPOINT, params=params, timeout=request_timeout)
+    resp.raise_for_status()
+    data = resp.json()
 
     rows: list[SerpRow] = []
-    start_index = 1  # 1-based, max 10 per page
-
-    while len(rows) < num_results:
-        batch_size = min(10, num_results - len(rows))
-        params = {
-            "key": api_key,
-            "cx": cx_id,
-            "q": keyword,
-            "num": batch_size,
-            "start": start_index,
-            "safe": "active",
-        }
-        resp = requests.get(_CSE_ENDPOINT, params=params, timeout=request_timeout)
-        resp.raise_for_status()
-        data = resp.json()
-
-        items = data.get("items") or []
-        if not items:
-            break  # fewer results than requested (e.g. niche keyword)
-
-        for item in items:
-            raw_snippet = item.get("snippet", "")
-            rows.append(
-                SerpRow(
-                    url=item.get("link", ""),
-                    title=item.get("title", ""),
-                    description=_strip_html(raw_snippet),
-                    rank=len(rows) + 1,
-                )
+    for item in data.get("organic_results", []):
+        rows.append(
+            SerpRow(
+                url=item.get("link", ""),
+                title=item.get("title", ""),
+                description=item.get("snippet", ""),
+                rank=item.get("position", len(rows) + 1),
             )
-
-        start_index += len(items)
-        if len(items) < batch_size:
-            break  # API returned fewer than asked; no more pages
+        )
 
     return rows
 

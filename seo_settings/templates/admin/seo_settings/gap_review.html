@@ -1,0 +1,340 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Content Gap Review | Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmXJYDGQKHKaJN6nIGMbFpBP7sMv"
+        crossorigin="anonymous"></script>
+<style>
+  #gap-review { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #212529; line-height: 1.5; }
+  #gap-review *, #gap-review *::before, #gap-review *::after { box-sizing: border-box; }
+  #gap-review .table { font-size: 12px; }
+  #gap-review .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: #6c757d; margin-bottom: 12px; }
+  #gap-review .stat-pill { background: #f8f9fa; border-radius: 999px; padding: 2px 12px; font-size: 11px; font-weight: 600; color: #495057; }
+  #gap-review .filter-bar { background: #f8f9fa; border-radius: 8px; padding: 14px 18px; }
+  #gap-review .presence-yes { color: #198754; font-weight: 600; }
+  #gap-review .presence-no  { color: #adb5bd; }
+  #gap-review .vol-bar { display: inline-block; height: 6px; background: #0d6efd; border-radius: 3px; vertical-align: middle; }
+  #gap-review .action-text { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #gap-review .row-result { font-size: 10px; padding: 1px 6px; border-radius: 3px; display: none; }
+  #gap-review .row-result.ok  { background: #d1e7dd; color: #0a3622; display: inline-block; }
+  #gap-review .row-result.err { background: #f8d7da; color: #58151c; display: inline-block; }
+  #gap-review .bulk-bar { background: #e9ecef; border-radius: 6px; padding: 8px 14px; font-size: 12px; }
+  #gap-review .status-tab.active { font-weight: 700; }
+  #gap-review .page-link { font-size: 12px; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; SEO Intelligence
+  &rsaquo; <a href="{% url 'admin:seo_settings_contentgapanalytics_dashboard' %}">Content Gaps</a>
+  &rsaquo; Review
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>Content Gap Review</h1>{% endblock %}
+
+{% block content %}
+<div id="gap-review">
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2" role="alert" style="font-size:13px;">
+  {{ message }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+{# ── Status tabs ──────────────────────────────────────────────────── #}
+<ul class="nav nav-tabs mb-3" style="font-size:13px;">
+  {% for tab_status, tab_label, tab_count in tab_items %}
+  <li class="nav-item">
+    <a class="nav-link status-tab {% if f_status == tab_status %}active{% endif %}"
+       href="?status={{ tab_status }}{% if f_category %}&category={{ f_category }}{% endif %}{% if f_competitor %}&competitor_presence={{ f_competitor }}{% endif %}{% if f_action %}&recommended_action={{ f_action }}{% endif %}">
+      {{ tab_label }}
+      <span class="badge {% if f_status == tab_status %}bg-primary{% else %}bg-secondary{% endif %} ms-1"
+            style="font-size:10px;">{{ tab_count }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+
+{# ── Filter bar ────────────────────────────────────────────────────── #}
+<div class="filter-bar mb-3">
+  <form method="get" class="d-flex flex-wrap align-items-end gap-3">
+    <input type="hidden" name="status" value="{{ f_status }}">
+
+    <div>
+      <label class="form-label mb-1" style="font-size:11px;font-weight:600;">Category</label>
+      <select name="category" class="form-select form-select-sm" style="min-width:130px;">
+        <option value="">All categories</option>
+        {% for code, label in category_choices %}
+        <option value="{{ code }}" {% if f_category == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label mb-1" style="font-size:11px;font-weight:600;">Competitor presence</label>
+      <select name="competitor_presence" class="form-select form-select-sm" style="min-width:150px;">
+        <option value=""  {% if f_competitor == '' %}selected{% endif %}>Any</option>
+        <option value="1" {% if f_competitor == '1' %}selected{% endif %}>Yes</option>
+        <option value="0" {% if f_competitor == '0' %}selected{% endif %}>No</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label mb-1" style="font-size:11px;font-weight:600;">Recommended action</label>
+      <input type="text" name="recommended_action" value="{{ f_action }}"
+             class="form-control form-control-sm" placeholder="Search…" style="min-width:180px;">
+    </div>
+
+    <div class="d-flex gap-2 align-items-end">
+      <button type="submit" class="btn btn-sm btn-primary">
+        <i class="bi bi-funnel me-1"></i>Filter
+      </button>
+      <a href="?status={{ f_status }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+    </div>
+
+    <div class="ms-auto d-flex align-items-end">
+      <a href="{{ export_url }}" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-download me-1"></i>Export CSV
+      </a>
+    </div>
+  </form>
+</div>
+
+{# ── Result count + bulk action bar ───────────────────────────────── #}
+<form id="bulk-form" method="post" action="{{ review_url }}?status={{ f_status }}{% if f_category %}&category={{ f_category }}{% endif %}{% if f_competitor %}&competitor_presence={{ f_competitor }}{% endif %}{% if f_action %}&recommended_action={{ f_action }}{% endif %}">
+  {% csrf_token %}
+  <input type="hidden" name="status" value="{{ f_status }}">
+  {% if f_category %}<input type="hidden" name="category" value="{{ f_category }}">{% endif %}
+  {% if f_competitor %}<input type="hidden" name="competitor_presence" value="{{ f_competitor }}">{% endif %}
+  {% if f_action %}<input type="hidden" name="recommended_action" value="{{ f_action }}">{% endif %}
+
+  <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+    <span class="stat-pill">
+      <i class="bi bi-list-check me-1"></i>{{ filtered_count }} record{{ filtered_count|pluralize }}
+    </span>
+
+    <div class="bulk-bar d-flex align-items-center gap-2 ms-2">
+      <span style="color:#6c757d;">Bulk:</span>
+      <button type="submit" name="bulk_action" value="approve"
+              class="btn btn-sm btn-outline-success py-0"
+              onclick="return confirmBulk('approve')"
+              style="font-size:11px;">
+        <i class="bi bi-check2-all me-1"></i>Approve selected
+      </button>
+      <button type="submit" name="bulk_action" value="dismiss"
+              class="btn btn-sm btn-outline-secondary py-0"
+              onclick="return confirmBulk('dismiss')"
+              style="font-size:11px;">
+        <i class="bi bi-x-circle me-1"></i>Dismiss selected
+      </button>
+    </div>
+  </div>
+
+  {# ── Main table ────────────────────────────────────────────────── #}
+  {% if page_obj.object_list %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:32px;">
+              <input type="checkbox" id="select-all" title="Select all on this page">
+            </th>
+            <th>Keyword</th>
+            <th class="text-end">Vol.</th>
+            <th class="text-center">Comp.</th>
+            <th class="text-center">LC Psych</th>
+            <th>Recommended action</th>
+            <th class="text-center">Status</th>
+            <th style="width:130px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rec in page_obj.object_list %}
+          <tr id="row-{{ rec.pk }}">
+            <td>
+              <input type="checkbox" name="selected_ids" value="{{ rec.pk }}" class="row-check">
+            </td>
+            <td>
+              <a href="{{ detail_base_url }}{{ rec.pk }}/"
+                 class="fw-semibold text-decoration-none text-dark"
+                 title="View detail">{{ rec.keyword }}</a>
+            </td>
+            <td class="text-end">
+              <span style="font-variant-numeric:tabular-nums;">{{ rec.search_volume }}</span>
+              <span class="vol-bar ms-1"
+                    style="width:{% widthratio rec.search_volume 10000 60 %}px;min-width:2px;"
+                    title="{{ rec.search_volume }} monthly searches"></span>
+            </td>
+            <td class="text-center">
+              {% if rec.competitor_presence %}
+              <span class="presence-yes"><i class="bi bi-check-circle-fill"></i></span>
+              {% else %}
+              <span class="presence-no"><i class="bi bi-dash-circle"></i></span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if rec.lcpsych_presence %}
+              <span class="presence-yes"><i class="bi bi-check-circle-fill"></i></span>
+              {% else %}
+              <span class="presence-no"><i class="bi bi-dash-circle"></i></span>
+              {% endif %}
+            </td>
+            <td class="action-text" title="{{ rec.recommended_action }}">
+              {{ rec.recommended_action|default:"—" }}
+            </td>
+            <td class="text-center">
+              {% if rec.resolved %}
+              <span class="badge bg-success" style="font-size:10px;">Approved</span>
+              {% elif rec.ignored %}
+              <span class="badge bg-secondary" style="font-size:10px;">Dismissed</span>
+              {% else %}
+              <span class="badge bg-warning text-dark" style="font-size:10px;">Open</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="d-flex gap-1 justify-content-end align-items-center">
+                <span id="row-result-{{ rec.pk }}" class="row-result"></span>
+                <button type="button"
+                        class="btn btn-sm btn-outline-success py-0 px-2"
+                        onclick="rowAction('{{ approve_base_url }}{{ rec.pk }}/', {{ rec.pk }}, 'Approved', 'approved')"
+                        title="Approve — mark as resolved"
+                        style="font-size:11px;">
+                  <i class="bi bi-check2"></i>
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary py-0 px-2"
+                        onclick="rowAction('{{ dismiss_base_url }}{{ rec.pk }}/', {{ rec.pk }}, 'Dismissed', 'dismissed')"
+                        title="Dismiss — mark as not relevant"
+                        style="font-size:11px;">
+                  <i class="bi bi-x"></i>
+                </button>
+                <a href="{{ detail_base_url }}{{ rec.pk }}/"
+                   class="btn btn-sm btn-outline-primary py-0 px-2"
+                   title="View detail"
+                   style="font-size:11px;">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm p-4 text-center text-muted" style="font-size:13px;">
+    <i class="bi bi-diagram-3 fs-2 mb-2 d-block"></i>
+    No content gap records match the current filters.
+  </div>
+  {% endif %}
+
+</form>{# /bulk-form #}
+
+{# ── Pagination ────────────────────────────────────────────────────── #}
+{% if paginator.num_pages > 1 %}
+<nav class="mt-3" aria-label="Gap review pages">
+  <ul class="pagination pagination-sm justify-content-center mb-0">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ f_status }}{% if f_category %}&category={{ f_category }}{% endif %}{% if f_competitor %}&competitor_presence={{ f_competitor }}{% endif %}{% if f_action %}&recommended_action={{ f_action }}{% endif %}">
+        &laquo; Prev
+      </a>
+    </li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link text-muted">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+    </li>
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ f_status }}{% if f_category %}&category={{ f_category }}{% endif %}{% if f_competitor %}&competitor_presence={{ f_competitor }}{% endif %}{% if f_action %}&recommended_action={{ f_action }}{% endif %}">
+        Next &raquo;
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+</div>{# #gap-review #}
+
+<script>
+(function () {
+  /* CSRF helper */
+  function getCsrf() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  /* Select-all checkbox */
+  var selectAll = document.getElementById('select-all');
+  if (selectAll) {
+    selectAll.addEventListener('change', function () {
+      document.querySelectorAll('.row-check').forEach(function (cb) {
+        cb.checked = selectAll.checked;
+      });
+    });
+  }
+
+  /* Bulk confirm */
+  window.confirmBulk = function (action) {
+    var checked = document.querySelectorAll('.row-check:checked').length;
+    if (checked === 0) { alert('Select at least one record.'); return false; }
+    var verb = action === 'approve' ? 'approve' : 'dismiss';
+    return window.confirm('Are you sure you want to ' + verb + ' ' + checked + ' record(s)?');
+  };
+
+  /* Per-row AJAX action */
+  window.rowAction = function (url, pk, label, cssClass) {
+    var box = document.getElementById('row-result-' + pk);
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!box) return;
+      box.textContent = d.status === 'ok' ? '\u2713 ' + label : '\u2717 Error';
+      box.className = 'row-result ' + (d.status === 'ok' ? 'ok' : 'err');
+      /* dim the row after 600ms to indicate state change */
+      if (d.status === 'ok') {
+        setTimeout(function () {
+          var row = document.getElementById('row-' + pk);
+          if (row) row.style.opacity = '0.45';
+        }, 600);
+      }
+    })
+    .catch(function (e) {
+      if (box) { box.textContent = '\u2717 ' + e.message; box.className = 'row-result err'; }
+    });
+  };
+
+  /* Build tab items from template context */
+  var tabItems = [
+    ['open',      'Open',      {{ open_count }}],
+    ['resolved',  'Approved',  {{ resolved_count }}],
+    ['dismissed', 'Dismissed', {{ dismissed_count }}],
+    ['all',       'All',       {{ open_count|add:resolved_count|add:dismissed_count }}],
+  ];
+  /* (tab nav is rendered server-side; this block exists for future JS enhancements) */
+})();
+</script>
+{% endblock %}

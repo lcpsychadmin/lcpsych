@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}SEO Intelligence — Competitor Domains | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.form-input { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.45rem 0.75rem; font-size: 0.88rem; color: #0f3f46; background: #fff; transition: border-color 0.15s, box-shadow 0.15s; }
+.form-input:focus { outline: none; border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146,220,229,0.3); }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.seo-btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+.pill-active { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #d1fae5; color: #065f46; }
+.pill-inactive { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #f1f5f9; color: #64748b; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg">Manage competitor domains tracked in SERP analysis.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if 'error' in msg.tags %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# Add domain #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Add Competitor Domain</h2>
+            <form method="post" action="" class="flex flex-wrap gap-3 items-end">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Domain</label>
+                <input type="text" name="domain" placeholder="example.com" required class="form-input w-56">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Label (optional)</label>
+                <input type="text" name="label" placeholder="e.g. Main competitor" class="form-input w-48">
+              </div>
+              <button type="submit" class="seo-btn seo-btn-primary">Add Domain</button>
+            </form>
+            {% if add_form.errors %}
+            <div class="mt-2 text-red-700 text-sm">{{ add_form.errors }}</div>
+            {% endif %}
+          </div>
+
+          {# Bulk import #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-2">Bulk Import</h2>
+            <p class="text-slate-500 text-sm mb-3">Paste one domain per line. Leading https:// and www. will be stripped automatically.</p>
+            <form method="post" action="">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="bulk_import">
+              <textarea name="domains_text" class="form-input w-full font-mono text-xs" rows="5" placeholder="competitor1.com&#10;competitor2.com&#10;https://competitor3.com"></textarea>
+              <div class="mt-3">
+                <button type="submit" class="seo-btn seo-btn-outline">Import Domains</button>
+              </div>
+            </form>
+          </div>
+
+          {# Domain list #}
+          <div class="card-surface p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Competitor Domains <span class="text-sm font-normal text-slate-500">({{ active_count }} active)</span></h2>
+              <a href="{{ export_url }}" class="seo-btn seo-btn-outline seo-btn-sm">Export CSV</a>
+            </div>
+            {% if domains %}
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Label</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for d in domains %}
+                  <tr id="comp-row-{{ d.pk }}">
+                    <td class="font-mono text-sm">{{ d.domain }}</td>
+                    <td class="text-slate-500">{{ d.label|default:"—" }}</td>
+                    <td>
+                      <span id="comp-status-{{ d.pk }}" class="{% if d.active %}pill-active{% else %}pill-inactive{% endif %}">{% if d.active %}Active{% else %}Inactive{% endif %}</span>
+                    </td>
+                    <td class="text-right">
+                      <div class="inline-flex gap-1">
+                        <button class="seo-btn seo-btn-outline seo-btn-sm" onclick="toggleCompetitor({{ d.pk }})">
+                          <span id="comp-toggle-label-{{ d.pk }}">{% if d.active %}Deactivate{% else %}Activate{% endif %}</span>
+                        </button>
+                        <button class="seo-btn seo-btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;" onclick="deleteCompetitor({{ d.pk }}, '{{ d.domain }}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-slate-500 text-sm">No competitor domains added yet.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+function getCsrf() { var m = document.cookie.match(/csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+
+function toggleCompetitor(pk) {
+  fetch('{{ toggle_base }}' + pk + '/toggle/', { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success) return;
+      var pill = document.getElementById('comp-status-' + pk);
+      var btn = document.getElementById('comp-toggle-label-' + pk);
+      if (d.active) {
+        pill.className = 'pill-active'; pill.textContent = 'Active';
+        btn.textContent = 'Deactivate';
+      } else {
+        pill.className = 'pill-inactive'; pill.textContent = 'Inactive';
+        btn.textContent = 'Activate';
+      }
+    });
+}
+
+function deleteCompetitor(pk, domain) {
+  if (!confirm('Delete "' + domain + '"?')) return;
+  fetch('{{ delete_base }}' + pk + '/delete/', { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { var row = document.getElementById('comp-row-' + pk); if (row) row.remove(); }
+    });
+}
+</script>
+{% endblock %}

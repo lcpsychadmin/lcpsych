@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}SEO Intelligence — Competitor SERPs | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-danger { background: #dc2626; color: #fff; }
+.seo-btn-danger:hover { background: #b91c1c; }
+.action-tag { font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 0.4rem; margin-left: 0.5rem; display: inline-block; }
+.action-tag-ok { background: #d1fae5; color: #065f46; }
+.action-tag-err { background: #fee2e2; color: #991b1b; }
+.rank-pill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; }
+.rank-top { background: #dcfce7; color: #166534; }
+.rank-mid { background: #fef9c3; color: #854d0e; }
+.rank-low { background: #fee2e2; color: #991b1b; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg">Competitor SERPs — rank distribution and keyword tracking.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+
+          <div class="card-surface p-5 flex flex-wrap items-center gap-3">
+            <div class="text-sm text-slate-600"><span class="font-bold text-[#0f3f46] text-lg">{{ total_results }}</span> SERP results on record</div>
+            <div class="ml-auto flex gap-2 flex-wrap">
+              <button class="seo-btn seo-btn-primary" onclick="seoAction('{{ action_run_scrape }}','run-scrape','Run competitor SERP scrape?')">Run Scrape</button>
+              <span id="res-run-scrape" class="action-tag" style="display:none"></span>
+              <button class="seo-btn seo-btn-danger" onclick="seoAction('{{ action_clear_serps }}','clear-serps','Delete ALL SERP results?')">Clear Data</button>
+              <span id="res-clear-serps" class="action-tag" style="display:none"></span>
+            </div>
+          </div>
+
+          {# Rank buckets chart #}
+          {% if total_results %}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Rank Distribution</h2>
+            <div style="position:relative;height:220px;max-width:380px">
+              <canvas id="rank-chart"></canvas>
+            </div>
+          </div>
+          {% endif %}
+
+          {# Top Keywords #}
+          {% if top_keywords %}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Keywords by Average Rank</h2>
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead><tr><th>Keyword</th><th class="text-right">Results</th><th class="text-right">Avg Rank</th></tr></thead>
+                <tbody>
+                  {% for k in top_keywords %}
+                  <tr>
+                    <td class="font-medium">{{ k.keyword }}</td>
+                    <td class="text-right tabular-nums">{{ k.result_count }}</td>
+                    <td class="text-right">
+                      <span class="rank-pill {% if k.avg_rank <= 3 %}rank-top{% elif k.avg_rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">{{ k.avg_rank|floatformat:1 }}</span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+
+          {# Recent Results #}
+          {% if results %}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Recent SERP Results</h2>
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead><tr><th>Keyword</th><th>Competitor URL</th><th class="text-right">Rank</th><th>Date</th></tr></thead>
+                <tbody>
+                  {% for r in results %}
+                  <tr>
+                    <td class="font-medium">{{ r.keyword }}</td>
+                    <td class="text-xs font-mono max-w-xs truncate">{{ r.competitor_url }}</td>
+                    <td class="text-right">
+                      <span class="rank-pill {% if r.rank <= 3 %}rank-top{% elif r.rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">{{ r.rank }}</span>
+                    </td>
+                    <td class="text-xs text-slate-400">{{ r.timestamp|date:"M j, Y" }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if not total_results %}
+          <div class="card-surface p-6">
+            <p class="text-slate-500 text-sm">No SERP data yet. Add competitor domains and keyword seeds, then run a scrape.</p>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+var chartData = {{ chart_data_json|safe }};
+{% if total_results %}
+var ctx = document.getElementById('rank-chart').getContext('2d');
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    labels: chartData.labels,
+    datasets: [{ data: chartData.values, backgroundColor: ['#3C9C64','#92DCE5','#f59e0b','#ef4444'], borderWidth: 2 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+});
+{% endif %}
+
+function getCsrf() { var m = document.cookie.match(/csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+function seoAction(url, id, msg) {
+  if (!confirm(msg)) return;
+  var el = document.getElementById('res-' + id);
+  if (el) el.style.display = 'none';
+  fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!el) return;
+      el.style.display = 'inline-block';
+      el.className = 'action-tag ' + (d.status === 'ok' ? 'action-tag-ok' : 'action-tag-err');
+      el.textContent = d.status === 'ok' ? 'Done ✓' : ('Error: ' + (d.message || 'failed'));
+    });
+}
+</script>
+{% endblock %}

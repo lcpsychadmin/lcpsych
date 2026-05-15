@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}SEO Intelligence — Keyword Seeds | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.form-input { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.45rem 0.75rem; font-size: 0.88rem; color: #0f3f46; background: #fff; transition: border-color 0.15s, box-shadow 0.15s; }
+.form-input:focus { outline: none; border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146,220,229,0.3); }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.seo-btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+.pill-active { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #d1fae5; color: #065f46; }
+.pill-inactive { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #f1f5f9; color: #64748b; }
+.cat-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 0.35rem; background: #e0f2fe; color: #0369a1; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+.filter-btn { font-size: 0.8rem; font-weight: 600; padding: 0.25rem 0.7rem; border-radius: 0.5rem; border: 1px solid transparent; transition: all 0.15s; text-decoration: none; color: #0f3f46; }
+.filter-btn.active { background: #0f3f46; color: #fff; border-color: #0f3f46; }
+.filter-btn:not(.active):hover { background: #e6f6f3; border-color: #92DCE5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg">Manage keyword seeds used for gap analysis and competitor tracking.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if 'error' in msg.tags %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# Add keyword #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Add Keyword Seed</h2>
+            <form method="post" action="" class="flex flex-wrap gap-3 items-end">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Keyword</label>
+                <input type="text" name="keyword" placeholder="e.g. anxiety therapy" required class="form-input w-56">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Category</label>
+                <select name="category" class="form-input">
+                  {% for val, label in category_choices %}
+                  <option value="{{ val }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="seo-btn seo-btn-primary">Add Keyword</button>
+            </form>
+          </div>
+
+          {# Bulk import #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-2">Bulk Import</h2>
+            <p class="text-slate-500 text-sm mb-3">Paste one keyword per line. Choose a default category for all imported keywords.</p>
+            <form method="post" action="">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="bulk_import">
+              <div class="flex flex-wrap gap-3 items-start">
+                <textarea name="keywords_text" class="form-input font-mono text-xs flex-1 min-w-[200px]" rows="4" placeholder="anxiety therapy&#10;depression counseling&#10;ADHD testing"></textarea>
+                <div class="flex flex-col gap-2">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Default Category</label>
+                    <select name="bulk_category" class="form-input">
+                      {% for val, label in category_choices %}
+                      <option value="{{ val }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <button type="submit" class="seo-btn seo-btn-outline">Import Keywords</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {# AI keyword suggestions #}
+          <div class="card-surface p-6" id="ai-suggest-panel">
+            <div class="flex items-center gap-2 mb-1">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">AI Keyword Suggestions</h2>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">OpenAI</span>
+            </div>
+            <p class="text-slate-500 text-sm mb-4">Ask AI to suggest new keyword seeds based on your existing list. Optionally focus on a topic or category.</p>
+            <div class="flex flex-wrap gap-3 items-end mb-4">
+              <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-bold text-slate-600 mb-1">Focus (optional)</label>
+                <input type="text" id="ai-focus" placeholder="e.g. anxiety, teens, EMDR, location" class="form-input w-full">
+              </div>
+              <button type="button" id="ai-suggest-btn" class="seo-btn seo-btn-primary" onclick="fetchAISuggestions()">
+                <span id="ai-suggest-label">✦ Get suggestions</span>
+              </button>
+            </div>
+
+            {# Results area #}
+            <div id="ai-results-wrap" class="hidden">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-wide" id="ai-results-count"></p>
+                <button type="button" id="ai-add-all-btn" class="seo-btn seo-btn-primary seo-btn-sm hidden" onclick="addCheckedKeywords()">Add selected</button>
+              </div>
+              <div id="ai-results-list" class="space-y-2"></div>
+              <p id="ai-results-status" class="text-xs text-slate-500 mt-2"></p>
+            </div>
+            <p id="ai-suggest-error" class="text-sm text-red-600 hidden mt-2"></p>
+          </div>
+
+          {# Keyword list #}
+          <div class="card-surface p-6">            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-xl font-semibold text-[#0f3f46] m-0">Keywords</h2>
+              <a href="{{ export_url }}" class="seo-btn seo-btn-outline seo-btn-sm">Export CSV</a>
+            </div>
+
+            {# Category filter #}
+            <div class="flex flex-wrap gap-2 mb-4">
+              <a href="{% url 'seo_intel:keywords' %}" class="filter-btn {% if not category_filter %}active{% endif %}">All</a>
+              {% for val, label in category_choices %}
+              <a href="{% url 'seo_intel:keywords' %}?category={{ val }}" class="filter-btn {% if category_filter == val %}active{% endif %}">{{ label }}</a>
+              {% endfor %}
+            </div>
+
+            {% if keywords %}
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Keyword</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for kw in keywords %}
+                  <tr id="kw-row-{{ kw.pk }}">
+                    <td class="font-medium">{{ kw.keyword }}</td>
+                    <td><span class="cat-badge">{{ kw.get_category_display }}</span></td>
+                    <td>
+                      <span id="kw-status-{{ kw.pk }}" class="{% if kw.active %}pill-active{% else %}pill-inactive{% endif %}">{% if kw.active %}Active{% else %}Inactive{% endif %}</span>
+                    </td>
+                    <td class="text-right">
+                      <div class="inline-flex gap-1">
+                        <button class="seo-btn seo-btn-outline seo-btn-sm" onclick="toggleKeyword({{ kw.pk }})">
+                          <span id="kw-toggle-label-{{ kw.pk }}">{% if kw.active %}Deactivate{% else %}Activate{% endif %}</span>
+                        </button>
+                        <button class="seo-btn seo-btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;" onclick="deleteKeyword({{ kw.pk }}, '{{ kw.keyword|escapejs }}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-slate-500 text-sm">No keywords found{% if category_filter %} for this category{% endif %}.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const AI_SUGGEST_URL = '{% url "seo_intel:keywords_ai_suggest" %}';
+const BULK_ADD_URL   = '{% url "seo_intel:keywords_bulk_add" %}';
+
+function getCsrf() { var m = document.cookie.match(/csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+
+// ── AI suggestions ────────────────────────────────────────────────────────
+
+var _aiSuggestions = [];
+
+function fetchAISuggestions() {
+  var btn = document.getElementById('ai-suggest-btn');
+  var label = document.getElementById('ai-suggest-label');
+  var errEl = document.getElementById('ai-suggest-error');
+  var wrap = document.getElementById('ai-results-wrap');
+
+  errEl.classList.add('hidden');
+  wrap.classList.add('hidden');
+  label.textContent = 'Thinking…';
+  btn.disabled = true;
+
+  var focus = document.getElementById('ai-focus').value.trim();
+
+  fetch(AI_SUGGEST_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+    body: JSON.stringify({ focus: focus }),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    label.textContent = '✦ Get suggestions';
+    btn.disabled = false;
+    if (data.error) {
+      errEl.textContent = data.error;
+      errEl.classList.remove('hidden');
+      return;
+    }
+    _aiSuggestions = data.suggestions || [];
+    renderAISuggestions(_aiSuggestions);
+  })
+  .catch(function(err) {
+    label.textContent = '✦ Get suggestions';
+    btn.disabled = false;
+    errEl.textContent = 'Request failed: ' + err;
+    errEl.classList.remove('hidden');
+  });
+}
+
+var CAT_COLORS = {
+  service:  'bg-blue-100 text-blue-800',
+  testing:  'bg-amber-100 text-amber-800',
+  modality: 'bg-purple-100 text-purple-800',
+  location: 'bg-emerald-100 text-emerald-800',
+};
+
+function renderAISuggestions(items) {
+  var list = document.getElementById('ai-results-list');
+  var count = document.getElementById('ai-results-count');
+  var addAllBtn = document.getElementById('ai-add-all-btn');
+  var wrap = document.getElementById('ai-results-wrap');
+  var status = document.getElementById('ai-results-status');
+
+  status.textContent = '';
+  list.innerHTML = '';
+
+  if (!items.length) {
+    count.textContent = 'No new suggestions — all ideas are already in your list.';
+    wrap.classList.remove('hidden');
+    addAllBtn.classList.add('hidden');
+    return;
+  }
+
+  count.textContent = items.length + ' suggestion' + (items.length !== 1 ? 's' : '');
+  addAllBtn.classList.remove('hidden');
+
+  items.forEach(function(item, idx) {
+    var colorCls = CAT_COLORS[item.category] || 'bg-slate-100 text-slate-700';
+    var row = document.createElement('div');
+    row.className = 'flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50';
+    row.id = 'ai-row-' + idx;
+    row.innerHTML = [
+      '<input type="checkbox" class="ai-check mt-0.5 accent-[#0f3f46]" data-idx="' + idx + '" checked>',
+      '<div class="flex-1 min-w-0">',
+        '<div class="flex flex-wrap items-center gap-2">',
+          '<span class="font-semibold text-sm text-[#0f3f46]">' + escHtml(item.keyword) + '</span>',
+          '<span class="text-xs font-semibold px-2 py-0.5 rounded-full ' + colorCls + '">' + escHtml(item.category) + '</span>',
+        '</div>',
+        item.reason ? '<p class="text-xs text-slate-500 mt-0.5">' + escHtml(item.reason) + '</p>' : '',
+      '</div>',
+      '<button type="button" class="seo-btn seo-btn-outline seo-btn-sm shrink-0" onclick="addSingleKeyword(' + idx + ', this)">Add</button>',
+    ].join('');
+    list.appendChild(row);
+  });
+
+  wrap.classList.remove('hidden');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addSingleKeyword(idx, btn) {
+  var item = _aiSuggestions[idx];
+  if (!item) return;
+  btn.disabled = true;
+  btn.textContent = '…';
+  fetch(BULK_ADD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+    body: JSON.stringify([{ keyword: item.keyword, category: item.category }]),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.created) {
+      var row = document.getElementById('ai-row-' + idx);
+      if (row) { row.style.opacity = '0.4'; row.style.pointerEvents = 'none'; }
+      btn.textContent = 'Added ✓';
+    } else {
+      btn.textContent = 'Exists';
+    }
+  })
+  .catch(function() { btn.disabled = false; btn.textContent = 'Add'; });
+}
+
+function addCheckedKeywords() {
+  var checks = document.querySelectorAll('.ai-check:checked');
+  if (!checks.length) return;
+  var items = [];
+  checks.forEach(function(ch) {
+    var item = _aiSuggestions[parseInt(ch.dataset.idx)];
+    if (item) items.push({ keyword: item.keyword, category: item.category });
+  });
+  var addAllBtn = document.getElementById('ai-add-all-btn');
+  addAllBtn.disabled = true;
+  addAllBtn.textContent = '…';
+  fetch(BULK_ADD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+    body: JSON.stringify(items),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    var status = document.getElementById('ai-results-status');
+    status.textContent = d.created + ' keyword(s) added' + (d.skipped ? ', ' + d.skipped + ' already existed.' : '.');
+    checks.forEach(function(ch) {
+      var row = document.getElementById('ai-row-' + ch.dataset.idx);
+      if (row) { row.style.opacity = '0.4'; row.style.pointerEvents = 'none'; }
+    });
+    addAllBtn.disabled = false;
+    addAllBtn.textContent = 'Add selected';
+  })
+  .catch(function() { addAllBtn.disabled = false; addAllBtn.textContent = 'Add selected'; });
+}
+
+// ── Existing keyword actions ──────────────────────────────────────────────
+
+function toggleKeyword(pk) {
+  fetch('{{ toggle_base }}' + pk + '/toggle/', { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.success) return;
+      var pill = document.getElementById('kw-status-' + pk);
+      var btn = document.getElementById('kw-toggle-label-' + pk);
+      if (d.active) {
+        pill.className = 'pill-active'; pill.textContent = 'Active'; btn.textContent = 'Deactivate';
+      } else {
+        pill.className = 'pill-inactive'; pill.textContent = 'Inactive'; btn.textContent = 'Activate';
+      }
+    });
+}
+
+function deleteKeyword(pk, kw) {
+  if (!confirm('Delete "' + kw + '"?')) return;
+  fetch('{{ delete_base }}' + pk + '/delete/', { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) { var row = document.getElementById('kw-row-' + pk); if (row) row.remove(); }
+    });
+}
+</script>
+{% endblock %}

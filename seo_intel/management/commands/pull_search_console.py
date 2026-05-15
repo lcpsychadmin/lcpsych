@@ -189,7 +189,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from seo_intel.models import SearchConsoleQuery
 
-        site_url = os.environ.get("GSC_SITE_URL", "").rstrip("/")
+        site_url = os.environ.get("GSC_SITE_URL", "")
         if not site_url:
             raise CommandError("GSC_SITE_URL environment variable is not set.")
 

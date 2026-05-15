@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}SEO Intelligence — Content Gaps | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; text-decoration: none; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.seo-btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+.action-tag { font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 0.4rem; margin-left: 0.5rem; display: inline-block; }
+.action-tag-ok { background: #d1fae5; color: #065f46; }
+.action-tag-err { background: #fee2e2; color: #991b1b; }
+.yes-pill { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #d1fae5; color: #065f46; }
+.no-pill { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #f1f5f9; color: #94a3b8; }
+.filter-select { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.4rem 0.6rem; font-size: 0.82rem; color: #0f3f46; background: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg">Content Gaps — keywords competitors rank for that you don't.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+
+          <div class="card-surface p-5 flex flex-wrap items-center gap-3">
+            <div class="text-sm text-slate-600"><span class="font-bold text-[#0f3f46] text-lg">{{ total }}</span> records (showing up to 200)</div>
+            <div class="ml-auto flex gap-2 flex-wrap items-center">
+              <button class="seo-btn seo-btn-primary" onclick="seoAction('{{ action_run_gap }}','run-gap','Run content gap analysis?')">Run Analysis</button>
+              <span id="res-run-gap" class="action-tag" style="display:none"></span>
+              <a href="{{ export_url }}" class="seo-btn seo-btn-outline seo-btn-sm">Export CSV</a>
+            </div>
+          </div>
+
+          {# Filters #}
+          <div class="card-surface p-5">
+            <form method="get" action="" class="flex flex-wrap gap-3 items-center">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Resolved</label>
+                <select name="resolved" class="filter-select" onchange="this.form.submit()">
+                  <option value="" {% if not filter_resolved %}selected{% endif %}>All</option>
+                  <option value="0" {% if filter_resolved == '0' %}selected{% endif %}>Open only</option>
+                  <option value="1" {% if filter_resolved == '1' %}selected{% endif %}>Resolved only</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Competitor Presence</label>
+                <select name="competitor_presence" class="filter-select" onchange="this.form.submit()">
+                  <option value="">All</option>
+                  <option value="1" {% if filter_competitor_presence == '1' %}selected{% endif %}>Yes</option>
+                  <option value="0" {% if filter_competitor_presence == '0' %}selected{% endif %}>No</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">LC Psych Presence</label>
+                <select name="lcpsych_presence" class="filter-select" onchange="this.form.submit()">
+                  <option value="">All</option>
+                  <option value="1" {% if filter_lcpsych_presence == '1' %}selected{% endif %}>Yes</option>
+                  <option value="0" {% if filter_lcpsych_presence == '0' %}selected{% endif %}>No</option>
+                </select>
+              </div>
+            </form>
+          </div>
+
+          {# Table #}
+          {% if records %}
+          <div class="card-surface p-6">
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Keyword</th>
+                    <th class="text-right">Search Vol.</th>
+                    <th>Competitor</th>
+                    <th>LC Psych</th>
+                    <th>Recommended Action</th>
+                    <th>Resolved</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for rec in records %}
+                  <tr>
+                    <td class="font-medium">{{ rec.keyword }}</td>
+                    <td class="text-right tabular-nums">{{ rec.search_volume }}</td>
+                    <td><span class="{% if rec.competitor_presence %}yes-pill{% else %}no-pill{% endif %}">{% if rec.competitor_presence %}Yes{% else %}No{% endif %}</span></td>
+                    <td><span class="{% if rec.lcpsych_presence %}yes-pill{% else %}no-pill{% endif %}">{% if rec.lcpsych_presence %}Yes{% else %}No{% endif %}</span></td>
+                    <td class="text-slate-600 text-xs max-w-xs">{{ rec.recommended_action|truncatechars:60 }}</td>
+                    <td><span class="{% if rec.resolved %}yes-pill{% else %}no-pill{% endif %}">{% if rec.resolved %}Yes{% else %}No{% endif %}</span></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% else %}
+          <div class="card-surface p-6">
+            <p class="text-slate-500 text-sm">No content gap records found{% if filter_resolved or filter_competitor_presence or filter_lcpsych_presence %} for the current filters{% endif %}. Run the gap analysis to populate data.</p>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+function getCsrf() { var m = document.cookie.match(/csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+function seoAction(url, id, msg) {
+  if (!confirm(msg)) return;
+  var el = document.getElementById('res-' + id);
+  if (el) el.style.display = 'none';
+  fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!el) return;
+      el.style.display = 'inline-block';
+      el.className = 'action-tag ' + (d.status === 'ok' ? 'action-tag-ok' : 'action-tag-err');
+      el.textContent = d.status === 'ok' ? 'Done ✓' : ('Error: ' + (d.message || 'failed'));
+    });
+}
+</script>
+{% endblock %}

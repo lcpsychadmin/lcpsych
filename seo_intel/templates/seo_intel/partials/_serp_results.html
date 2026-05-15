@@ -1,0 +1,160 @@
+{% if selected_kw %}
+
+{# ── Stats bar ── #}
+<div class="card-surface p-5">
+  <div class="grid grid-cols-3 gap-4 divide-x divide-slate-100">
+    <div class="stat-block">
+      <div class="stat-num">{{ organic_count }}</div>
+      <div class="stat-label">Organic Results</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num {% if competitor_hit_count > 0 %}text-red-600{% endif %}">{{ competitor_hit_count }}</div>
+      <div class="stat-label">Competitor Hits (all time)</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num {% if lc_hit_count > 0 %}text-emerald-700{% endif %}">{{ lc_hit_count }}</div>
+      <div class="stat-label">LC Psych Appearances</div>
+    </div>
+  </div>
+</div>
+
+{# ── Organic Results ── #}
+<div class="card-surface overflow-hidden">
+  <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+    <div>
+      <h2 class="section-title">Organic Results</h2>
+      <p class="text-xs text-slate-400 mt-0.5">Top results for <em>{{ selected_kw }}</em>{% if serp_raw %} as of {{ serp_raw.timestamp|date:"M j, Y" }}{% endif %}.</p>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="data-table">
+      <thead>
+        <tr><th>#</th><th>Title</th><th>URL</th><th>Snippet</th></tr>
+      </thead>
+      <tbody>
+        {% for result in organic_results %}
+        <tr>
+          <td><span class="rank-pill {% if result.position <= 3 %}rank-top{% elif result.position <= 10 %}rank-mid{% else %}rank-low{% endif %}">#{{ result.position }}</span></td>
+          <td class="font-medium text-[#0f3f46] max-w-[220px]">
+            <a href="{{ result.link }}" target="_blank" rel="noopener" class="hover:underline">{{ result.title|truncatechars:60 }}</a>
+          </td>
+          <td class="text-xs text-slate-500 max-w-[200px]">
+            <a href="{{ result.link }}" target="_blank" rel="noopener" class="hover:underline break-all">{{ result.link|truncatechars:55 }}</a>
+          </td>
+          <td class="text-sm text-slate-600 max-w-[280px]">{{ result.snippet|truncatechars:120 }}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="4">No organic results on record. Run SERP to fetch.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Competitor Hits ── #}
+<div class="card-surface overflow-hidden">
+  <div class="px-5 py-4 border-b border-slate-100">
+    <h2 class="section-title">Competitor Hits</h2>
+    <p class="text-xs text-slate-400 mt-0.5">All competitor appearances in SERPs for this keyword (all runs).</p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="data-table">
+      <thead>
+        <tr><th>Rank</th><th>Domain</th><th>Title</th><th>URL</th><th>Seen</th></tr>
+      </thead>
+      <tbody>
+        {% for hit in competitor_hits %}
+        <tr>
+          <td><span class="rank-pill {% if hit.rank <= 3 %}rank-top{% elif hit.rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">#{{ hit.rank }}</span></td>
+          <td class="font-medium text-slate-700">{{ hit.competitor_domain }}</td>
+          <td class="text-sm text-slate-600 max-w-[200px]">{{ hit.title|truncatechars:50 }}</td>
+          <td class="text-xs text-slate-400 max-w-[200px]">
+            <a href="{{ hit.url }}" target="_blank" rel="noopener" class="hover:underline break-all">{{ hit.url|truncatechars:50 }}</a>
+          </td>
+          <td class="text-xs text-slate-400 whitespace-nowrap">{{ hit.timestamp|date:"M j, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="5">No competitor hits recorded for this keyword.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── LC Psych Appearances ── #}
+<div class="card-surface overflow-hidden">
+  <div class="px-5 py-4 border-b border-slate-100">
+    <h2 class="section-title">LC Psych Appearances</h2>
+    <p class="text-xs text-slate-400 mt-0.5">All positions where lcpsych.com appeared in SERPs for this keyword (all runs).</p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="data-table">
+      <thead>
+        <tr><th>Rank</th><th>Title</th><th>URL</th><th>Seen</th></tr>
+      </thead>
+      <tbody>
+        {% for hit in lc_hits %}
+        <tr>
+          <td><span class="rank-pill {% if hit.rank <= 3 %}rank-top{% elif hit.rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">#{{ hit.rank }}</span></td>
+          <td class="font-medium text-emerald-800 max-w-[220px]">{{ hit.title|truncatechars:60 }}</td>
+          <td class="text-xs text-slate-400 max-w-[220px]">
+            <a href="{{ hit.url }}" target="_blank" rel="noopener" class="hover:underline break-all">{{ hit.url|truncatechars:55 }}</a>
+          </td>
+          <td class="text-xs text-slate-400 whitespace-nowrap">{{ hit.timestamp|date:"M j, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="4">LC Psych has not appeared in SERPs for this keyword yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── PAA + Related Searches ── #}
+{% if paa or related_searches %}
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+  {% if paa %}
+  <div class="card-surface p-5">
+    <h2 class="section-title mb-3">People Also Ask</h2>
+    <ul class="space-y-1.5">
+      {% for q in paa %}<li class="text-sm text-slate-700 flex gap-2"><span class="text-slate-300 select-none">›</span>{{ q }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  {% if related_searches %}
+  <div class="card-surface p-5">
+    <h2 class="section-title mb-3">Related Searches</h2>
+    <ul class="space-y-1.5">
+      {% for q in related_searches %}<li class="text-sm text-slate-700 flex gap-2"><span class="text-slate-300 select-none">›</span>{{ q }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── Run history ── #}
+{% if serp_history %}
+<div class="card-surface p-5">
+  <h2 class="section-title mb-3">Recent SERP Runs</h2>
+  <ul class="space-y-1">
+    {% for run in serp_history %}
+    <li class="flex items-center gap-3 text-sm text-slate-600">
+      <span class="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">{{ run.timestamp|date:"Y-m-d H:i" }}</span>
+      <span class="text-slate-400">{{ run.payload.parsed.organic|length }} organic results</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% else %}
+{# No keyword selected / no keywords tracked #}
+<div class="card-surface p-10 text-center text-slate-400">
+  <p class="text-lg font-medium mb-1">No keywords tracked yet.</p>
+  <p class="text-sm">
+    <a href="{% url 'seo_intel:keywords' %}" class="underline text-[#0f3f46]">Add keyword seeds</a>
+    then run the SerpAPI scraper from the
+    <a href="{% url 'seo_intel:control_panel' %}" class="underline text-[#0f3f46]">Control Panel</a>.
+  </p>
+</div>
+{% endif %}

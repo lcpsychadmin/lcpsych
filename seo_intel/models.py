@@ -94,6 +94,30 @@ class CompetitorSERPResult(models.Model):
         return f'#{self.rank} {self.competitor_url} for "{self.keyword}"'
 
 
+class CompetitorHit(models.Model):
+    """A competitor URL detected in a live SERP for a given keyword."""
+
+    keyword = models.CharField(max_length=500)
+    competitor_domain = models.CharField(max_length=253)
+    url = models.URLField(max_length=2000)
+    title = models.CharField(max_length=500, blank=True)
+    rank = models.IntegerField()
+    timestamp = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-timestamp', 'rank']
+        indexes = [
+            models.Index(fields=['keyword']),
+            models.Index(fields=['competitor_domain']),
+            models.Index(fields=['-timestamp']),
+        ]
+        verbose_name = 'Competitor hit'
+        verbose_name_plural = 'Competitor hits'
+
+    def __str__(self):
+        return f'{self.competitor_domain} #{self.rank} for "{self.keyword}"'
+
+
 class ContentGapRecord(models.Model):
     """A keyword gap: topics competitors rank for that LC Psych does not."""
 
@@ -105,6 +129,10 @@ class ContentGapRecord(models.Model):
     resolved = models.BooleanField(
         default=False,
         help_text="Mark when the recommended action has been taken.",
+    )
+    ignored = models.BooleanField(
+        default=False,
+        help_text="Dismiss this gap as not relevant.",
     )
     timestamp = models.DateTimeField()
 
@@ -121,3 +149,115 @@ class ContentGapRecord(models.Model):
     def __str__(self):
         presence = 'gap' if not self.lcpsych_presence else 'covered'
         return f'"{self.keyword}" ({presence}, vol {self.search_volume})'
+
+
+class SerpRawResult(models.Model):
+    """Raw SerpApi JSON response stored per keyword run."""
+
+    keyword = models.CharField(max_length=500)
+    payload = models.JSONField(
+        help_text="Full SerpApi response JSON for this keyword.",
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['keyword']),
+            models.Index(fields=['-timestamp']),
+        ]
+        verbose_name = 'SERP raw result'
+        verbose_name_plural = 'SERP raw results'
+
+    def __str__(self):
+        return f'"{self.keyword}" at {self.timestamp:%Y-%m-%d %H:%M}'
+
+
+class LCPsychHit(models.Model):
+    """A position where LC Psych itself appeared in a live SERP."""
+
+    keyword = models.CharField(max_length=500)
+    url = models.URLField(max_length=2000)
+    title = models.CharField(max_length=500, blank=True)
+    rank = models.IntegerField()
+    timestamp = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-timestamp', 'rank']
+        indexes = [
+            models.Index(fields=['keyword']),
+            models.Index(fields=['-timestamp']),
+            models.Index(fields=['rank']),
+        ]
+        verbose_name = 'LC Psych SERP hit'
+        verbose_name_plural = 'LC Psych SERP hits'
+
+    def __str__(self):
+        return f'Rank #{self.rank} — {self.url} for "{self.keyword}"'
+
+
+class KeywordSuggestion(models.Model):
+    """
+    A keyword phrase discovered from PAA or related searches during a SERP run.
+    Candidates for promotion into active KeywordSeed records.
+    """
+
+    PAA = 'paa'
+    RELATED = 'related'
+    SOURCE_TYPE_CHOICES = [
+        (PAA, 'People Also Ask'),
+        (RELATED, 'Related Search'),
+    ]
+
+    source_keyword = models.CharField(max_length=500)
+    suggestion = models.CharField(max_length=500, unique=True)
+    source_type = models.CharField(
+        max_length=10,
+        choices=SOURCE_TYPE_CHOICES,
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    used_as_seed = models.BooleanField(
+        default=False,
+        help_text='True once this suggestion has been promoted to a KeywordSeed.',
+    )
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['source_type']),
+            models.Index(fields=['used_as_seed']),
+            models.Index(fields=['-timestamp']),
+        ]
+        verbose_name = 'Keyword suggestion'
+        verbose_name_plural = 'Keyword suggestions'
+
+    def __str__(self):
+        return f'[{self.source_type}] {self.suggestion}'
+
+
+class KeywordScore(models.Model):
+    """
+    Computed priority score for a keyword, updated each time
+    ``score_keywords`` runs.  ``priority_score`` is 0–100.
+    """
+
+    keyword = models.CharField(max_length=500, unique=True)
+    search_demand_score = models.IntegerField(default=0)
+    competitor_pressure_score = models.IntegerField(default=0)
+    lcpsych_presence_score = models.IntegerField(default=0)
+    local_intent_score = models.IntegerField(default=0)
+    commercial_intent_score = models.IntegerField(default=0)
+    priority_score = models.IntegerField(default=0)
+    timestamp = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-priority_score']
+        indexes = [
+            models.Index(fields=['-priority_score']),
+            models.Index(fields=['keyword']),
+        ]
+        verbose_name = 'Keyword score'
+        verbose_name_plural = 'Keyword scores'
+
+    def __str__(self):
+        return f'"{self.keyword}" — priority {self.priority_score}'

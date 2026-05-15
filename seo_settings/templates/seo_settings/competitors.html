@@ -1,0 +1,236 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Competitor Domain Manager | Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmXJYDGQKHKaJN6nIGMbFpBP7sMv"
+        crossorigin="anonymous"></script>
+<style>
+  #mgr { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #212529; line-height: 1.5; }
+  #mgr *, #mgr *::before, #mgr *::after { box-sizing: border-box; }
+  #mgr .table { font-size: 13px; }
+  #mgr .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: #6c757d; margin-bottom: 10px; }
+  #mgr .toggle-btn { cursor: pointer; border: none; background: none; padding: 0; font-size: 1.15rem; line-height: 1; }
+  #mgr .toggle-btn[data-active="true"]  { color: #198754; }
+  #mgr .toggle-btn[data-active="false"] { color: #adb5bd; }
+  #mgr .delete-btn { cursor: pointer; border: none; background: none; color: #dc3545; padding: 0; font-size: 1.05rem; }
+  #mgr .delete-btn:hover { color: #a71d2a; }
+  #mgr .stat-pill { background: #f8f9fa; border-radius: 999px; padding: 2px 12px; font-size: 11px; font-weight: 600; color: #495057; }
+  #mgr .add-panel { border: 1px solid #dee2e6; border-radius: 8px; }
+  #mgr .field-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+  #mgr .field-row input[type=text], #mgr .field-row input[type=url] { border: 1px solid #ced4da; border-radius: 4px; padding: 5px 10px; font-size: 13px; }
+  #mgr .field-row label { font-size: 12px; font-weight: 600; color: #495057; margin-bottom: 3px; display: block; }
+  #mgr .errorlist { list-style: none; padding: 0; margin: 4px 0 0; }
+  #mgr .errorlist li { font-size: 11px; color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; SEO Intelligence
+  &rsaquo; Competitor Domain Manager
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>Competitor Domain Manager</h1>{% endblock %}
+
+{% block content %}
+<div id="mgr">
+
+  {# ── Django messages ─────────────────────────────────────────────── #}
+  {% if messages %}
+  <div class="mb-3">
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 px-3" style="font-size:13px;" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="font-size:10px;"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Summary bar ─────────────────────────────────────────────────── #}
+  <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+    <span class="stat-pill"><i class="bi bi-globe me-1"></i>{{ domain_count }} domain{{ domain_count|pluralize }}</span>
+    <span class="stat-pill text-success"><i class="bi bi-check-circle me-1"></i>{{ active_count }} active</span>
+    <div class="ms-auto d-flex gap-2">
+      <a href="{{ export_url }}" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-download me-1"></i>Export CSV
+      </a>
+      <button class="btn btn-sm btn-outline-primary" type="button"
+              data-bs-toggle="collapse" data-bs-target="#bulk-import-panel">
+        <i class="bi bi-upload me-1"></i>Bulk Import
+      </button>
+    </div>
+  </div>
+
+  {# ── Add domain form ─────────────────────────────────────────────── #}
+  <div class="add-panel bg-white p-3 mb-4">
+    <p class="section-label mb-2">Add domain</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="field-row">
+        <div>
+          <label for="{{ add_form.domain.id_for_label }}">Domain</label>
+          {{ add_form.domain }}
+          {% if add_form.domain.errors %}<ul class="errorlist">{% for e in add_form.domain.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div>
+          <label for="{{ add_form.label.id_for_label }}">Label (optional)</label>
+          {{ add_form.label }}
+          {% if add_form.label.errors %}<ul class="errorlist">{% for e in add_form.label.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div class="d-flex align-items-end" style="padding-bottom:2px;">
+          <div class="form-check me-2">
+            {{ add_form.active }}
+            <label class="form-check-label" for="{{ add_form.active.id_for_label }}" style="font-size:12px;">Active</label>
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add
+          </button>
+        </div>
+      </div>
+      {% if add_form.non_field_errors %}
+      <p class="text-danger mt-1" style="font-size:11px;">{{ add_form.non_field_errors }}</p>
+      {% endif %}
+    </form>
+  </div>
+
+  {# ── Bulk import (collapsible) ────────────────────────────────────── #}
+  <div class="collapse mb-4" id="bulk-import-panel">
+    <div class="add-panel bg-light p-3">
+      <p class="section-label mb-2">Bulk import — paste domains, one per line</p>
+      <p style="font-size:12px;color:#6c757d;margin-bottom:10px;">
+        Full URLs are accepted (e.g. <code>https://www.competitor.com/page</code>); only the domain will be stored.
+        Existing domains are skipped.
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="bulk_import">
+        <textarea name="domains_text" rows="8"
+                  style="width:100%;max-width:560px;font-family:monospace;font-size:12px;border:1px solid #ced4da;border-radius:4px;padding:8px;"
+                  placeholder="competitor1.com&#10;https://www.competitor2.com&#10;competitor3.org"></textarea>
+        <div class="mt-2">
+          <button type="submit" class="btn btn-sm btn-success">
+            <i class="bi bi-cloud-upload me-1"></i>Import
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Domains table ───────────────────────────────────────────────── #}
+  <p class="section-label">All domains</p>
+  {% if domains %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="domains-table">
+        <thead class="table-light">
+          <tr>
+            <th>Domain</th>
+            <th>Label</th>
+            <th class="text-center">Active</th>
+            <th class="text-end" style="width:110px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in domains %}
+          <tr id="row-{{ d.pk }}">
+            <td class="fw-semibold">{{ d.domain }}</td>
+            <td class="text-muted">{{ d.label|default:"—" }}</td>
+            <td class="text-center">
+              <button class="toggle-btn"
+                      data-pk="{{ d.pk }}"
+                      data-active="{{ d.active|yesno:'true,false' }}"
+                      title="Toggle active"
+                      onclick="toggleActive(this)">
+                <i class="bi {% if d.active %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+              </button>
+            </td>
+            <td class="text-end">
+              <a href="{% url 'admin:seo_settings_competitordomain_change' d.pk %}"
+                 class="btn btn-xs btn-outline-secondary btn-sm me-1"
+                 style="font-size:11px;padding:2px 8px;">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button class="delete-btn"
+                      data-pk="{{ d.pk }}"
+                      data-domain="{{ d.domain }}"
+                      title="Delete"
+                      onclick="deleteDomain(this)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm p-4 text-center text-muted" style="font-size:13px;">
+    <i class="bi bi-globe fs-2 mb-2 d-block"></i>No competitor domains yet. Add one above.
+  </div>
+  {% endif %}
+
+</div>{# #mgr #}
+
+<script>
+(function () {
+  function getCsrf() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function post(url, onSuccess, onError) {
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { d.success ? onSuccess(d) : onError(d.error || 'Error'); })
+    .catch(function (e) { onError(e.message); });
+  }
+
+  window.toggleActive = function (btn) {
+    var pk = btn.dataset.pk;
+    post(
+      '/admin/seo_settings/competitordomain/toggle/' + pk + '/',
+      function (d) {
+        btn.dataset.active = d.active ? 'true' : 'false';
+        btn.style.color = d.active ? '#198754' : '#adb5bd';
+        var icon = btn.querySelector('i');
+        icon.className = d.active ? 'bi bi-toggle-on' : 'bi bi-toggle-off';
+      },
+      function (err) { alert('Toggle failed: ' + err); }
+    );
+  };
+
+  window.deleteDomain = function (btn) {
+    var pk = btn.dataset.pk;
+    var domain = btn.dataset.domain;
+    if (!confirm('Delete "' + domain + '"? This cannot be undone.')) return;
+    post(
+      '/admin/seo_settings/competitordomain/delete-ajax/' + pk + '/',
+      function () {
+        var row = document.getElementById('row-' + pk);
+        if (row) row.remove();
+      },
+      function (err) { alert('Delete failed: ' + err); }
+    );
+  };
+}());
+</script>
+{% endblock %}

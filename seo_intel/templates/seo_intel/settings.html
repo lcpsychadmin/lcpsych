@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.form-input { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.45rem 0.75rem; font-size: 0.88rem; color: #0f3f46; background: #fff; transition: border-color 0.15s, box-shadow 0.15s; }
+.form-input:focus { outline: none; border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146,220,229,0.3); }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.seo-btn-danger { background: #fff; color: #dc2626; border: 1px solid #fecaca; }
+.seo-btn-danger:hover { background: #fef2f2; border-color: #dc2626; }
+.seo-btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+.pill-active   { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #d1fae5; color: #065f46; }
+.pill-inactive { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #f1f5f9; color: #64748b; }
+.pill-ok       { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #d1fae5; color: #065f46; }
+.pill-missing  { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #fef2f2; color: #991b1b; }
+.cat-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 0.35rem; background: #e0f2fe; color: #0369a1; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+.key-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: #475569; letter-spacing: 0.03em; }
+.cmd-chip { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 0.4rem; background: #0f3f46; color: #92DCE5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg">Configure SERP data collection, competitor tracking, and keyword seeds.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+
+          {# ── Flash messages ── #}
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if 'error' in msg.tags %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# ══════════════════════════════════════════════════════════
+             SECTION 1 — API Keys
+          ══════════════════════════════════════════════════════════ #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-1">API Keys</h2>
+            <p class="text-slate-500 text-sm mb-4">Keys are read from environment variables. Update them in your <code class="key-mono">.env</code> file and restart the server.</p>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Env Variable</th>
+                  <th>Value</th>
+                  <th>Status</th>
+                  <th>Docs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for key in api_keys %}
+                <tr>
+                  <td class="font-semibold text-[#0f3f46]">{{ key.name }}</td>
+                  <td><code class="key-mono">{{ key.env_var }}</code></td>
+                  <td>
+                    {% if key.configured %}
+                      <span class="key-mono">{{ key.masked }}</span>
+                    {% else %}
+                      <span class="text-slate-400 italic text-xs">not set</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if key.configured %}
+                      <span class="pill-ok">Configured</span>
+                    {% else %}
+                      <span class="pill-missing">Missing</span>
+                    {% endif %}
+                  </td>
+                  <td><a href="{{ key.docs_url }}" target="_blank" rel="noopener noreferrer" class="text-[#0f3f46] text-xs underline underline-offset-2 hover:text-[#3C9C64]">Dashboard ↗</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {# ══════════════════════════════════════════════════════════
+             SECTION 2 — Competitor Domains
+          ══════════════════════════════════════════════════════════ #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Competitor Domains
+              <span class="ml-2 text-base font-normal text-slate-400">({{ competitors|length }} total)</span>
+            </h2>
+
+            {# Add form #}
+            <div id="settings-flash-competitor"></div>
+            <form method="post" action="" class="flex flex-wrap gap-3 items-end mb-5"
+                  hx-post="{% url 'seo_intel:serp_settings' %}"
+                  hx-target="#settings-flash-competitor"
+                  hx-swap="innerHTML">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_competitor">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Domain</label>
+                <input type="text" name="domain" placeholder="example.com" required maxlength="253" class="form-input w-56">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Label <span class="font-normal text-slate-400">(optional)</span></label>
+                <input type="text" name="label" placeholder="e.g. BetterHelp" maxlength="200" class="form-input w-44">
+              </div>
+              <button type="submit" class="seo-btn seo-btn-primary">Add Domain</button>
+            </form>
+
+            {# Table #}
+            {% if competitors %}
+            <div class="overflow-x-auto">
+              <table class="data-table" id="competitors-table">
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Label</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for obj in competitors %}
+                  <tr id="competitor-row-{{ obj.pk }}">
+                    <td class="font-medium text-[#0f3f46]">{{ obj.domain }}</td>
+                    <td class="text-slate-500">{{ obj.label|default:"—" }}</td>
+                    <td>
+                      <span class="pill-status {% if obj.active %}pill-active{% else %}pill-inactive{% endif %}" id="competitor-pill-{{ obj.pk }}">
+                        {% if obj.active %}Active{% else %}Inactive{% endif %}
+                      </span>
+                    </td>
+                    <td class="text-right space-x-1">
+                      <button type="button"
+                              class="seo-btn seo-btn-outline seo-btn-sm toggle-competitor"
+                              data-id="{{ obj.pk }}"
+                              data-toggle-url="{{ toggle_competitor_base }}{{ obj.pk }}/toggle/">
+                        Toggle
+                      </button>
+                      <button type="button"
+                              class="seo-btn seo-btn-danger seo-btn-sm delete-competitor"
+                              data-id="{{ obj.pk }}"
+                              data-delete-url="{{ delete_competitor_base }}{{ obj.pk }}/delete/"
+                              data-domain="{{ obj.domain }}">
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-slate-400 text-sm italic">No competitor domains added yet.</p>
+            {% endif %}
+          </div>
+
+          {# ══════════════════════════════════════════════════════════
+             SECTION 3 — Keyword Seeds
+          ══════════════════════════════════════════════════════════ #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Keyword Seeds
+              <span class="ml-2 text-base font-normal text-slate-400">({{ keywords|length }} total)</span>
+            </h2>
+
+            {# Add form #}
+            <div id="settings-flash-keyword"></div>
+            <form method="post" action="" class="flex flex-wrap gap-3 items-end mb-5"
+                  hx-post="{% url 'seo_intel:serp_settings' %}"
+                  hx-target="#settings-flash-keyword"
+                  hx-swap="innerHTML">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_keyword">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Keyword</label>
+                <input type="text" name="keyword" placeholder="e.g. anxiety therapy NKY" required maxlength="500" class="form-input w-64">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Category</label>
+                <select name="category" class="form-input">
+                  {% for val, label in category_choices %}
+                  <option value="{{ val }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="seo-btn seo-btn-primary">Add Keyword</button>
+            </form>
+
+            {# Table #}
+            {% if keywords %}
+            <div class="overflow-x-auto">
+              <table class="data-table" id="keywords-table">
+                <thead>
+                  <tr>
+                    <th>Keyword</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for obj in keywords %}
+                  <tr id="keyword-row-{{ obj.pk }}">
+                    <td class="font-medium text-[#0f3f46]">{{ obj.keyword }}</td>
+                    <td><span class="cat-badge">{{ obj.get_category_display }}</span></td>
+                    <td>
+                      <span class="pill-status {% if obj.active %}pill-active{% else %}pill-inactive{% endif %}" id="keyword-pill-{{ obj.pk }}">
+                        {% if obj.active %}Active{% else %}Inactive{% endif %}
+                      </span>
+                    </td>
+                    <td class="text-right space-x-1">
+                      <button type="button"
+                              class="seo-btn seo-btn-outline seo-btn-sm toggle-keyword"
+                              data-id="{{ obj.pk }}"
+                              data-toggle-url="{{ toggle_keyword_base }}{{ obj.pk }}/toggle/">
+                        Toggle
+                      </button>
+                      <button type="button"
+                              class="seo-btn seo-btn-danger seo-btn-sm delete-keyword"
+                              data-id="{{ obj.pk }}"
+                              data-delete-url="{{ delete_keyword_base }}{{ obj.pk }}/delete/"
+                              data-keyword="{{ obj.keyword }}">
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-slate-400 text-sm italic">No keyword seeds added yet.</p>
+            {% endif %}
+          </div>
+
+          {# ══════════════════════════════════════════════════════════
+             SECTION 4 — Automation Schedule
+          ══════════════════════════════════════════════════════════ #}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-1">Automation Schedule</h2>
+            <p class="text-slate-500 text-sm mb-4">Run these management commands manually or schedule them via cron / Celery Beat.</p>
+            <div class="space-y-4">
+              {% for cmd in automation_commands %}
+              <div class="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                  <span class="cmd-chip">manage.py {{ cmd.command }}</span>
+                </div>
+                <p class="text-sm text-slate-600 mb-1">{{ cmd.description }}</p>
+                <p class="text-xs text-slate-400 font-mono">{{ cmd.flags }}</p>
+              </div>
+              {% endfor %}
+            </div>
+            <p class="mt-4 text-xs text-slate-400">Tip: run with <code class="key-mono">--dry-run</code> first to preview changes without writing to the database.</p>
+          </div>
+
+        </div>{# end main col #}
+      </div>{# end settings-layout #}
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+(function () {
+  'use strict';
+
+  document.body.addEventListener('htmx:configRequest', function (evt) {
+    var m = document.cookie.match(/csrftoken=([^;]+)/);
+    if (m) evt.detail.headers['X-CSRFToken'] = decodeURIComponent(m[1]);
+  });
+
+  function getCsrf() {
+    var el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
+  }
+
+  function postJson(url) {
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCsrf(),
+        'Content-Type': 'application/json',
+      },
+    }).then(function (r) { return r.json(); });
+  }
+
+  // ── Competitor toggles ──────────────────────────────────────────────
+  document.querySelectorAll('.toggle-competitor').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.dataset.id;
+      var url = btn.dataset.toggleUrl;
+      postJson(url).then(function (data) {
+        if (!data.success) return;
+        var pill = document.getElementById('competitor-pill-' + id);
+        if (!pill) return;
+        if (data.active) {
+          pill.textContent = 'Active';
+          pill.className = 'pill-status pill-active';
+        } else {
+          pill.textContent = 'Inactive';
+          pill.className = 'pill-status pill-inactive';
+        }
+      });
+    });
+  });
+
+  // ── Competitor deletes ──────────────────────────────────────────────
+  document.querySelectorAll('.delete-competitor').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!confirm('Delete competitor domain "' + btn.dataset.domain + '"?')) return;
+      var id = btn.dataset.id;
+      postJson(btn.dataset.deleteUrl).then(function (data) {
+        if (data.success) {
+          var row = document.getElementById('competitor-row-' + id);
+          if (row) row.remove();
+        }
+      });
+    });
+  });
+
+  // ── Keyword toggles ─────────────────────────────────────────────────
+  document.querySelectorAll('.toggle-keyword').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.dataset.id;
+      var url = btn.dataset.toggleUrl;
+      postJson(url).then(function (data) {
+        if (!data.success) return;
+        var pill = document.getElementById('keyword-pill-' + id);
+        if (!pill) return;
+        if (data.active) {
+          pill.textContent = 'Active';
+          pill.className = 'pill-status pill-active';
+        } else {
+          pill.textContent = 'Inactive';
+          pill.className = 'pill-status pill-inactive';
+        }
+      });
+    });
+  });
+
+  // ── Keyword deletes ─────────────────────────────────────────────────
+  document.querySelectorAll('.delete-keyword').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!confirm('Delete keyword "' + btn.dataset.keyword + '"?')) return;
+      var id = btn.dataset.id;
+      postJson(btn.dataset.deleteUrl).then(function (data) {
+        if (data.success) {
+          var row = document.getElementById('keyword-row-' + id);
+          if (row) row.remove();
+        }
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

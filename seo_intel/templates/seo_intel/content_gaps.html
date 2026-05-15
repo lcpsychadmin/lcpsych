@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.75rem; font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+.data-table td { padding: 0.55rem 0.75rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+.form-input { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-size: 0.85rem; color: #0f3f46; background: #fff; }
+.form-input:focus { outline: none; border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146,220,229,0.3); }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; text-decoration: none; }
+.seo-btn-primary { background: #0f3f46; color: #fff; }
+.seo-btn-primary:hover { background: #1a5a63; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.seo-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.stat-block { text-align: center; }
+.stat-num { font-size: 1.6rem; font-weight: 700; color: #0f3f46; line-height: 1; }
+.stat-label { font-size: 0.73rem; color: #64748b; margin-top: 0.2rem; }
+.cat-badge { display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 0.35rem; background: #e0f2fe; color: #0369a1; }
+.score-pill { display: inline-block; font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 9999px; min-width: 2.2rem; text-align: center; }
+.score-high { background: #d1fae5; color: #065f46; }
+.score-mid  { background: #fef9c3; color: #854d0e; }
+.score-low  { background: #fee2e2; color: #991b1b; }
+.score-none { background: #f1f5f9; color: #94a3b8; }
+.presence-yes { display: inline-flex; align-items: center; justify-content: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: #d1fae5; color: #065f46; font-size: 0.7rem; font-weight: 900; }
+.presence-no  { display: inline-flex; align-items: center; justify-content: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: #f1f5f9; color: #94a3b8; font-size: 0.7rem; font-weight: 900; }
+.action-badge { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 0.4rem; white-space: nowrap; }
+.action-optimize  { background: #d1fae5; color: #065f46; }
+.action-location  { background: #e0f2fe; color: #0369a1; }
+.action-modality  { background: #f3e8ff; color: #6b21a8; }
+.action-testing   { background: #fce7f3; color: #9d174d; }
+.action-service   { background: #ffedd5; color: #9a3412; }
+.action-other     { background: #f1f5f9; color: #64748b; }
+.spinner { display: none; width: 1rem; height: 1rem; border: 2px solid #92DCE5; border-top-color: #0f3f46; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg">Content Gaps — topics competitors cover that LC Psych doesn't.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-5">
+
+          <div id="gaps-content">
+            {% include "seo_intel/partials/_gaps_table.html" %}
+          </div>
+        </div>{# end main col #}
+      </div>{# end settings-layout #}
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+document.body.addEventListener('htmx:configRequest', function (evt) {
+  var m = document.cookie.match(/csrftoken=([^;]+)/);
+  if (m) evt.detail.headers['X-CSRFToken'] = decodeURIComponent(m[1]);
+});
+</script>
+{% endblock body_extra %}

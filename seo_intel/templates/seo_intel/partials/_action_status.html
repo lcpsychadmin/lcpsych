@@ -1,0 +1,9 @@
+{% if status == 'ok' %}
+<span style="display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:600;padding:.25rem .75rem;border-radius:.5rem;background:#d1fae5;color:#065f46">
+  ✓ {{ message|default:"Done" }}
+</span>
+{% else %}
+<span style="display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:600;padding:.25rem .75rem;border-radius:.5rem;background:#fee2e2;color:#991b1b">
+  ✗ {{ message|default:"Something went wrong." }}
+</span>
+{% endif %}

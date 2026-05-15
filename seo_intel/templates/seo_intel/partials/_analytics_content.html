@@ -1,0 +1,311 @@
+{# ── Stats bar ── #}
+<div class="card-surface p-5">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap gap-6">
+      <div class="stat-block">
+        <div class="stat-num">{{ total_impressions }}</div>
+        <div class="stat-label">Impressions ({{ days }}d)</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">{{ total_clicks }}</div>
+        <div class="stat-label">Clicks ({{ days }}d)</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">{{ internal_search_count }}</div>
+        <div class="stat-label">Internal Searches ({{ days }}d)</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">{{ dead_url_count }}</div>
+        <div class="stat-label">Dead URL Hits ({{ days }}d)</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">{{ competitor_hit_count }}</div>
+        <div class="stat-label">Competitor Hits (all-time)</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num">{{ scored_keyword_count }}</div>
+        <div class="stat-label">Scored Keywords</div>
+      </div>
+    </div>
+    <button type="button"
+            class="seo-btn seo-btn-primary"
+            hx-get="{% url 'seo_intel:analytics_hub' %}"
+            hx-target="#analytics-content"
+            hx-swap="innerHTML">
+      Refresh Analytics
+    </button>
+  </div>
+</div>
+
+{# ── Row 1: Impressions + Clicks over time ── #}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+  <div class="card-surface chart-card">
+    <div>
+      <p class="section-title">Impressions Over Time</p>
+      <p class="section-sub">Last {{ days }} days — from Search Console.</p>
+    </div>
+    <canvas id="chartImpressions"></canvas>
+  </div>
+
+  <div class="card-surface chart-card">
+    <div>
+      <p class="section-title">Clicks Over Time</p>
+      <p class="section-sub">Last {{ days }} days — from Search Console.</p>
+    </div>
+    <canvas id="chartClicks"></canvas>
+  </div>
+
+</div>
+
+{# ── Row 2: Top Internal Searches + Top Dead URLs ── #}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+  <div class="card-surface chart-card">
+    <div>
+      <p class="section-title">Top Internal Searches</p>
+      <p class="section-sub">Most frequent site-search terms (all-time, top 10).</p>
+    </div>
+    {% if search_counts_json == '[]' %}
+      <p class="text-sm text-slate-400 italic py-4 text-center">No internal search data recorded yet.</p>
+    {% else %}
+      <canvas id="chartInternalSearch"></canvas>
+    {% endif %}
+  </div>
+
+  <div class="card-surface chart-card">
+    <div>
+      <p class="section-title">Top Dead URLs</p>
+      <p class="section-sub">Most-hit 404 paths (all-time, top 10).</p>
+    </div>
+    {% if dead_counts_json == '[]' %}
+      <p class="text-sm text-slate-400 italic py-4 text-center">No dead URL hits recorded yet.</p>
+    {% else %}
+      <canvas id="chartDeadUrls"></canvas>
+    {% endif %}
+  </div>
+
+</div>
+
+{# ── Row 3: Competitor Ranking Distribution + Keyword Priority Distribution ── #}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+  <div class="card-surface chart-card">
+    <div>
+      <p class="section-title">Competitor Ranking Distribution</p>
+      <p class="section-sub">All-time SERP hits grouped by rank bucket.</p>
+    </div>
+    {% if competitor_hit_count == 0 %}
+      <p class="text-sm text-slate-400 italic py-4 text-center">No competitor SERP data yet — run a SERP crawl first.</p>
+    {% else %}
+      <canvas id="chartCompetitorRank"></canvas>
+    {% endif %}
+  </div>
+
+  <div class="card-surface chart-card">
+    <div>
+      <p class="section-title">Keyword Priority Distribution</p>
+      <p class="section-sub">Scored keywords grouped by priority score range.</p>
+    </div>
+    {% if scored_keyword_count == 0 %}
+      <p class="text-sm text-slate-400 italic py-4 text-center">No keyword scores yet — run the keyword scorer first.</p>
+    {% else %}
+      <canvas id="chartKeywordPriority"></canvas>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // ── Data from Django view ─────────────────────────────────────────────
+  var SC_LABELS       = {{ sc_labels_json|safe }};
+  var SC_IMPRESSIONS  = {{ sc_impressions_json|safe }};
+  var SC_CLICKS       = {{ sc_clicks_json|safe }};
+  var SEARCH_TERMS    = {{ search_terms_json|safe }};
+  var SEARCH_COUNTS   = {{ search_counts_json|safe }};
+  var DEAD_URLS       = {{ dead_urls_json|safe }};
+  var DEAD_COUNTS     = {{ dead_counts_json|safe }};
+  var RANK_LABELS     = {{ rank_labels_json|safe }};
+  var RANK_COUNTS     = {{ rank_counts_json|safe }};
+  var PRIORITY_LABELS = {{ priority_labels_json|safe }};
+  var PRIORITY_COUNTS = {{ priority_counts_json|safe }};
+
+  // ── Chart defaults ────────────────────────────────────────────────────
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+  Chart.defaults.font.size   = 12;
+  Chart.defaults.color       = '#64748b';
+
+  var TEAL   = '#0f3f46';
+  var TEAL_L = 'rgba(15,63,70,0.12)';
+  var AQUA   = '#92DCE5';
+  var AMBER  = '#f59e0b';
+  var ROSE   = '#f43f5e';
+  var GREEN  = '#22c55e';
+
+  // ── 1. Impressions over time ──────────────────────────────────────────
+  if (SC_LABELS.length > 0) {
+    new Chart(document.getElementById('chartImpressions'), {
+      type: 'line',
+      data: {
+        labels: SC_LABELS,
+        datasets: [{
+          label: 'Impressions',
+          data: SC_IMPRESSIONS,
+          borderColor: AQUA,
+          backgroundColor: 'rgba(146,220,229,0.15)',
+          borderWidth: 2,
+          pointRadius: 3,
+          fill: true,
+          tension: 0.35,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: TEAL_L } },
+          y: { grid: { color: TEAL_L }, beginAtZero: true },
+        },
+      },
+    });
+  } else {
+    document.getElementById('chartImpressions').insertAdjacentHTML(
+      'afterend',
+      '<p class="text-sm text-slate-400 italic py-4 text-center">No Search Console data for this period.</p>'
+    );
+    document.getElementById('chartImpressions').remove();
+  }
+
+  // ── 2. Clicks over time ───────────────────────────────────────────────
+  if (SC_LABELS.length > 0) {
+    new Chart(document.getElementById('chartClicks'), {
+      type: 'line',
+      data: {
+        labels: SC_LABELS,
+        datasets: [{
+          label: 'Clicks',
+          data: SC_CLICKS,
+          borderColor: TEAL,
+          backgroundColor: 'rgba(15,63,70,0.08)',
+          borderWidth: 2,
+          pointRadius: 3,
+          fill: true,
+          tension: 0.35,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: TEAL_L } },
+          y: { grid: { color: TEAL_L }, beginAtZero: true },
+        },
+      },
+    });
+  } else {
+    document.getElementById('chartClicks').insertAdjacentHTML(
+      'afterend',
+      '<p class="text-sm text-slate-400 italic py-4 text-center">No Search Console data for this period.</p>'
+    );
+    document.getElementById('chartClicks').remove();
+  }
+
+  // ── 3. Top internal searches ──────────────────────────────────────────
+  if (SEARCH_COUNTS.length > 0) {
+    new Chart(document.getElementById('chartInternalSearch'), {
+      type: 'bar',
+      data: {
+        labels: SEARCH_TERMS,
+        datasets: [{
+          label: 'Searches',
+          data: SEARCH_COUNTS,
+          backgroundColor: AQUA,
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: TEAL_L }, beginAtZero: true, ticks: { precision: 0 } },
+          y: { grid: { display: false } },
+        },
+      },
+    });
+  }
+
+  // ── 4. Top dead URLs ──────────────────────────────────────────────────
+  if (DEAD_COUNTS.length > 0) {
+    new Chart(document.getElementById('chartDeadUrls'), {
+      type: 'bar',
+      data: {
+        labels: DEAD_URLS,
+        datasets: [{
+          label: 'Hits',
+          data: DEAD_COUNTS,
+          backgroundColor: ROSE,
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: TEAL_L }, beginAtZero: true, ticks: { precision: 0 } },
+          y: { grid: { display: false } },
+        },
+      },
+    });
+  }
+
+  // ── 5. Competitor ranking distribution ───────────────────────────────
+  if (RANK_COUNTS.some(function(c){ return c > 0; })) {
+    new Chart(document.getElementById('chartCompetitorRank'), {
+      type: 'doughnut',
+      data: {
+        labels: RANK_LABELS,
+        datasets: [{
+          data: RANK_COUNTS,
+          backgroundColor: [GREEN, AQUA, AMBER, ROSE],
+          borderWidth: 2,
+          borderColor: '#fff',
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 14 } },
+        },
+        cutout: '55%',
+      },
+    });
+  }
+
+  // ── 6. Keyword priority distribution ─────────────────────────────────
+  if (PRIORITY_COUNTS.some(function(c){ return c > 0; })) {
+    new Chart(document.getElementById('chartKeywordPriority'), {
+      type: 'bar',
+      data: {
+        labels: PRIORITY_LABELS,
+        datasets: [{
+          label: 'Keywords',
+          data: PRIORITY_COUNTS,
+          backgroundColor: [ROSE, AMBER, AQUA, TEAL, GREEN],
+          borderRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: TEAL_L }, beginAtZero: true, ticks: { precision: 0 } },
+        },
+      },
+    });
+  }
+})();
+</script>

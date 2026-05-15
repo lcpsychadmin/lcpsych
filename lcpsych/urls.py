@@ -34,6 +34,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('blog/', include('blog.urls')),
     path('settings/', ManageTherapistsView.as_view(), name='settings'),
+    path('seo/', include('seo_settings.portal_urls', namespace='seo_intel')),
     path('sitemap.xml', sitemap, {
         'sitemaps': {
             'static': StaticViewSitemap,

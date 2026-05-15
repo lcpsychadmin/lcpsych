@@ -1,0 +1,204 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {% trans 'Django site admin' %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; SEO Intelligence Settings
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>{{ title }}</h1>{% endblock %}
+
+{% block object-tools %}
+<ul class="object-tools">
+  <li><a href="{% url 'admin:seo_settings_competitordomain_changelist' %}">Competitor Domains</a></li>
+  <li><a href="{% url 'admin:seo_settings_keywordseed_changelist' %}">Keyword Seeds</a></li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Module Status ─────────────────────────────────────────────────────── -->
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#666;margin-bottom:10px;">
+    Module Status
+  </h2>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;">
+    {% for label, enabled in status_modules %}
+    <div style="
+        padding:10px 16px;
+        border-radius:4px;
+        border-left:4px solid {% if enabled %}#28a745{% else %}#adb5bd{% endif %};
+        background:{% if enabled %}#d4edda{% else %}#f8f9fa{% endif %};
+        min-width:180px;">
+      <div style="font-weight:bold;font-size:12px;color:#333;">{{ label }}</div>
+      <div style="font-size:11px;margin-top:3px;color:{% if enabled %}#155724{% else %}#6c757d{% endif %};">
+        {% if enabled %}&#9679; Enabled{% else %}&#9675; Disabled{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Settings Form ──────────────────────────────────────────────────────── -->
+<form method="post" id="seo-settings-form" novalidate>
+  {% csrf_token %}
+
+  {% if form.errors %}
+  <p class="errornote">
+    {% blocktrans count form.errors.items|length as counter %}
+      Please correct the error below.
+    {% plural %}
+      Please correct the errors below.
+    {% endblocktrans %}
+  </p>
+  {% endif %}
+
+  <!-- Feature Toggles -->
+  <fieldset class="module aligned">
+    <h2>Feature Toggles</h2>
+    {% for field in toggle_fields %}
+    <div class="form-row{% if field.errors %} errors{% endif %}">
+      <div>
+        <label class="vCheckboxLabel" for="{{ field.id_for_label }}">
+          {{ field }} {{ field.label }}
+        </label>
+        {% if field.errors %}
+        <ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </fieldset>
+
+  <!-- Google Search Console -->
+  <fieldset class="module aligned">
+    <h2>Google Search Console</h2>
+    {% for field in gsc_fields %}
+    <div class="form-row{% if field.errors %} errors{% endif %}">
+      {{ field.label_tag }}
+      <div>
+        {{ field }}
+        {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+        {% if field.errors %}
+        <ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </fieldset>
+
+  <!-- Other -->
+  <fieldset class="module aligned">
+    <h2>Other</h2>
+    <div class="form-row{% if form.url_removal_token.errors %} errors{% endif %}">
+      {{ form.url_removal_token.label_tag }}
+      <div>
+        {{ form.url_removal_token }}
+        {% if form.url_removal_token.help_text %}
+        <p class="help">{{ form.url_removal_token.help_text }}</p>
+        {% endif %}
+        {% if form.url_removal_token.errors %}
+        <ul class="errorlist">{% for e in form.url_removal_token.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="submit-row">
+    <input type="submit" value="Save settings" class="default" name="_save">
+    {% if global_settings.updated_at %}
+    <p style="float:right;margin:0;font-size:11px;color:#999;line-height:35px;">
+      Last saved: {{ global_settings.updated_at }}
+    </p>
+    {% endif %}
+  </div>
+</form>
+
+<!-- ── Test Google API Credentials ───────────────────────────────────────── -->
+<div class="module" style="padding:16px 16px 20px;margin-top:8px;">
+  <h2 style="font-size:13px;margin-bottom:6px;">Test Google API Credentials</h2>
+  <p style="font-size:12px;color:#666;margin-bottom:12px;">
+    Uses the service account email and private key <strong>currently saved in the database</strong>
+    to request an access token from Google. Save your settings above before testing.
+  </p>
+  <button type="button" id="test-creds-btn" class="button" onclick="testGoogleCredentials()">
+    Test Credentials
+  </button>
+  <span id="test-creds-result" style="margin-left:14px;font-size:12px;"></span>
+</div>
+
+<!-- ── Test Search Console Connection ────────────────────────────────────── -->
+<div class="module" style="padding:16px 16px 20px;margin-top:8px;">
+  <h2 style="font-size:13px;margin-bottom:6px;">Test Search Console Connection</h2>
+  <p style="font-size:12px;color:#666;margin-bottom:12px;">
+    Verifies that the configured property URL is accessible in your Search Console account.
+    Requires valid credentials saved above.
+  </p>
+  <button type="button" id="test-gsc-btn" class="button" onclick="testSearchConsole()">
+    Test Search Console
+  </button>
+  <span id="test-gsc-result" style="margin-left:14px;font-size:12px;"></span>
+</div>
+
+<script>
+(function () {
+  function getCookie(name) {
+    var match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  function apiPost(url, btnId, resultId) {
+    var btn = document.getElementById(btnId);
+    var result = document.getElementById(resultId);
+    btn.disabled = true;
+    result.textContent = 'Testing\u2026';
+    result.style.color = '#666';
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'Content-Type': 'application/json',
+      },
+    })
+    .then(function (resp) { return resp.json(); })
+    .then(function (data) {
+      if (data.success) {
+        result.textContent = '\u2713 ' + data.message;
+        result.style.color = '#28a745';
+      } else {
+        result.textContent = '\u2717 ' + (data.error || 'Unknown error');
+        result.style.color = '#dc3545';
+      }
+    })
+    .catch(function (err) {
+      result.textContent = '\u2717 Request failed: ' + err.message;
+      result.style.color = '#dc3545';
+    })
+    .finally(function () { btn.disabled = false; });
+  }
+
+  window.testGoogleCredentials = function () {
+    apiPost(
+      '{% url "admin:seo_settings_seoglobalsettings_test_google_api" %}',
+      'test-creds-btn',
+      'test-creds-result'
+    );
+  };
+
+  window.testSearchConsole = function () {
+    apiPost(
+      '{% url "admin:seo_settings_seoglobalsettings_test_search_console" %}',
+      'test-gsc-btn',
+      'test-gsc-result'
+    );
+  };
+}());
+</script>
+
+{% endblock %}

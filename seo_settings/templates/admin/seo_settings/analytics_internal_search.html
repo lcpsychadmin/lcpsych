@@ -1,0 +1,191 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Internal Search Analytics | Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmXJYDGQKHKaJN6nIGMbFpBP7sMv"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+        crossorigin="anonymous"></script>
+<style>
+  #seo-analytics { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #212529; line-height: 1.5; }
+  #seo-analytics *, #seo-analytics *::before, #seo-analytics *::after { box-sizing: border-box; }
+  #seo-analytics .chart-card { border: 0; box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+  #seo-analytics .table { font-size: 12px; }
+  #seo-analytics .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: #6c757d; margin-bottom: 12px; }
+  #seo-analytics .stat-pill { background: #f8f9fa; border-radius: 999px; padding: 2px 12px; font-size: 11px; font-weight: 600; color: #495057; }
+  .analytics-action-result { font-size:11px; padding:3px 8px; border-radius:4px; margin-top:4px; }
+  .analytics-action-result.ok  { background:#d1e7dd; color:#0a3622; }
+  .analytics-action-result.err { background:#f8d7da; color:#58151c; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; SEO Intelligence
+  &rsaquo; Internal Search Analytics
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>Internal Search Analytics</h1>{% endblock %}
+
+{% block content %}
+<div id="seo-analytics">
+
+  <div class="d-flex align-items-center flex-wrap gap-2 mb-4">
+    <span class="stat-pill"><i class="bi bi-search me-1"></i>{{ total_searches }} total searches</span>
+    <div class="ms-auto d-flex gap-2">
+      <button type="button" id="act-clear-btn" class="btn btn-sm btn-outline-danger"
+              onclick="analyticsActionConfirm('{{ action_urls.clear_internal_search }}','act-clear','Delete all internal search records?')" style="font-size:11px;">
+        <i class="bi bi-trash3 me-1"></i>Clear All
+      </button>
+    </div>
+  </div>
+  <div id="act-clear-result" class="analytics-action-result" style="display:none;"></div>
+
+  {# ── Bar chart: most searched terms ──────────────────────────────── #}
+  <section class="mb-5">
+    <p class="section-label">Most searched terms (top 20)</p>
+    {% if top_terms %}
+    <div class="card chart-card p-3" style="max-width:900px;">
+      <canvas id="chartTerms" height="80"></canvas>
+    </div>
+    {% else %}
+    <p class="text-muted" style="font-size:13px;">No search data yet.</p>
+    {% endif %}
+  </section>
+
+  {# ── Two-column tables ───────────────────────────────────────────── #}
+  <div class="row g-4">
+
+    {# Recent searches #}
+    <div class="col-lg-6">
+      <p class="section-label">Recent searches</p>
+      {% if recent_searches %}
+      <div class="card border-0 shadow-sm">
+        <div class="table-responsive" style="max-height:420px;overflow-y:auto;">
+          <table class="table table-hover mb-0">
+            <thead class="table-light sticky-top">
+              <tr><th>Term</th><th>Timestamp</th></tr>
+            </thead>
+            <tbody>
+              {% for s in recent_searches %}
+              <tr>
+                <td>{{ s.term }}</td>
+                <td class="text-muted">{{ s.timestamp|date:"M j, Y g:i A" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted" style="font-size:13px;">No data yet.</p>
+      {% endif %}
+    </div>
+
+    {# Low-frequency terms (potential "no results") #}
+    <div class="col-lg-6">
+      <p class="section-label">
+        Low-frequency terms
+        <span class="fw-normal text-muted">(searched once — likely found nothing)</span>
+      </p>
+      {% if rare_terms %}
+      <div class="card border-0 shadow-sm">
+        <div class="table-responsive" style="max-height:420px;overflow-y:auto;">
+          <table class="table table-hover mb-0">
+            <thead class="table-light sticky-top">
+              <tr><th>Term</th><th class="text-end">Count</th></tr>
+            </thead>
+            <tbody>
+              {% for t in rare_terms %}
+              <tr>
+                <td>{{ t.term }}</td>
+                <td class="text-end text-muted">{{ t.count }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted" style="font-size:13px;">No rare terms found.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>{# #seo-analytics #}
+
+<script>
+(function () {
+  const raw = JSON.parse(document.getElementById('chart-data').textContent);
+  if (!raw.labels.length) return;
+
+  new Chart(document.getElementById('chartTerms'), {
+    type: 'bar',
+    data: {
+      labels: raw.labels,
+      datasets: [{
+        label: 'Searches',
+        data: raw.values,
+        backgroundColor: 'rgba(13,110,253,.75)',
+        borderColor: '#0d6efd',
+        borderWidth: 1,
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { font: { size: 10 } } },
+        y: { ticks: { font: { size: 10 } } },
+      },
+    },
+  });
+})();
+</script>
+{{ chart_data_json|json_script:"chart-data" }}
+
+<script>
+(function () {
+  function getCsrf() {
+    var m = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  window.analyticsAction = function (url, key) {
+    var btn = document.getElementById(key + '-btn');
+    var box = document.getElementById(key + '-result');
+    if (btn) btn.disabled = true;
+    if (box) { box.style.display = 'none'; box.className = 'analytics-action-result'; }
+    fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!box) return;
+        box.style.display = 'block';
+        if (d.status === 'ok') { box.classList.add('ok'); box.textContent = '\u2713 Done'; }
+        else { box.classList.add('err'); box.textContent = '\u2717 ' + (d.message || 'Error'); }
+      })
+      .catch(function (e) { if (box) { box.style.display='block'; box.classList.add('err'); box.textContent='\u2717 '+e.message; } })
+      .finally(function () { if (btn) btn.disabled = false; });
+  };
+  window.analyticsActionConfirm = function (url, key, msg) {
+    if (!window.confirm(msg + '\n\nThis cannot be undone.')) return;
+    analyticsAction(url, key);
+  };
+}());
+</script>
+{% endblock %}

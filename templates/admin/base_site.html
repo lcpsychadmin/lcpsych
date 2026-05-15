@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {% trans 'Site administration' %}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">{% trans 'LCPsych Administration' %}</a>
+</h1>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  /* ── SEO Intelligence sidebar group ────────────────────────────────── */
+
+  /* Parent row for the Analytics sub-group (non-clickable label) */
+  #nav-sidebar tr.seo-nav-analytics-parent-row th {
+    padding: 0;
+  }
+  #nav-sidebar .seo-nav-analytics-parent {
+    display: block;
+    padding: 6px 15px 4px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--body-quiet-color, #666);
+    cursor: default;
+    user-select: none;
+  }
+  #nav-sidebar .seo-nav-analytics-parent .bi {
+    margin-right: 4px;
+    font-size: 0.9em;
+    opacity: 0.7;
+  }
+
+  /* Analytics child rows — indented */
+  #nav-sidebar tr.seo-analytics-child th a {
+    padding-left: 28px;
+    font-size: 0.95em;
+  }
+
+  /* Active state shared with Django's own current-model class */
+  #nav-sidebar tr.seo-nav-row.current-model th a,
+  #nav-sidebar tr.seo-analytics-child.current-model th a {
+    font-weight: bold;
+  }
+</style>
+{% endblock %}

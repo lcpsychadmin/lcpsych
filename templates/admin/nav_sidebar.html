@@ -1,0 +1,105 @@
+{% load i18n %}
+<button class="sticky" id="nav-sidebar-toggle" aria-label="{% trans 'Toggle navigation' %}">&#x25c4;</button>
+<nav id="nav-sidebar" class="sticky" aria-label="{% trans 'Navigation' %}">
+  <div id="nav-filter">
+    <input type="search" placeholder="{% trans 'Start typing to filter…' %}"
+           id="nav-sidebar-search" aria-label="{% trans 'Filter navigation items' %}">
+  </div>
+
+  {# ── SEO Intelligence custom group ───────────────────────────────────
+     seo_nav is injected by LCPsychAdminSite.each_context().
+     Each item: {label, url, icon, children}
+     The Analytics item has children=[{label, url, icon}] instead of url.
+  #}
+  {% if seo_nav %}
+  {% with path=request.path %}
+  <div class="module{% if '/seo_settings/' in path %} current-app{% endif %}" id="app-seo-intelligence">
+    <table>
+      <caption>
+        <a href="{% url 'admin:seo_settings_seocontrolpanel_panel' %}" class="section">
+          SEO Intelligence
+        </a>
+      </caption>
+
+      {% for item in seo_nav %}
+        {% if item.children %}
+        {# Analytics parent row — not a link, just a label #}
+        <tr class="seo-nav-analytics-parent-row">
+          <th scope="row" colspan="2">
+            <span class="seo-nav-analytics-parent">
+              {% if item.icon %}<i class="bi bi-{{ item.icon }}"></i>{% endif %}
+              {{ item.label }}
+            </span>
+          </th>
+        </tr>
+        {% for child in item.children %}
+        <tr class="seo-analytics-child{% if child.url != '#' and child.url in path %} current-model{% endif %}">
+          <th scope="row">
+            <a href="{{ child.url }}"
+               {% if child.url != '#' and child.url in path %}aria-current="page"{% endif %}>
+              {{ child.label }}
+            </a>
+          </th>
+          <td></td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        {# Direct nav link #}
+        <tr class="seo-nav-row{% if item.url != '#' and item.url in path %} current-model{% endif %}">
+          <th scope="row">
+            <a href="{{ item.url }}"
+               {% if item.url != '#' and item.url in path %}aria-current="page"{% endif %}>
+              {{ item.label }}
+            </a>
+          </th>
+          <td></td>
+        </tr>
+        {% endif %}
+      {% endfor %}
+
+    </table>
+  </div>
+  {% endwith %}
+  {% endif %}
+
+  {# ── Standard app list — seo_settings excluded (replaced above) ────── #}
+  {% for app in available_apps %}
+  {% if app.app_label != 'seo_settings' %}
+  <div class="module{% if app.app_label == current_app %} current-app{% endif %}" id="app-{{ app.app_label }}">
+    <table>
+      <caption>
+        <a href="{{ app.app_url }}" class="section"
+           title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">
+          {{ app.name }}
+        </a>
+      </caption>
+      {% for model in app.models %}
+      <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path %} current-model{% endif %}">
+        {% if model.admin_url %}
+        <th scope="row">
+          <a href="{{ model.admin_url }}"
+             {% if model.admin_url in request.path %}aria-current="page"{% endif %}>
+            {{ model.name }}
+          </a>
+        </th>
+        {% else %}
+        <th scope="row">{{ model.name }}</th>
+        {% endif %}
+        {% if model.add_url %}
+        <td>
+          <a href="{{ model.add_url }}"
+             title="{% blocktrans with model.name as name %}Add {{ name }}{% endblocktrans %}">
+            {% trans 'Add' %}
+          </a>
+        </td>
+        {% else %}
+        <td></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+</nav>

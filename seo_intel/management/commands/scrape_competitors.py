@@ -49,8 +49,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "keywords_file",
+            nargs="?",
             type=str,
-            help="Path to a text file with one keyword per line (#-prefixed lines are comments).",
+            default=None,
+            help="Path to a text file with one keyword per line (#-prefixed lines are comments). Omit when using --from-db.",
+        )
+        parser.add_argument(
+            "--from-db",
+            action="store_true",
+            help="Load keywords from active KeywordSeed records in the database instead of a file.",
         )
         parser.add_argument(
             "--results",
@@ -75,24 +82,34 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from seo_intel.services.serp_scraper import scrape_keyword, save_serp_results
 
-        keywords_path = Path(options["keywords_file"])
-        if not keywords_path.exists():
-            raise CommandError(f"Keywords file not found: {keywords_path}")
+        if options["from_db"]:
+            from seo_settings.models import KeywordSeed
+            keywords = list(
+                KeywordSeed.objects.filter(active=True)
+                .order_by("category", "keyword")
+                .values_list("keyword", flat=True)
+            )
+            if not keywords:
+                raise CommandError("No active KeywordSeed records found in the database.")
+            self.stdout.write(f"Found {len(keywords)} active keyword seed(s) from database.")
+        else:
+            if not options["keywords_file"]:
+                raise CommandError(
+                    "Provide a keywords_file argument or use --from-db to load from the database."
+                )
+            keywords_path = Path(options["keywords_file"])
+            if not keywords_path.exists():
+                raise CommandError(f"Keywords file not found: {keywords_path}")
 
-        # Parse keywords file
-        raw_lines = keywords_path.read_text(encoding="utf-8").splitlines()
-        keywords = [
-            line.strip()
-            for line in raw_lines
-            if line.strip() and not line.strip().startswith("#")
-        ]
-
-        if not keywords:
-            raise CommandError(f"No keywords found in {keywords_path}")
-
-        self.stdout.write(
-            f"Found {len(keywords)} keyword(s) in {keywords_path.name}."
-        )
+            raw_lines = keywords_path.read_text(encoding="utf-8").splitlines()
+            keywords = [
+                line.strip()
+                for line in raw_lines
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            if not keywords:
+                raise CommandError(f"No keywords found in {keywords_path}")
+            self.stdout.write(f"Found {len(keywords)} keyword(s) in {keywords_path.name}.")
 
         if options["dry_run"]:
             for i, kw in enumerate(keywords, 1):

@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     'blog',
     'geo',
     'seo_intel',
+    'seo_settings',
     'django_celery_beat',
 ]
 

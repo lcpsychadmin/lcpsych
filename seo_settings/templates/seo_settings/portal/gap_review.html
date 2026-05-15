@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}SEO Intelligence — Gap Review | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.data-table th { text-align: left; padding: 0.5rem 0.65rem; font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+.data-table td { padding: 0.55rem 0.65rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.6rem; padding: 0.4rem 0.9rem; font-size: 0.82rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; text-decoration: none; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-danger { background: #dc2626; color: #fff; }
+.seo-btn-danger:hover { background: #b91c1c; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.seo-btn-sm { padding: 0.28rem 0.65rem; font-size: 0.76rem; }
+.tab-btn { padding: 0.45rem 1rem; font-size: 0.84rem; font-weight: 600; border-radius: 0.6rem; border: 1px solid transparent; cursor: pointer; text-decoration: none; transition: all 0.15s; color: #0f3f46; background: transparent; }
+.tab-btn.active { background: #0f3f46; color: #fff; border-color: #0f3f46; }
+.tab-btn:not(.active):hover { background: #e6f6f3; border-color: #92DCE5; }
+.filter-select { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.55rem; padding: 0.35rem 0.55rem; font-size: 0.8rem; color: #0f3f46; background: #fff; }
+.yes-pill { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 0.12rem 0.45rem; border-radius: 9999px; background: #d1fae5; color: #065f46; }
+.no-pill { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 0.12rem 0.45rem; border-radius: 9999px; background: #f1f5f9; color: #94a3b8; }
+.row-approve { background: #dcfce7 !important; }
+.row-dismiss { background: #fef2f2 !important; opacity: 0.5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">SEO Intelligence</h1>
+      <p class="mt-3 text-white/85 text-lg">Gap Review — approve or dismiss content opportunities.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-5">
+
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if 'error' in msg.tags %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# Tabs #}
+          <div class="card-surface p-4">
+            <div class="flex flex-wrap gap-2 items-center">
+              {% for val, label, count in tab_items %}
+              <a href="{{ review_url }}?status={{ val }}" class="tab-btn {% if f_status == val %}active{% endif %}">{{ label }} <span class="text-xs ml-1 opacity-75">({{ count }})</span></a>
+              {% endfor %}
+              <div class="ml-auto flex gap-2">
+                <a href="{{ export_url }}" class="seo-btn seo-btn-outline seo-btn-sm">Export CSV</a>
+              </div>
+            </div>
+          </div>
+
+          {# Filters #}
+          <div class="card-surface p-4">
+            <form method="get" action="" class="flex flex-wrap gap-3 items-end">
+              <input type="hidden" name="status" value="{{ f_status }}">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Category</label>
+                <select name="category" class="filter-select" onchange="this.form.submit()">
+                  <option value="">All categories</option>
+                  {% for val, label in category_choices %}
+                  <option value="{{ val }}" {% if f_category == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Competitor Presence</label>
+                <select name="competitor_presence" class="filter-select" onchange="this.form.submit()">
+                  <option value="">Any</option>
+                  <option value="1" {% if f_competitor == '1' %}selected{% endif %}>Yes</option>
+                  <option value="0" {% if f_competitor == '0' %}selected{% endif %}>No</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Action contains</label>
+                <input type="text" name="recommended_action" value="{{ f_action }}" placeholder="e.g. blog post" class="filter-select w-36">
+              </div>
+              <button type="submit" class="seo-btn seo-btn-outline seo-btn-sm">Filter</button>
+              <a href="{{ review_url }}?status={{ f_status }}" class="seo-btn seo-btn-outline seo-btn-sm">Reset</a>
+            </form>
+          </div>
+
+          {# Bulk actions #}
+          {% if page_obj %}
+          <div class="card-surface p-5">
+            <form method="post" action="{{ review_url }}?status={{ f_status }}&category={{ f_category }}&competitor_presence={{ f_competitor }}&recommended_action={{ f_action }}" id="bulk-form">
+              {% csrf_token %}
+              <div class="flex items-center gap-3 mb-4 flex-wrap">
+                <label class="flex items-center gap-2 text-sm font-semibold text-[#0f3f46] cursor-pointer">
+                  <input type="checkbox" id="select-all" class="w-4 h-4 accent-[#3C9C64]"> Select all
+                </label>
+                <span class="text-xs text-slate-500">{{ filtered_count }} record(s)</span>
+                <div class="ml-auto flex gap-2">
+                  <button type="submit" name="bulk_action" value="approve" class="seo-btn seo-btn-primary seo-btn-sm" onclick="return confirmBulk('approve')">Approve Selected</button>
+                  <button type="submit" name="bulk_action" value="dismiss" class="seo-btn seo-btn-danger seo-btn-sm" onclick="return confirmBulk('dismiss')">Dismiss Selected</button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:32px"></th>
+                      <th>Keyword</th>
+                      <th class="text-right">Vol.</th>
+                      <th>Comp.</th>
+                      <th>Us</th>
+                      <th>Action</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for rec in page_obj %}
+                    <tr id="gap-row-{{ rec.pk }}" class="{% if rec.resolved %}row-approve{% endif %}">
+                      <td><input type="checkbox" name="selected_ids" value="{{ rec.pk }}" class="row-check w-4 h-4 accent-[#3C9C64]"></td>
+                      <td>
+                        <a href="{{ detail_base }}{{ rec.pk }}/" class="font-semibold text-[#0f3f46] hover:text-[#3C9C64] hover:underline">{{ rec.keyword }}</a>
+                      </td>
+                      <td class="text-right tabular-nums text-slate-600">{{ rec.search_volume }}</td>
+                      <td><span class="{% if rec.competitor_presence %}yes-pill{% else %}no-pill{% endif %}">{% if rec.competitor_presence %}Y{% else %}N{% endif %}</span></td>
+                      <td><span class="{% if rec.lcpsych_presence %}yes-pill{% else %}no-pill{% endif %}">{% if rec.lcpsych_presence %}Y{% else %}N{% endif %}</span></td>
+                      <td class="text-slate-500 text-xs max-w-[140px] truncate">{{ rec.recommended_action }}</td>
+                      <td class="text-right" style="white-space:nowrap">
+                        {% if not rec.resolved %}
+                        <button class="seo-btn seo-btn-primary seo-btn-sm mr-1" onclick="rowAction('{{ approve_base }}{{ rec.pk }}/approve/', {{ rec.pk }}, 'approve')">✓</button>
+                        {% endif %}
+                        {% if not rec.ignored %}
+                        <button class="seo-btn seo-btn-outline seo-btn-sm" onclick="rowAction('{{ dismiss_base }}{{ rec.pk }}/dismiss/', {{ rec.pk }}, 'dismiss')">✕</button>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </form>
+
+            {# Pagination #}
+            {% if paginator.num_pages > 1 %}
+            <div class="flex gap-2 mt-4 flex-wrap">
+              {% if page_obj.has_previous %}
+              <a href="?status={{ f_status }}&category={{ f_category }}&competitor_presence={{ f_competitor }}&recommended_action={{ f_action }}&page={{ page_obj.previous_page_number }}" class="seo-btn seo-btn-outline seo-btn-sm">← Prev</a>
+              {% endif %}
+              <span class="text-sm text-slate-500 py-1 px-2">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+              {% if page_obj.has_next %}
+              <a href="?status={{ f_status }}&category={{ f_category }}&competitor_presence={{ f_competitor }}&recommended_action={{ f_action }}&page={{ page_obj.next_page_number }}" class="seo-btn seo-btn-outline seo-btn-sm">Next →</a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="card-surface p-6">
+            <p class="text-slate-500 text-sm">No records found for the current filters.</p>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+function getCsrf() { var m = document.cookie.match(/csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+
+document.getElementById('select-all').addEventListener('change', function() {
+  document.querySelectorAll('.row-check').forEach(function(c) { c.checked = this.checked; }, this);
+});
+
+function confirmBulk(action) {
+  var checked = document.querySelectorAll('.row-check:checked').length;
+  if (!checked) { alert('Select at least one record.'); return false; }
+  return confirm(action === 'approve' ? 'Approve ' + checked + ' record(s)?' : 'Dismiss ' + checked + ' record(s)?');
+}
+
+function rowAction(url, pk, type) {
+  fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.status !== 'ok') return;
+      var row = document.getElementById('gap-row-' + pk);
+      if (!row) return;
+      if (type === 'approve') {
+        row.className = (row.className || '').replace('row-dismiss','') + ' row-approve';
+        var btn = row.querySelector('[onclick*="approve"]');
+        if (btn) btn.remove();
+      } else {
+        row.className = (row.className || '').replace('row-approve','') + ' row-dismiss';
+        var btn = row.querySelector('[onclick*="dismiss"]');
+        if (btn) btn.remove();
+      }
+    });
+}
+</script>
+{% endblock %}

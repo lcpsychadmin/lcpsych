@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Gap Detail: {{ record.keyword }} | L+C Psych{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.75rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+.data-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
+.data-table tr:last-child td { border-bottom: none; }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; text-decoration: none; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-danger { background: #dc2626; color: #fff; }
+.seo-btn-danger:hover { background: #b91c1c; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.action-tag { font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 0.4rem; margin-left: 0.5rem; display: inline-block; }
+.action-tag-ok { background: #d1fae5; color: #065f46; }
+.action-tag-err { background: #fee2e2; color: #991b1b; }
+.stat-block { background: #f8fbfc; border: 1px solid rgba(146,220,229,0.4); border-radius: 0.75rem; padding: 0.9rem 1.2rem; }
+.stat-val { font-size: 1.6rem; font-weight: 700; color: #0f3f46; }
+.stat-lbl { font-size: 0.75rem; color: #64748b; margin-top: 0.1rem; }
+.rank-pill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; }
+.rank-top { background: #dcfce7; color: #166534; }
+.rank-mid { background: #fef9c3; color: #854d0e; }
+.rank-low { background: #fee2e2; color: #991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4">
+      <a href="{{ back_url }}" class="inline-flex items-center gap-1 text-white/70 hover:text-white text-sm mb-4 no-underline">← Back to Gap Review</a>
+      <h1 class="text-3xl font-semibold m-0">{{ record.keyword }}</h1>
+      <p class="mt-2 text-white/80 text-base">Content gap detail</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+
+          {# Meta + Actions #}
+          <div class="card-surface p-6">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+              <div class="stat-block">
+                <div class="stat-val">{{ record.search_volume }}</div>
+                <div class="stat-lbl">Est. search volume</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val">{% if record.competitor_presence %}Yes{% else %}No{% endif %}</div>
+                <div class="stat-lbl">Competitor ranks</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val">{% if record.lcpsych_presence %}Yes{% else %}No{% endif %}</div>
+                <div class="stat-lbl">We rank</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val">{% if record.resolved %}Done{% elif record.ignored %}Skip{% else %}Open{% endif %}</div>
+                <div class="stat-lbl">Status</div>
+              </div>
+            </div>
+
+            {% if record.recommended_action %}
+            <p class="text-slate-700 text-sm mb-4"><strong>Recommended action:</strong> {{ record.recommended_action }}</p>
+            {% endif %}
+
+            <div class="flex gap-2 flex-wrap">
+              {% if not record.resolved %}
+              <button class="seo-btn seo-btn-primary" onclick="gapAction('{{ approve_url }}','Approve this gap as resolved?', 'approved')">Mark Approved</button>
+              <span id="res-approved" class="action-tag" style="display:none"></span>
+              {% endif %}
+              {% if not record.ignored %}
+              <button class="seo-btn seo-btn-danger" onclick="gapAction('{{ dismiss_url }}','Dismiss this gap?', 'dismissed')">Dismiss</button>
+              <span id="res-dismissed" class="action-tag" style="display:none"></span>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Competitor results #}
+          {% if competitor_results %}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Competitor Rankings for "{{ record.keyword }}"</h2>
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead><tr><th>Competitor URL</th><th>Title</th><th class="text-right">Rank</th><th>Date</th></tr></thead>
+                <tbody>
+                  {% for r in competitor_results %}
+                  <tr>
+                    <td class="font-mono text-xs max-w-xs truncate">{{ r.competitor_url }}</td>
+                    <td class="text-sm max-w-xs truncate">{{ r.title|default:"—" }}</td>
+                    <td class="text-right"><span class="rank-pill {% if r.rank <= 3 %}rank-top{% elif r.rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">{{ r.rank }}</span></td>
+                    <td class="text-xs text-slate-400">{{ r.timestamp|date:"M j, Y" }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% else %}
+          <div class="card-surface p-6">
+            <p class="text-slate-500 text-sm">No competitor SERP results on record for this keyword.</p>
+          </div>
+          {% endif %}
+
+          {# LC Psych pages #}
+          {% if lcpsych_pages %}
+          <div class="card-surface p-6">
+            <h2 class="text-xl font-semibold text-[#0f3f46] mb-4">Your Pages for "{{ record.keyword }}"</h2>
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead><tr><th>Page</th><th class="text-right">Total Clicks</th><th class="text-right">Avg Position</th></tr></thead>
+                <tbody>
+                  {% for p in lcpsych_pages %}
+                  <tr>
+                    <td class="font-mono text-xs max-w-sm truncate">{{ p.page }}</td>
+                    <td class="text-right tabular-nums">{{ p.total_clicks }}</td>
+                    <td class="text-right tabular-nums">{{ p.avg_position|floatformat:1 }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% else %}
+          <div class="card-surface p-6">
+            <p class="text-slate-500 text-sm">No Search Console data for this keyword on your site.</p>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+function getCsrf() { var m = document.cookie.match(/csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+function gapAction(url, msg, id) {
+  if (!confirm(msg)) return;
+  var el = document.getElementById('res-' + id);
+  fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCsrf() } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!el) return;
+      el.style.display = 'inline-block';
+      el.className = 'action-tag ' + (d.status === 'ok' ? 'action-tag-ok' : 'action-tag-err');
+      el.textContent = d.status === 'ok' ? 'Done ✓' : ('Error: ' + (d.message || 'failed'));
+    });
+}
+</script>
+{% endblock %}
