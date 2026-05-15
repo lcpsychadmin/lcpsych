@@ -447,19 +447,28 @@ def ai_suggest_keywords(request):
 
     system_prompt = (
         "You are an SEO specialist for a psychology and mental health private practice. "
-        "Suggest search keywords that prospective therapy clients or their families might use to find services. "
+        "Your goal is to suggest ONLY high-impact keyword phrases — ones that combine a specific clinical/service "
+        "term AND a local geography term from the practice's service area wherever possible. "
+        "High-impact means the keyword is long-tail, locally specific, and reflects clear purchase intent "
+        "(i.e. someone ready to book a therapy appointment or assessment). "
+        "Avoid generic single-word or non-local phrases like 'therapy', 'counseling', or 'mental health' on their own — "
+        "these are too broad and low-converting. Instead prefer phrases like "
+        "'ADHD testing Florence KY', 'anxiety therapist Covington Kentucky', "
+        "'postpartum depression counselor northern Kentucky', 'OCD treatment Cincinnati area'. "
         "Return ONLY a JSON array — no prose, no code fences — where each element is an object with keys: "
         '"keyword" (string), "category" (one of: service, testing, modality, location), '
-        '"reason" (one short sentence explaining relevance). '
+        '"reason" (one short sentence explaining why this phrase has strong local + clinical intent). '
         f"Valid categories: {category_labels}. "
-        "Aim for 12–16 diverse, high-intent suggestions spanning all four categories. "
-        "Incorporate currently trending mental health and psychology search topics such as: "
+        "Aim for 12–16 suggestions. At least half should be geo-qualified (city or state + service term). "
+        "The rest should be high-commercial-intent phrases (specific condition + service type, e.g. "
+        "'autism spectrum evaluation adults', 'trauma-informed therapist near me', "
+        "'ketamine-assisted therapy assessment', 'executive functioning coaching adults ADHD'). "
+        "Incorporate currently trending mental health topics: "
         "adult ADHD diagnosis, autism spectrum assessments in adults, perinatal and postpartum mood disorders, "
-        "burnout and work-related stress, telehealth therapy, OCD treatment, ketamine-assisted therapy, "
-        "executive functioning coaching, neurodivergent-affirming therapy, and somatic or trauma-informed care. "
-        "For 'location' category keywords, ONLY use the specific cities and states this practice actually serves — "
-        "do NOT suggest cities outside this list. Location keywords should be specific and local "
-        "(e.g. 'anxiety therapy Florence KY') not generic regional names. "
+        "burnout, telehealth therapy, OCD treatment, ketamine-assisted therapy, "
+        "executive functioning coaching, neurodivergent-affirming therapy, somatic or trauma-informed care. "
+        "For geo-qualified keywords, ONLY use cities and states this practice actually serves — "
+        "do NOT invent or use cities outside these lists. "
         f"States served: {state_list}. "
         f"Cities/areas served: {city_list}. "
         "Do NOT include any keyword already in the existing list."
@@ -467,7 +476,8 @@ def ai_suggest_keywords(request):
         f"Existing keywords (do not repeat): {existing[:200]}"
     )
     user_prompt = (
-        f"Suggest new keyword seeds for a psychology practice serving {state_list}."
+        f"Suggest high-impact, locally-specific keyword seeds for a psychology practice serving {state_list}. "
+        f"Prioritize phrases that combine a clinical service term with a specific city or 'near me'."
         f"{' Topic focus: ' + focus if focus else ''}"
     )
 
@@ -520,6 +530,72 @@ def ai_suggest_keywords(request):
             'category': cat,
             'reason': (item.get('reason') or '').strip(),
         })
+
+    # Score each suggestion live using the keyword scoring engine
+    from collections import defaultdict
+    from django.db.models import Sum
+    from seo_intel.models import CompetitorHit, KeywordScore, LCPsychHit, SearchConsoleQuery
+    from seo_intel.services.keyword_scoring import load_geo_terms, score_keyword
+
+    kw_list = [f['keyword'] for f in filtered]
+
+    gsc_stats: dict = {}
+    for row in (
+        SearchConsoleQuery.objects
+        .filter(query__in=kw_list)
+        .values('query')
+        .annotate(impressions=Sum('impressions'), clicks=Sum('clicks'))
+    ):
+        gsc_stats[row['query']] = {
+            'impressions': row['impressions'] or 0,
+            'clicks': row['clicks'] or 0,
+        }
+
+    competitor_ranks: dict = defaultdict(list)
+    for kw, rank in CompetitorHit.objects.filter(keyword__in=kw_list).values_list('keyword', 'rank'):
+        competitor_ranks[kw].append(rank)
+
+    lcpsych_ranks: dict = defaultdict(list)
+    for kw, rank in LCPsychHit.objects.filter(keyword__in=kw_list).values_list('keyword', 'rank'):
+        lcpsych_ranks[kw].append(rank)
+
+    geo_terms = load_geo_terms()
+
+    score_updates = []
+    for item in filtered:
+        result = score_keyword(
+            item['keyword'],
+            gsc_stats=gsc_stats,
+            competitor_ranks=competitor_ranks,
+            lcpsych_ranks=lcpsych_ranks,
+            geo_terms=geo_terms,
+        )
+        item['score'] = result['priority_score']
+        item['score_breakdown'] = {
+            'search_demand': result['search_demand_score'],
+            'competitor_pressure': result['competitor_pressure_score'],
+            'lc_presence': result['lcpsych_presence_score'],
+            'local_intent': result['local_intent_score'],
+            'commercial_intent': result['commercial_intent_score'],
+        }
+        score_updates.append(result)
+
+    # Persist scores so the Keyword Universe table reflects them immediately
+    for result in score_updates:
+        KeywordScore.objects.update_or_create(
+            keyword=result['keyword'],
+            defaults={
+                'search_demand_score': result['search_demand_score'],
+                'competitor_pressure_score': result['competitor_pressure_score'],
+                'lcpsych_presence_score': result['lcpsych_presence_score'],
+                'local_intent_score': result['local_intent_score'],
+                'commercial_intent_score': result['commercial_intent_score'],
+                'priority_score': result['priority_score'],
+            },
+        )
+
+    # Sort highest score first
+    filtered.sort(key=lambda x: -x['score'])
 
     return JsonResponse({'suggestions': filtered})
 
