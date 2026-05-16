@@ -150,8 +150,25 @@ def _cache_key(domain: str) -> str:
 
 
 def get_cached_crawl(domain: str) -> list[dict] | None:
-    """Return cached crawl results for *domain*, or None if not cached."""
-    return cache.get(_cache_key(domain))
+    """Return crawl results for *domain* — cache first, then DB."""
+    cached = cache.get(_cache_key(domain))
+    if cached is not None:
+        return cached
+    # Fall back to the database snapshot
+    try:
+        from seo_intel.models import CompetitorCrawl
+        snap = CompetitorCrawl.objects.filter(domain=_normalise_domain(domain)).first()
+        if snap is not None:
+            logger.info(
+                "competitor_crawler: DB hit for %s (%d pages, crawled %s)",
+                domain, snap.page_count, snap.crawled_at,
+            )
+            # Warm the cache so subsequent reads are fast
+            cache.set(_cache_key(domain), snap.pages, CACHE_TTL)
+            return snap.pages
+    except Exception as exc:
+        logger.warning("competitor_crawler: DB fallback failed for %s: %s", domain, exc)
+    return None
 
 
 def invalidate_crawl(domain: str) -> None:
@@ -352,4 +369,20 @@ def crawl_competitor(domain: str, max_pages: int = 200, force: bool = False) -> 
         "competitor_crawler: finished %s — %d pages, %d errors", domain, len(pages), errors
     )
     cache.set(cache_key, pages, CACHE_TTL)
+
+    # Persist to database so data survives dyno restarts / cache expiry
+    try:
+        from django.utils import timezone as _tz
+        from seo_intel.models import CompetitorCrawl
+        CompetitorCrawl.objects.update_or_create(
+            domain=domain,
+            defaults={
+                "crawled_at": _tz.now(),
+                "page_count": len(pages),
+                "pages":      pages,
+            },
+        )
+    except Exception as exc:
+        logger.warning("competitor_crawler: failed to persist crawl for %s: %s", domain, exc)
+
     return pages

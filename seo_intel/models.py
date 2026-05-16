@@ -261,3 +261,24 @@ class KeywordScore(models.Model):
 
     def __str__(self):
         return f'"{self.keyword}" — priority {self.priority_score}'
+
+
+class CompetitorCrawl(models.Model):
+    """Persisted crawl snapshot for one competitor domain.
+
+    One row per domain — updated in-place on each fresh crawl so the table
+    stays small while always holding the most-recent data.
+    """
+
+    domain = models.CharField(max_length=253, unique=True, db_index=True)
+    crawled_at = models.DateTimeField()
+    page_count = models.IntegerField(default=0)
+    pages = models.JSONField(default=list)
+
+    class Meta:
+        ordering = ['domain']
+        verbose_name = 'Competitor crawl'
+        verbose_name_plural = 'Competitor crawls'
+
+    def __str__(self):
+        return f'{self.domain} — {self.page_count} pages @ {self.crawled_at:%Y-%m-%d %H:%M}'

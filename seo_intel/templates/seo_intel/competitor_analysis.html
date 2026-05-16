@@ -114,7 +114,7 @@
                     onchange="this.form.submit()">
               {% for c in competitors %}
               <option value="{{ c.domain }}"{% if c.domain == selected_domain %} selected{% endif %}>
-                {{ c.label|default:c.domain }}
+                {{ c.label|default:c.domain }}{% if c.last_crawled_at %} ({{ c.last_crawled_at|date:"M j" }}){% endif %}
               </option>
               {% endfor %}
             </select>
@@ -132,6 +132,15 @@
           </button>
           {% endif %}
 
+          {# Last crawled timestamp #}
+          {% if last_crawled_at %}
+          <span class="text-xs text-slate-500">
+            Last crawled: {{ last_crawled_at|date:"M j, Y" }} at {{ last_crawled_at|time:"g:i A" }}
+          </span>
+          {% elif selected_domain %}
+          <span class="text-xs text-slate-400 italic">Never crawled</span>
+          {% endif %}
+
           {# Refresh analysis (HTMX) #}
           {% if crawled %}
           <a href="?competitor={{ selected_domain }}"
@@ -139,12 +148,12 @@
              hx-target="#comp-panel"
              hx-swap="innerHTML"
              hx-push-url="true"
-             class="seo-btn seo-btn-outline">⟳ Refresh</a>
+             class="seo-btn seo-btn-outline ml-auto">⟳ Refresh</a>
           {% endif %}
 
           {% if crawled %}
-          <span class="text-xs text-slate-500 ml-auto">
-            {{ overview.page_count }} pages crawled · avg {{ overview.avg_word_count }} words/page
+          <span class="text-xs text-slate-500{% if not last_crawled_at %} ml-auto{% endif %}">
+            {{ overview.page_count }} pages · avg {{ overview.avg_word_count }} words/page
           </span>
           {% endif %}
         </div>

@@ -37,6 +37,7 @@ def _staff_required(view_func):
 @_staff_required
 def competitor_analysis(request):
     from seo_settings.models import CompetitorDomain
+    from seo_intel.models import CompetitorCrawl
     from seo_intel.services.competitor_analyzer import analyze_competitor
 
     # ── Competitor selection ──────────────────────────────────────────────
@@ -47,6 +48,16 @@ def competitor_analysis(request):
         selected_domain = competitors[0].domain
 
     selected = next((c for c in competitors if c.domain == selected_domain), None)
+
+    # Attach last_crawled_at to each competitor object for the template
+    crawl_map = {
+        c.domain: c.crawled_at
+        for c in CompetitorCrawl.objects.filter(
+            domain__in=[c.domain for c in competitors]
+        )
+    }
+    for comp in competitors:
+        comp.last_crawled_at = crawl_map.get(comp.domain)
 
     # ── Analysis ──────────────────────────────────────────────────────────
     analysis: dict = {}
@@ -118,6 +129,7 @@ def competitor_analysis(request):
         "competitors": competitors,
         "selected": selected,
         "selected_domain": selected_domain,
+        "last_crawled_at": crawl_map.get(selected_domain),
         "analysis": analysis,
         "crawled": analysis.get("crawled", False),
         "overview": analysis.get("overview", {}),
