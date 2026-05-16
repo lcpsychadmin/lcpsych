@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title }} — SEO Intelligence{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background:#fff; border:1px solid rgba(15,63,70,.12); border-radius:1rem; box-shadow:0 10px 30px rgba(0,48,57,.06); }
+.stat-block { text-align:center; }
+.stat-num   { font-size:1.6rem; font-weight:700; color:#0f3f46; line-height:1; }
+.stat-label { font-size:.73rem; color:#64748b; margin-top:.2rem; }
+.data-table    { width:100%; border-collapse:collapse; font-size:.86rem; }
+.data-table th { text-align:left; padding:.55rem .65rem; font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748b; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
+.data-table td { padding:.5rem .65rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table tr:hover td { background:#f8fbfc; }
+.form-input   { border:1px solid rgba(15,63,70,.2); border-radius:.6rem; padding:.4rem .7rem; font-size:.85rem; color:#0f3f46; background:#fff; }
+.form-input:focus { outline:none; border-color:#92DCE5; box-shadow:0 0 0 3px rgba(146,220,229,.3); }
+.seo-btn         { display:inline-flex; align-items:center; gap:.4rem; border-radius:.65rem; padding:.45rem 1rem; font-size:.85rem; font-weight:600; border:none; cursor:pointer; transition:all .18s; text-decoration:none; }
+.seo-btn-outline { background:#fff; color:#0f3f46; border:1px solid rgba(15,63,70,.2); }
+.seo-btn-outline:hover { background:#e6f6f3; border-color:#92DCE5; }
+.seo-btn-sm  { padding:.3rem .75rem; font-size:.8rem; }
+.score-pill  { display:inline-block; font-size:.78rem; font-weight:700; padding:.18rem .55rem; border-radius:9999px; min-width:2.4rem; text-align:center; }
+.score-high  { background:#d1fae5; color:#065f46; }
+.score-mid   { background:#fef9c3; color:#854d0e; }
+.score-low   { background:#fee2e2; color:#991b1b; }
+.tab-pill { display:inline-block; font-size:.8rem; font-weight:600; padding:.3rem .85rem; border-radius:2rem; border:1px solid transparent; text-decoration:none; color:#475569; background:#f1f5f9; transition:all .15s; }
+.tab-pill:hover { background:#e2e8f0; color:#0f3f46; }
+.tab-pill-active { background:#0f3f46; color:#fff; border-color:#0f3f46; }
+.empty-state { text-align:center; padding:3rem 1rem; color:#64748b; }
+.empty-state h3 { font-size:1.05rem; font-weight:600; color:#0f3f46; margin-bottom:.4rem; }
+/* Score bars in table */
+.dim-bar-wrap { width:3.5rem; height:5px; background:#e2e8f0; border-radius:3px; overflow:hidden; display:inline-block; vertical-align:middle; }
+.dim-bar-fill { height:100%; border-radius:3px; }
+.bar-high { background:#34d399; }
+.bar-mid  { background:#fbbf24; }
+.bar-low  { background:#f87171; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="bg-brand-deep text-white py-14">
+  <div class="max-w-7xl mx-auto px-4 sm:px-8">
+    <p class="text-sm font-medium uppercase tracking-widest text-cyan-300 mb-2">SEO Intelligence › Competitor Analysis</p>
+    <h1 class="text-4xl font-bold mb-3">Content Quality Analysis</h1>
+    <p class="text-slate-300 text-lg">
+      Per-page quality scoring for {{ selected_domain|default:"a competitor" }} — identify their strong threats and thin opportunities.
+    </p>
+  </div>
+</section>
+
+<section class="py-10 md:py-14">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="settings-layout">
+      {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+      <div class="space-y-5 min-w-0">
+
+        {# ── Toolbar ─────────────────────────────────────────────────── #}
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          {% if competitors %}
+          <form method="get" class="flex items-center gap-2">
+            <label for="comp-select" class="text-sm font-medium text-slate-600">Competitor:</label>
+            <select id="comp-select" name="competitor" class="form-input" onchange="this.form.submit()">
+              {% for c in competitors %}
+              <option value="{{ c.domain }}"{% if c.domain == selected_domain %} selected{% endif %}>
+                {{ c.label|default:c.domain }}{% if c.last_crawled_at %} ({{ c.last_crawled_at|date:"M j" }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            {% if quality_filter != "all" %}
+            <input type="hidden" name="quality" value="{{ quality_filter }}">
+            {% endif %}
+          </form>
+          {% endif %}
+          {% if last_crawled_at %}
+          <span class="text-xs text-slate-500 ml-auto">Crawled {{ last_crawled_at|date:"M j, Y" }}</span>
+          {% endif %}
+        </div>
+
+        {# ── Filter pills ─────────────────────────────────────────────── #}
+        {% if has_data %}
+        <div class="flex flex-wrap gap-2 mb-1">
+          <a href="?competitor={{ selected_domain }}&quality=all"
+             class="tab-pill{% if quality_filter == 'all' %} tab-pill-active{% endif %}">All Pages</a>
+          <a href="?competitor={{ selected_domain }}&quality=strong"
+             class="tab-pill{% if quality_filter == 'strong' %} tab-pill-active{% endif %}">
+            Strong (≥70) <span class="ml-1 text-xs opacity-70">{{ summary.strong_page_count }}</span>
+          </a>
+          <a href="?competitor={{ selected_domain }}&quality=weak"
+             class="tab-pill{% if quality_filter == 'weak' %} tab-pill-active{% endif %}">
+            Weak (&lt;45) <span class="ml-1 text-xs opacity-70">{{ summary.weak_page_count }}</span>
+          </a>
+        </div>
+        {% endif %}
+
+        {# ── Summary cards ────────────────────────────────────────────── #}
+        {% if has_data %}
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num">{{ summary.page_count }}</div>
+            <div class="stat-label">Pages Crawled</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num"><span class="score-pill {{ summary.quality_css }}">{{ summary.avg_quality_score }}</span></div>
+            <div class="stat-label">Avg Quality Score</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-slate-600">{{ summary.avg_word_count }}</div>
+            <div class="stat-label">Avg Words/Page</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-emerald-600">{{ summary.strong_page_count }}</div>
+            <div class="stat-label">Strong Pages</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-amber-600">{{ summary.weak_page_count }}</div>
+            <div class="stat-label">Weak Pages</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Full pages table ─────────────────────────────────────────── #}
+        {% if has_data and pages %}
+        <div class="card-surface overflow-hidden">
+          <div class="p-4 border-b border-slate-100">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">
+              All Scored Pages
+              <span class="text-xs font-normal text-slate-400 normal-case ml-1">({{ pages|length }} pages)</span>
+            </h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Page</th>
+                  <th>Quality</th>
+                  <th title="Word count">Words</th>
+                  <th title="Heading structure">Headings</th>
+                  <th title="Schema types">Schema</th>
+                  <th title="Internal links">Int. Links</th>
+                  <th title="Keyword richness">Keywords</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in pages %}
+                <tr>
+                  <td class="max-w-xs">
+                    <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer"
+                       class="text-brand-teal hover:underline text-sm truncate block max-w-xs"
+                       title="{{ p.url }}">
+                      {{ p.title|truncatechars:60 }}
+                    </a>
+                  </td>
+                  <td>
+                    <span class="score-pill {{ p.quality_css }}">{{ p.quality_score }}</span>
+                  </td>
+                  <td>
+                    <span class="text-xs text-slate-700">{{ p.word_count }}</span>
+                    <span class="dim-bar-wrap ml-1">
+                      <span class="dim-bar-fill {% if p.word_count_score >= 70 %}bar-high{% elif p.word_count_score >= 45 %}bar-mid{% else %}bar-low{% endif %}"
+                            style="width:{{ p.word_count_score }}%"></span>
+                    </span>
+                  </td>
+                  <td>
+                    {% if p.h1 %}<span class="text-xs text-green-600 font-semibold">H1</span>{% else %}<span class="text-xs text-red-400">—</span>{% endif %}
+                    <span class="text-xs text-slate-500 ml-1">+{{ p.h2_count }} H2</span>
+                  </td>
+                  <td>
+                    {% if p.schema_types %}
+                    {% for st in p.schema_types %}<span class="kw-chip">{{ st }}</span>{% endfor %}
+                    {% else %}
+                    <span class="text-xs text-slate-400">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-xs text-slate-600">{{ p.internal_link_count }}</td>
+                  <td class="text-xs text-slate-600">{{ p.keyword_hit_count }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {% elif has_data %}
+        <div class="card-surface p-8 empty-state">
+          <h3>No pages match the current filter</h3>
+        </div>
+
+        {% elif selected_domain %}
+        <div class="card-surface p-8 empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0f3f46" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 opacity-30"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <h3>No crawl data for {{ selected_domain }}</h3>
+          <p class="text-sm text-slate-500">
+            Run a crawl from the
+            <a href="{% url 'seo_intel:competitor_analysis' %}?competitor={{ selected_domain }}" class="text-brand-teal underline">Competitor Analysis page</a>
+            first.
+          </p>
+        </div>
+        {% endif %}
+
+        {# ── Strong + Weak callouts ───────────────────────────────────── #}
+        {% if has_data and quality_filter == 'all' %}
+        <div class="grid md:grid-cols-2 gap-5">
+
+          {# Threats — strong competitor pages #}
+          <div class="card-surface overflow-hidden">
+            <div class="p-4 border-b border-red-100 bg-red-50">
+              <h2 class="text-sm font-bold text-red-700 uppercase tracking-wide">
+                ⚠ Threat Pages — Strong Competitor Content
+              </h2>
+              <p class="text-xs text-red-600 mt-0.5">These pages score ≥70 — competitors you'll need to out-create</p>
+            </div>
+            <table class="data-table">
+              <tbody>
+                {% for p in strong_pages %}
+                <tr>
+                  <td class="max-w-[16rem]">
+                    <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer"
+                       class="text-brand-teal hover:underline text-xs truncate block">
+                      {{ p.title|truncatechars:50 }}
+                    </a>
+                  </td>
+                  <td><span class="score-pill score-high">{{ p.quality_score }}</span></td>
+                  <td class="text-xs text-slate-500">{{ p.word_count }}w</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-xs text-slate-400 py-4">No strong pages found</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {# Opportunities — weak competitor pages #}
+          <div class="card-surface overflow-hidden">
+            <div class="p-4 border-b border-emerald-100 bg-emerald-50">
+              <h2 class="text-sm font-bold text-emerald-700 uppercase tracking-wide">
+                ✓ Opportunity Pages — Thin Competitor Content
+              </h2>
+              <p class="text-xs text-emerald-600 mt-0.5">These pages score &lt;45 — topics where LC Psych can easily win</p>
+            </div>
+            <table class="data-table">
+              <tbody>
+                {% for p in weak_pages %}
+                <tr>
+                  <td class="max-w-[16rem]">
+                    <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer"
+                       class="text-brand-teal hover:underline text-xs truncate block">
+                      {{ p.title|truncatechars:50 }}
+                    </a>
+                  </td>
+                  <td><span class="score-pill score-low">{{ p.quality_score }}</span></td>
+                  <td class="text-xs text-slate-500">{{ p.word_count }}w</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-xs text-slate-400 py-4">No weak pages found</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+        {% endif %}
+
+      </div>{# /min-w-0 #}
+    </div>{# /settings-layout #}
+  </div>
+</section>
+{% endblock %}

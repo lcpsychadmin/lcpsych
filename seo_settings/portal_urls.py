@@ -21,6 +21,10 @@ from seo_intel.views.content_gaps import content_gaps
 from seo_intel.views.keyword_discovery import keyword_discovery
 from seo_intel.views.keyword_seeds_intel import keyword_seeds_intel
 from seo_intel.views.competitor_analysis import competitor_analysis
+from seo_intel.views.competitor_keyword_gap import competitor_keyword_gap
+from seo_intel.views.competitor_content_quality import competitor_content_quality
+from seo_intel.views.competitor_location_coverage import competitor_location_coverage
+from seo_intel.views.competitor_modality_testing import competitor_modality_testing
 from seo_intel.views.keyword_universe import keyword_universe
 from seo_intel.views.serp_explorer import serp_explorer
 from seo_settings.views import actions, portal
@@ -64,8 +68,12 @@ urlpatterns = [
     # Content Gaps (enhanced view)
     path('content-gaps/', content_gaps, name='content_gaps'),
 
-    # Competitor Analysis Engine
+    # Competitor Analysis suite
     path('competitor-analysis/', competitor_analysis, name='competitor_analysis'),
+    path('competitor-analysis/keyword-gaps/', competitor_keyword_gap, name='competitor_keyword_gap'),
+    path('competitor-analysis/content-quality/', competitor_content_quality, name='competitor_content_quality'),
+    path('competitor-analysis/location-coverage/', competitor_location_coverage, name='competitor_location_coverage'),
+    path('competitor-analysis/modality-testing/', competitor_modality_testing, name='competitor_modality_testing'),
 
     # Analytics Hub
     path('analytics-hub/', analytics_hub, name='analytics_hub'),

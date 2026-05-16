@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title }} — SEO Intelligence{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+<style>
+.card-surface { background:#fff; border:1px solid rgba(15,63,70,.12); border-radius:1rem; box-shadow:0 10px 30px rgba(0,48,57,.06); }
+.stat-block { text-align:center; }
+.stat-num   { font-size:1.6rem; font-weight:700; color:#0f3f46; line-height:1; }
+.stat-label { font-size:.73rem; color:#64748b; margin-top:.2rem; }
+.data-table    { width:100%; border-collapse:collapse; font-size:.86rem; }
+.data-table th { text-align:left; padding:.55rem .65rem; font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748b; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
+.data-table td { padding:.5rem .65rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table tr:hover td { background:#f8fbfc; }
+.form-input   { border:1px solid rgba(15,63,70,.2); border-radius:.6rem; padding:.4rem .7rem; font-size:.85rem; color:#0f3f46; background:#fff; }
+.form-input:focus { outline:none; border-color:#92DCE5; box-shadow:0 0 0 3px rgba(146,220,229,.3); }
+.seo-btn         { display:inline-flex; align-items:center; gap:.4rem; border-radius:.65rem; padding:.45rem 1rem; font-size:.85rem; font-weight:600; border:none; cursor:pointer; transition:all .18s; text-decoration:none; }
+.seo-btn-primary { background:#0f3f46; color:#fff; }
+.seo-btn-primary:hover { background:#1a5a63; }
+.seo-btn-outline { background:#fff; color:#0f3f46; border:1px solid rgba(15,63,70,.2); }
+.seo-btn-outline:hover { background:#e6f6f3; border-color:#92DCE5; }
+.seo-btn-sm  { padding:.3rem .75rem; font-size:.8rem; }
+.score-pill  { display:inline-block; font-size:.78rem; font-weight:700; padding:.18rem .55rem; border-radius:9999px; min-width:2.4rem; text-align:center; }
+.score-high  { background:#d1fae5; color:#065f46; }
+.score-mid   { background:#fef9c3; color:#854d0e; }
+.score-low   { background:#fee2e2; color:#991b1b; }
+.score-none  { background:#f1f5f9; color:#94a3b8; }
+.action-badge  { display:inline-block; font-size:.72rem; font-weight:600; padding:.18rem .55rem; border-radius:.4rem; white-space:nowrap; }
+.action-red    { background:#fee2e2; color:#991b1b; }
+.action-yellow { background:#fef9c3; color:#854d0e; }
+.action-green  { background:#d1fae5; color:#065f46; }
+.action-gray   { background:#f1f5f9; color:#64748b; }
+.kw-chip { display:inline-block; font-size:.7rem; background:#f1f5f9; color:#475569; border-radius:.3rem; padding:.1rem .45rem; margin:.1rem .1rem; }
+.empty-state { text-align:center; padding:3rem 1rem; color:#64748b; }
+.empty-state h3 { font-size:1.05rem; font-weight:600; color:#0f3f46; margin-bottom:.4rem; }
+.tab-pill { display:inline-block; font-size:.8rem; font-weight:600; padding:.3rem .85rem; border-radius:2rem; border:1px solid transparent; text-decoration:none; color:#475569; background:#f1f5f9; transition:all .15s; white-space:nowrap; }
+.tab-pill:hover { background:#e2e8f0; color:#0f3f46; }
+.tab-pill-active { background:#0f3f46; color:#fff; border-color:#0f3f46; }
+.rank-pill { display:inline-block; font-size:.75rem; font-weight:700; padding:.15rem .5rem; border-radius:9999px; }
+.rank-top      { background:#dcfce7; color:#166534; }
+.rank-mid      { background:#fef9c3; color:#854d0e; }
+.rank-low      { background:#f1f5f9; color:#64748b; }
+.rank-comp-top { background:#fee2e2; color:#991b1b; }
+.add-seed-btn { width:1.75rem; height:1.75rem; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; border:none; cursor:pointer; font-size:1rem; font-weight:700; line-height:1; background:#e6f6f3; color:#0f3f46; transition:background .15s,transform .1s; }
+.add-seed-btn:hover { background:#92DCE5; transform:scale(1.1); }
+.add-seed-btn.adding { opacity:.5; cursor:not-allowed; }
+.add-seed-btn.added  { background:#d1fae5; color:#065f46; cursor:default; font-size:.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="bg-brand-deep text-white py-14">
+  <div class="max-w-7xl mx-auto px-4 sm:px-8">
+    <p class="text-sm font-medium uppercase tracking-widest text-cyan-300 mb-2">SEO Intelligence › Competitor Analysis</p>
+    <h1 class="text-4xl font-bold mb-3">Keyword Gap Analysis</h1>
+    <p class="text-slate-300 text-lg">
+      Keywords where {{ selected_domain|default:"a competitor" }} ranks in SERPs but LC Psych is absent or outranked.
+    </p>
+  </div>
+</section>
+
+<section class="py-10 md:py-14">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="settings-layout">
+      {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+      <div class="space-y-5 min-w-0">
+
+        {# ── Toolbar ─────────────────────────────────────────────────── #}
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          {% if competitors %}
+          <form method="get" class="flex items-center gap-2">
+            <label for="comp-select" class="text-sm font-medium text-slate-600">Competitor:</label>
+            <select id="comp-select" name="competitor" class="form-input" onchange="this.form.submit()">
+              {% for c in competitors %}
+              <option value="{{ c.domain }}"{% if c.domain == selected_domain %} selected{% endif %}>
+                {{ c.label|default:c.domain }}{% if c.last_crawled_at %} ({{ c.last_crawled_at|date:"M j" }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            {% if gap_filter != "all" %}
+            <input type="hidden" name="gap_type" value="{{ gap_filter }}">
+            {% endif %}
+          </form>
+          {% endif %}
+
+          {% if has_data %}
+          <a href="?competitor={{ selected_domain }}&export=csv" class="seo-btn seo-btn-outline seo-btn-sm">↓ CSV</a>
+          {% endif %}
+
+          {% if last_crawled_at %}
+          <span class="text-xs text-slate-500 ml-auto">SERP data as of {{ last_crawled_at|date:"M j, Y" }}</span>
+          {% endif %}
+        </div>
+
+        {# ── Gap-type filter pills ────────────────────────────────────── #}
+        {% if has_data %}
+        <div class="flex flex-wrap gap-2 mb-1">
+          <a href="?competitor={{ selected_domain }}&gap_type=all"
+             class="tab-pill{% if gap_filter == 'all' %} tab-pill-active{% endif %}">
+            All <span class="ml-1 text-xs opacity-70">{{ summary.total_keywords }}</span>
+          </a>
+          <a href="?competitor={{ selected_domain }}&gap_type=missing"
+             class="tab-pill{% if gap_filter == 'missing' %} tab-pill-active{% endif %}">
+            Missing <span class="ml-1 text-xs opacity-70">{{ summary.missing }}</span>
+          </a>
+          <a href="?competitor={{ selected_domain }}&gap_type=weak"
+             class="tab-pill{% if gap_filter == 'weak' %} tab-pill-active{% endif %}">
+            Weak <span class="ml-1 text-xs opacity-70">{{ summary.weak }}</span>
+          </a>
+          <a href="?competitor={{ selected_domain }}&gap_type=equal"
+             class="tab-pill{% if gap_filter == 'equal' %} tab-pill-active{% endif %}">
+            Equal <span class="ml-1 text-xs opacity-70">{{ summary.equal }}</span>
+          </a>
+          <a href="?competitor={{ selected_domain }}&gap_type=winning"
+             class="tab-pill{% if gap_filter == 'winning' %} tab-pill-active{% endif %}">
+            Winning <span class="ml-1 text-xs opacity-70">{{ summary.winning }}</span>
+          </a>
+        </div>
+        {% endif %}
+
+        {# ── Summary cards ────────────────────────────────────────────── #}
+        {% if has_data %}
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num">{{ summary.total_keywords }}</div>
+            <div class="stat-label">Keywords Tracked</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-red-600">{{ summary.missing }}</div>
+            <div class="stat-label">Missing</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-amber-600">{{ summary.weak }}</div>
+            <div class="stat-label">Outranked</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-emerald-600">{{ summary.winning }}</div>
+            <div class="stat-label">Winning</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-red-700">{{ summary.high_priority_gaps }}</div>
+            <div class="stat-label">High-Priority Gaps</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Keyword gap table ────────────────────────────────────────── #}
+        {% if has_data and keyword_gaps %}
+        <div class="card-surface overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">
+              Keyword Gaps
+              <span class="text-xs font-normal text-slate-400 normal-case ml-1">({{ keyword_gaps|length }} keywords)</span>
+            </h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Keyword</th>
+                  <th>Gap</th>
+                  <th>Competitor Rank</th>
+                  <th>LC Psych Rank</th>
+                  <th>Priority</th>
+                  <th>Action</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in keyword_gaps %}
+                <tr>
+                  <td class="font-medium text-slate-700 max-w-xs">{{ row.keyword }}</td>
+                  <td><span class="action-badge {{ row.gap_css }}">{{ row.gap_type }}</span></td>
+                  <td>
+                    {% if row.comp_url %}
+                    <a href="{{ row.comp_url }}" target="_blank" rel="noopener noreferrer"
+                       class="text-slate-700 hover:text-brand-teal text-xs truncate max-w-[12rem] block">
+                      {% if row.comp_rank <= 3 %}
+                      <span class="rank-pill rank-comp-top">#{{ row.comp_rank }}</span>
+                      {% else %}
+                      <span class="rank-pill rank-low">#{{ row.comp_rank }}</span>
+                      {% endif %}
+                      <span class="ml-1 text-slate-400 text-xs">↗</span>
+                    </a>
+                    {% else %}
+                    <span class="rank-pill rank-low">#{{ row.comp_rank }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if row.lc_rank %}
+                      {% if row.lc_rank <= 3 %}
+                      <span class="rank-pill rank-top">#{{ row.lc_rank }}</span>
+                      {% elif row.lc_rank <= 10 %}
+                      <span class="rank-pill rank-mid">#{{ row.lc_rank }}</span>
+                      {% else %}
+                      <span class="rank-pill rank-low">#{{ row.lc_rank }}</span>
+                      {% endif %}
+                    {% else %}
+                    <span class="text-xs text-slate-400 italic">Not ranking</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <div class="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-teal-700"
+                             style="width:{{ row.priority_score }}%"></div>
+                      </div>
+                      <span class="text-xs text-slate-500">{{ row.priority_score }}</span>
+                    </div>
+                  </td>
+                  <td class="text-xs text-slate-600 max-w-xs">{{ row.recommended_action }}</td>
+                  <td>
+                    {% if not row.is_seed %}
+                    <button class="add-seed-btn" title="Add to keyword seeds"
+                            onclick="addSeed(this, '{{ row.keyword|escapejs }}')">+</button>
+                    {% else %}
+                    <span class="add-seed-btn added" title="Already a seed">✓</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {% elif has_data %}
+        <div class="card-surface p-8 empty-state">
+          <h3>No gaps match the current filter</h3>
+          <p class="text-sm">Try removing the filter above.</p>
+        </div>
+
+        {% elif selected_domain %}
+        <div class="card-surface p-8 empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0f3f46" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 opacity-30"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <h3>No SERP data for {{ selected_domain }}</h3>
+          <p class="text-sm text-slate-500">
+            Run a SERP scan for this competitor from the
+            <a href="{% url 'seo_intel:control_panel' %}" class="text-brand-teal underline">Control Panel</a>
+            to populate keyword ranking data.
+          </p>
+        </div>
+        {% endif %}
+
+      </div>{# /min-w-0 #}
+    </div>{# /settings-layout #}
+  </div>
+</section>
+
+<script>
+const _ADD_SEED_URL = "{% url 'seo_intel:add_seed' %}";
+const _CSRF = document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '';
+
+function addSeed(btn, keyword) {
+  if (btn.classList.contains('adding') || btn.classList.contains('added')) return;
+  btn.classList.add('adding');
+  btn.textContent = '…';
+  fetch(_ADD_SEED_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': _CSRF },
+    body: new URLSearchParams({ keyword }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.classList.remove('adding');
+    if (data.status === 'ok' || data.status === 'exists') {
+      btn.classList.add('added');
+      btn.textContent = '✓';
+      btn.title = 'Added to seeds';
+    } else {
+      btn.textContent = '+';
+      alert(data.message || 'Error adding seed');
+    }
+  })
+  .catch(() => { btn.classList.remove('adding'); btn.textContent = '+'; });
+}
+</script>
+{% endblock %}

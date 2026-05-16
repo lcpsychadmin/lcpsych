@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title }} — SEO Intelligence{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background:#fff; border:1px solid rgba(15,63,70,.12); border-radius:1rem; box-shadow:0 10px 30px rgba(0,48,57,.06); }
+.stat-block { text-align:center; }
+.stat-num   { font-size:1.6rem; font-weight:700; color:#0f3f46; line-height:1; }
+.stat-label { font-size:.73rem; color:#64748b; margin-top:.2rem; }
+.data-table    { width:100%; border-collapse:collapse; font-size:.86rem; }
+.data-table th { text-align:left; padding:.55rem .65rem; font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748b; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
+.data-table td { padding:.5rem .65rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table tr:hover td { background:#f8fbfc; }
+.form-input   { border:1px solid rgba(15,63,70,.2); border-radius:.6rem; padding:.4rem .7rem; font-size:.85rem; color:#0f3f46; background:#fff; }
+.form-input:focus { outline:none; border-color:#92DCE5; box-shadow:0 0 0 3px rgba(146,220,229,.3); }
+.seo-btn         { display:inline-flex; align-items:center; gap:.4rem; border-radius:.65rem; padding:.45rem 1rem; font-size:.85rem; font-weight:600; border:none; cursor:pointer; transition:all .18s; text-decoration:none; }
+.seo-btn-outline { background:#fff; color:#0f3f46; border:1px solid rgba(15,63,70,.2); }
+.seo-btn-outline:hover { background:#e6f6f3; border-color:#92DCE5; }
+.seo-btn-sm  { padding:.3rem .75rem; font-size:.8rem; }
+.score-high  { background:#d1fae5; color:#065f46; }
+.score-mid   { background:#fef9c3; color:#854d0e; }
+.score-low   { background:#fee2e2; color:#991b1b; }
+.tab-pill { display:inline-block; font-size:.8rem; font-weight:600; padding:.3rem .85rem; border-radius:2rem; border:1px solid transparent; text-decoration:none; color:#475569; background:#f1f5f9; transition:all .15s; }
+.tab-pill:hover { background:#e2e8f0; color:#0f3f46; }
+.tab-pill-active { background:#0f3f46; color:#fff; border-color:#0f3f46; }
+.empty-state { text-align:center; padding:3rem 1rem; color:#64748b; }
+.empty-state h3 { font-size:1.05rem; font-weight:600; color:#0f3f46; margin-bottom:.4rem; }
+.loc-chip { display:inline-block; font-size:.72rem; font-weight:600; padding:.18rem .55rem; border-radius:.4rem; margin:.15rem; white-space:nowrap; }
+.loc-gap     { background:#fee2e2; color:#991b1b; }
+.loc-shared  { background:#d1fae5; color:#065f46; }
+.loc-only    { background:#fef9c3; color:#854d0e; }
+.status-dot  { width:.6rem; height:.6rem; border-radius:50%; display:inline-block; flex-shrink:0; }
+.dot-gap     { background:#f87171; }
+.dot-shared  { background:#34d399; }
+.dot-only    { background:#fbbf24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="bg-brand-deep text-white py-14">
+  <div class="max-w-7xl mx-auto px-4 sm:px-8">
+    <p class="text-sm font-medium uppercase tracking-widest text-cyan-300 mb-2">SEO Intelligence › Competitor Analysis</p>
+    <h1 class="text-4xl font-bold mb-3">Location Coverage</h1>
+    <p class="text-slate-300 text-lg">
+      Geographic markets targeted by {{ selected_domain|default:"a competitor" }} compared to LC Psych's location coverage.
+    </p>
+  </div>
+</section>
+
+<section class="py-10 md:py-14">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="settings-layout">
+      {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+      <div class="space-y-5 min-w-0">
+
+        {# ── Toolbar ─────────────────────────────────────────────────── #}
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          {% if competitors %}
+          <form method="get" class="flex items-center gap-2">
+            <label for="comp-select" class="text-sm font-medium text-slate-600">Competitor:</label>
+            <select id="comp-select" name="competitor" class="form-input" onchange="this.form.submit()">
+              {% for c in competitors %}
+              <option value="{{ c.domain }}"{% if c.domain == selected_domain %} selected{% endif %}>
+                {{ c.label|default:c.domain }}{% if c.last_crawled_at %} ({{ c.last_crawled_at|date:"M j" }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            {% if status_filter != "all" %}
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            {% endif %}
+          </form>
+          {% endif %}
+          {% if last_crawled_at %}
+          <span class="text-xs text-slate-500 ml-auto">Crawled {{ last_crawled_at|date:"M j, Y" }}</span>
+          {% endif %}
+        </div>
+
+        {# ── Filter pills ─────────────────────────────────────────────── #}
+        {% if has_data %}
+        <div class="flex flex-wrap gap-2 mb-1">
+          <a href="?competitor={{ selected_domain }}&status=all"
+             class="tab-pill{% if status_filter == 'all' %} tab-pill-active{% endif %}">All Locations</a>
+          <a href="?competitor={{ selected_domain }}&status=gap"
+             class="tab-pill{% if status_filter == 'gap' %} tab-pill-active{% endif %}">
+            Gaps <span class="ml-1 text-xs opacity-70">{{ summary.missing_count }}</span>
+          </a>
+          <a href="?competitor={{ selected_domain }}&status=shared"
+             class="tab-pill{% if status_filter == 'shared' %} tab-pill-active{% endif %}">
+            Shared <span class="ml-1 text-xs opacity-70">{{ summary.overlap_count }}</span>
+          </a>
+          <a href="?competitor={{ selected_domain }}&status=lc-only"
+             class="tab-pill{% if status_filter == 'lc-only' %} tab-pill-active{% endif %}">
+            LC Psych Only <span class="ml-1 text-xs opacity-70">{{ summary.exclusive_count }}</span>
+          </a>
+        </div>
+        {% endif %}
+
+        {# ── Summary cards ────────────────────────────────────────────── #}
+        {% if has_data %}
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-sky-600">{{ summary.competitor_count }}</div>
+            <div class="stat-label">Competitor Locations</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-teal-600">{{ summary.lcpsych_count }}</div>
+            <div class="stat-label">LC Psych Locations</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-red-600">{{ summary.missing_count }}</div>
+            <div class="stat-label">LC Psych Gaps</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-emerald-600">{{ summary.overlap_count }}</div>
+            <div class="stat-label">Shared Markets</div>
+          </div>
+          <div class="card-surface p-4 stat-block">
+            <div class="stat-num text-amber-600">{{ summary.exclusive_count }}</div>
+            <div class="stat-label">LC Psych Exclusive</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Gap location chips callout ────────────────────────────────── #}
+        {% if has_data and missing_from_lc %}
+        <div class="card-surface p-5">
+          <h2 class="text-sm font-bold uppercase tracking-wide text-red-600 mb-3">
+            ⚠ Missing Markets — {{ missing_from_lc|length }} location{{ missing_from_lc|length|pluralize }} competitor targets that LC Psych does not
+          </h2>
+          <div>
+            {% for loc in missing_from_lc %}
+            <span class="loc-chip loc-gap">{{ loc }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# ── Full comparison table ─────────────────────────────────────── #}
+        {% if has_data and location_rows %}
+        <div class="card-surface overflow-hidden">
+          <div class="p-4 border-b border-slate-100">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">
+              Location Coverage Table
+              <span class="text-xs font-normal text-slate-400 normal-case ml-1">({{ location_rows|length }} locations)</span>
+            </h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th class="text-center">{{ selected_domain|default:"Competitor" }}</th>
+                  <th class="text-center">LC Psych</th>
+                  <th>Recommendation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in location_rows %}
+                <tr>
+                  <td class="font-medium text-slate-700 capitalize">{{ row.location }}</td>
+                  <td>
+                    <span class="flex items-center gap-1.5">
+                      <span class="status-dot {% if row.status == 'gap' %}dot-gap{% elif row.status == 'shared' %}dot-shared{% else %}dot-only{% endif %}"></span>
+                      <span class="text-xs capitalize text-slate-600">
+                        {% if row.status == "gap" %}Gap{% elif row.status == "shared" %}Shared{% else %}LC Only{% endif %}
+                      </span>
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    {% if row.competitor %}✓{% else %}<span class="text-slate-300">—</span>{% endif %}
+                  </td>
+                  <td class="text-center">
+                    {% if row.lcpsych %}✓{% else %}<span class="text-slate-300">—</span>{% endif %}
+                  </td>
+                  <td class="text-xs text-slate-600">
+                    {% if row.status == "gap" %}
+                    Add location page or content for <em>{{ row.location }}</em>
+                    {% elif row.status == "lc-only" %}
+                    LC Psych exclusive — maintain coverage
+                    {% else %}
+                    Competing market — strengthen existing content
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {% elif has_data %}
+        <div class="card-surface p-8 empty-state">
+          <h3>No locations match the current filter</h3>
+        </div>
+
+        {% elif selected_domain %}
+        <div class="card-surface p-8 empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0f3f46" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 opacity-30"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <h3>No crawl data for {{ selected_domain }}</h3>
+          <p class="text-sm text-slate-500">
+            Run a crawl from the
+            <a href="{% url 'seo_intel:competitor_analysis' %}?competitor={{ selected_domain }}" class="text-brand-teal underline">Competitor Analysis page</a>
+            first.
+          </p>
+        </div>
+        {% endif %}
+
+        {# ── LC Psych exclusive locations ──────────────────────────────── #}
+        {% if has_data and lcpsych_exclusive and status_filter == "all" %}
+        <div class="card-surface p-5">
+          <h2 class="text-sm font-bold uppercase tracking-wide text-amber-700 mb-3">
+            LC Psych Exclusive Markets ({{ lcpsych_exclusive|length }})
+          </h2>
+          <p class="text-xs text-slate-500 mb-3">Locations LC Psych covers that {{ selected_domain }} does not — defend these.</p>
+          <div>
+            {% for loc in lcpsych_exclusive %}
+            <span class="loc-chip loc-only">{{ loc }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>{# /min-w-0 #}
+    </div>{# /settings-layout #}
+  </div>
+</section>
+{% endblock %}
