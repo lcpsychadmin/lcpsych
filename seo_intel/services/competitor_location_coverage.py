@@ -64,25 +64,24 @@ def get_location_coverage(domain: str) -> dict:
             "location_rows": [],
         }
 
-    # ── Competitor locations (from keyword_hits + URL path matching) ──────
-    comp_locs: set[str] = set()
-    for page in pages:
-        kw_locs = page.get("keyword_hits", {}).get("locations", [])
-        comp_locs.update(kw.lower() for kw in kw_locs)
-        comp_locs.update(_extract_url_locations(page.get("url", ""), LOCATION_KW))
-
-    # Filter to taxonomy so both sides are comparable
-    comp_locs = comp_locs & LOCATION_KW
-
-    # ── LC Psych locations (geo DB + location seeds) ──────────────────────
+    # ── LC Psych locations (geo DB + regions + location seeds) ───────────
     lc_locs: set[str] = set()
+    region_names: set[str] = set()
     try:
-        from geo.models import GeoLocation, GeoState
+        from geo.models import GeoLocation, GeoRegion, GeoState
         for loc in GeoLocation.objects.filter(is_active=True).values("name", "slug"):
             lc_locs.add(loc["name"].lower())
             lc_locs.add(loc["slug"].replace("-", " ").lower())
         for state in GeoState.objects.filter(is_active=True).values("name"):
             lc_locs.add(state["name"].lower())
+        # Include regions (e.g. "Northern Kentucky", "Greater Cincinnati")
+        for region in GeoRegion.objects.filter(is_active=True).values("name", "slug"):
+            norm_name = region["name"].lower()
+            norm_slug = region["slug"].replace("-", " ").lower()
+            lc_locs.add(norm_name)
+            lc_locs.add(norm_slug)
+            region_names.add(norm_name)
+            region_names.add(norm_slug)
     except Exception:
         logger.debug("location_coverage: could not load geo models", exc_info=True)
 
@@ -95,7 +94,19 @@ def get_location_coverage(domain: str) -> dict:
     except Exception:
         logger.debug("location_coverage: could not load KeywordSeed", exc_info=True)
 
-    lc_locs_filtered = lc_locs & LOCATION_KW
+    # Expand taxonomy to include DB-sourced region names so they survive filtering
+    loc_taxonomy = LOCATION_KW | region_names
+
+    # ── Competitor locations (from keyword_hits + URL path matching) ──────
+    comp_locs: set[str] = set()
+    for page in pages:
+        kw_locs = page.get("keyword_hits", {}).get("locations", [])
+        comp_locs.update(kw.lower() for kw in kw_locs)
+        comp_locs.update(_extract_url_locations(page.get("url", ""), loc_taxonomy))
+
+    # Filter to expanded taxonomy so both sides are comparable
+    comp_locs = comp_locs & loc_taxonomy
+    lc_locs_filtered = lc_locs & loc_taxonomy
 
     # ── Sets ──────────────────────────────────────────────────────────────
     missing = sorted(comp_locs - lc_locs_filtered)

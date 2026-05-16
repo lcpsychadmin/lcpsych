@@ -126,7 +126,7 @@ LOCATION_KW: frozenset[str] = frozenset({
     "kentucky", "ohio", "indiana", "west virginia", "tennessee",
     "virginia", "georgia", "michigan", "illinois",
     # NKY / Cincinnati metro
-    "cincinnati", "lexington", "louisville", "northern kentucky",
+    "cincinnati", "lexington", "louisville", "northern kentucky", "greater cincinnati",
     "florence", "covington", "newport", "erlanger", "independence",
     "highland heights", "fort mitchell", "edgewood", "elsmere",
     "bellevue", "dayton kentucky", "cold spring", "alexandria",
