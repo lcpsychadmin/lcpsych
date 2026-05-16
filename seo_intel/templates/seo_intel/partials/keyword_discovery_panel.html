@@ -1,0 +1,183 @@
+{% comment %}
+seo_intel/templates/seo_intel/partials/keyword_discovery_panel.html
+--------------------------------------------------------------------
+HTMX partial — replaces #keyword-discovery-panel on refresh/filter.
+{% endcomment %}
+
+{# ── Summary strip ───────────────────────────────────────────────────────── #}
+<div class="card-surface p-5 mb-5">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 divide-x divide-slate-100">
+    <div class="stat-block">
+      <div class="stat-num">{{ total }}</div>
+      <div class="stat-label">Opportunities Found</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num text-emerald-600">{{ rising }}</div>
+      <div class="stat-label">↑ Rising Queries</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num text-amber-600">{{ competitor_gap }}</div>
+      <div class="stat-label">Competitor Gaps</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num text-emerald-700">{{ high_priority }}</div>
+      <div class="stat-label">High Priority (70+)</div>
+    </div>
+  </div>
+</div>
+
+{# ── Source tabs + filter bar ────────────────────────────────────────────── #}
+<div class="card-surface p-4 mb-5">
+  <div class="flex flex-wrap gap-2 mb-4">
+    <a href="?sort={{ sort_by }}{% if action_filter %}&action={{ action_filter }}{% endif %}"
+       class="src-tab{% if not source_filter %} src-tab-active{% endif %}">
+      All <span class="src-tab-count">{{ total }}</span>
+    </a>
+    {% for tab in source_tabs %}
+    <a href="?source={{ tab.key }}&sort={{ sort_by }}{% if action_filter %}&action={{ action_filter }}{% endif %}"
+       class="src-tab src-tab-{{ tab.key }}{% if source_filter == tab.key %} src-tab-active{% endif %}">
+      {{ tab.label }} <span class="src-tab-count">{{ tab.count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <form method="get" class="flex flex-wrap gap-3 items-end">
+    <input type="hidden" name="source" value="{{ source_filter }}">
+    {% if all_actions %}
+    <div>
+      <label class="block text-xs font-semibold text-slate-500 mb-1">Action</label>
+      <select name="action" class="form-input" onchange="this.form.submit()">
+        <option value="">All Actions</option>
+        {% for act in all_actions %}
+          <option value="{{ act }}"{% if action_filter == act %} selected{% endif %}>{{ act }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div>
+      <label class="block text-xs font-semibold text-slate-500 mb-1">Sort</label>
+      <select name="sort" class="form-input" onchange="this.form.submit()">
+        <option value="priority"{% if sort_by == 'priority' %} selected{% endif %}>Priority Score</option>
+        <option value="trend"{% if sort_by == 'trend' %} selected{% endif %}>Trend (Rising first)</option>
+        <option value="keyword"{% if sort_by == 'keyword' %} selected{% endif %}>Keyword A–Z</option>
+        <option value="source"{% if sort_by == 'source' %} selected{% endif %}>Source</option>
+      </select>
+    </div>
+    {% if source_filter or action_filter or sort_by != 'priority' %}
+    <a href="?" class="seo-btn seo-btn-outline self-end">Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+{# ── Results count ────────────────────────────────────────────────────────── #}
+{% if source_filter or action_filter %}
+<p class="text-sm text-slate-500 mb-3">Showing {{ displayed }} of {{ total }} opportunities{% if source_filter %} · source: {{ source_filter_label }}{% endif %}{% if action_filter %} · action: {{ action_filter }}{% endif %}</p>
+{% endif %}
+
+{# ── Discovery table ──────────────────────────────────────────────────────── #}
+{% if results %}
+<div class="card-surface overflow-hidden">
+  <table class="data-table w-full">
+    <thead>
+      <tr>
+        <th class="pl-4">Keyword</th>
+        <th>Source</th>
+        <th>Trend</th>
+        <th>Priority</th>
+        <th>Intent</th>
+        <th>Competitors</th>
+        <th>LC Rank</th>
+        <th>Action</th>
+        <th class="pr-4">Add</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in results %}
+      <tr class="kw-row" data-keyword="{{ r.keyword }}" data-category="{{ r.category }}" data-priority="{{ r.priority_score }}">
+        <td class="pl-4 max-w-xs">
+          <div class="font-medium text-slate-800 text-sm leading-snug">{{ r.keyword }}</div>
+          {% if r.source_detail %}
+          <div class="text-xs text-slate-400 mt-0.5 truncate max-w-[14rem]" title="{{ r.source_detail }}">{{ r.source_detail }}</div>
+          {% endif %}
+        </td>
+        <td>
+          <span class="src-badge src-badge-{{ r.source }}">
+            {% if r.source == 'search_console' %}📊{% elif r.source == 'paa' %}❓{% elif r.source == 'related' %}🔍{% elif r.source == 'competitor' %}🏆{% elif r.source == 'internal' %}🔎{% else %}💀{% endif %}
+            {{ r.source_label }}
+          </span>
+          {% if r.sources|length > 1 %}
+          <span class="text-xs text-slate-400 ml-1" title="Also: {% for s in r.sources %}{{ s }} {% endfor %}">+{{ r.sources|length|add:"-1" }}</span>
+          {% endif %}
+        </td>
+        <td class="whitespace-nowrap">
+          {% if r.trend_direction == 'up' %}
+            <span class="trend-chip trend-up">{{ r.trend_label }}</span>
+          {% elif r.trend_direction == 'down' %}
+            <span class="trend-chip trend-down">{{ r.trend_label }}</span>
+          {% else %}
+            <span class="trend-chip trend-neutral">{{ r.trend_label }}</span>
+          {% endif %}
+          {% if r.impressions_7d %}
+          <div class="text-xs text-slate-400 mt-0.5">{{ r.impressions_7d }} impr/7d</div>
+          {% endif %}
+        </td>
+        <td class="text-center">
+          <span class="score-pill score-{{ r.score_css }}" title="Priority: {{ r.priority_score }}/100">{{ r.priority_score }}</span>
+          <div class="score-bar-wrap mt-1">
+            <div class="score-bar-fill" style="width:{{ r.priority_score }}%"></div>
+          </div>
+        </td>
+        <td class="text-center">
+          {% if r.has_local %}<span class="intent-dot intent-local" title="Local intent">📍</span>{% endif %}
+          {% if r.has_commercial %}<span class="intent-dot intent-commercial" title="Commercial intent">💼</span>{% endif %}
+          {% if not r.has_local and not r.has_commercial %}<span class="text-slate-300 text-xs">—</span>{% endif %}
+        </td>
+        <td class="text-center">
+          {% if r.competitor_count %}
+            <span class="font-semibold text-sm {% if r.top_competitor_rank <= 3 %}text-red-600{% else %}text-amber-600{% endif %}">
+              {{ r.competitor_count }}
+            </span>
+            {% if r.top_competitor_rank %}
+            <div class="text-xs text-slate-400">best #{{ r.top_competitor_rank }}</div>
+            {% endif %}
+          {% else %}
+            <span class="text-slate-300 text-sm">—</span>
+          {% endif %}
+        </td>
+        <td class="text-center">
+          {% if r.lc_rank %}
+            <span class="rank-pill {% if r.lc_rank <= 3 %}rank-top{% elif r.lc_rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">
+              #{{ r.lc_rank }}
+            </span>
+          {% else %}
+            <span class="text-slate-300 text-sm">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="action-badge action-{{ r.action_css }}">{{ r.recommended_action }}</span>
+        </td>
+        <td class="pr-4 text-center">
+          <button type="button"
+            class="add-seed-btn"
+            data-keyword="{{ r.keyword }}"
+            data-category="{{ r.category }}"
+            title="Add {{ r.keyword }} to seeds">
+            ＋
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="card-surface p-12 text-center text-slate-400">
+  <div class="text-4xl mb-3">🌱</div>
+  <div class="font-semibold text-slate-600 text-lg">No keyword opportunities found.</div>
+  <p class="text-sm mt-2 max-w-md mx-auto">
+    This engine reads from Search Console, SerpAPI expansion, Competitor hits, Internal Search, and Dead URLs.
+    Run a SerpAPI scrape first to populate expansion data.
+  </p>
+</div>
+{% endif %}

@@ -6,11 +6,13 @@
   <ul class="nav-list">
     <li><a class="{% if active_page == 'control_panel' %}is-active{% endif %}" href="{% url 'seo_intel:control_panel' %}">Control Panel</a></li>
     <li><a class="{% if active_page == 'settings' %}is-active{% endif %}" href="{% url 'seo_intel:settings' %}">Settings</a></li>
-    <li class="nav-tree {% if active_page == 'competitors' or active_page == 'keywords' %}{% else %}is-collapsed{% endif %}" data-collapsible>
-      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="{% if active_page == 'competitors' or active_page == 'keywords' %}true{% else %}false{% endif %}" aria-controls="nav-tree-data">Data Sources <span class="nav-tree__chevron">▸</span></button>
+    <li class="nav-tree {% if active_page == 'competitors' or active_page == 'keywords' or active_page == 'keyword_seeds_intel' or active_page == 'keyword_discovery' %}{% else %}is-collapsed{% endif %}" data-collapsible>
+      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="{% if active_page == 'competitors' or active_page == 'keywords' or active_page == 'keyword_seeds_intel' or active_page == 'keyword_discovery' %}true{% else %}false{% endif %}" aria-controls="nav-tree-data">Data Sources <span class="nav-tree__chevron">▸</span></button>
       <ul id="nav-tree-data" class="nav-tree__items">
         <li><a class="{% if active_page == 'competitors' %}is-active{% endif %}" href="{% url 'seo_intel:competitors' %}">Competitor Domains</a></li>
         <li><a class="{% if active_page == 'keywords' %}is-active{% endif %}" href="{% url 'seo_intel:keywords' %}">Keyword Seeds</a></li>
+        <li><a class="{% if active_page == 'keyword_seeds_intel' %}is-active{% endif %}" href="{% url 'seo_intel:keyword_seeds_intel' %}">Seeds Intelligence</a></li>
+        <li><a class="{% if active_page == 'keyword_discovery' %}is-active{% endif %}" href="{% url 'seo_intel:keyword_discovery' %}">Keyword Discovery</a></li>
       </ul>
     </li>
     <li class="nav-tree {% if active_page == 'analytics_sc' or active_page == 'analytics_internal' or active_page == 'analytics_dead_urls' or active_page == 'analytics_gaps' or active_page == 'content_gaps' or active_page == 'keyword_universe' or active_page == 'serp_explorer' or active_page == 'analytics_hub' %}{% else %}is-collapsed{% endif %}" data-collapsible>

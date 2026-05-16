@@ -1,0 +1,270 @@
+{% comment %}
+seo_intel/templates/seo_intel/partials/keyword_seeds_intel_panel.html
+----------------------------------------------------------------------
+HTMX partial — replaces #keyword-seeds-intel-panel on refresh.
+{% endcomment %}
+
+{# ── Summary strip ───────────────────────────────────────────────────────── #}
+<div class="card-surface p-5 mb-5">
+  <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 divide-x divide-slate-100">
+    <div class="stat-block">
+      <div class="stat-num">{{ total }}</div>
+      <div class="stat-label">Seeds Analyzed</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num text-emerald-600">{{ trending_up }}</div>
+      <div class="stat-label">↑ Trending Up</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num text-red-500">{{ trending_down }}</div>
+      <div class="stat-label">↓ Trending Down</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num text-amber-600">{{ needs_page }}</div>
+      <div class="stat-label">Need New Page</div>
+    </div>
+    <div class="stat-block pl-4">
+      <div class="stat-num text-emerald-700">{{ high_priority }}</div>
+      <div class="stat-label">High Priority (70+)</div>
+    </div>
+  </div>
+</div>
+
+{# ── Filter bar ──────────────────────────────────────────────────────────── #}
+<div class="card-surface p-4 mb-5">
+  <form method="get" class="flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs font-semibold text-slate-500 mb-1">Category</label>
+      <select name="category" class="form-input" onchange="this.form.submit()">
+        {% for val, label in category_choices %}
+          <option value="{{ val }}"{% if category_filter == val %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if all_actions %}
+    <div>
+      <label class="block text-xs font-semibold text-slate-500 mb-1">Action</label>
+      <select name="action" class="form-input" onchange="this.form.submit()">
+        <option value="">All Actions</option>
+        {% for act in all_actions %}
+          <option value="{{ act }}"{% if action_filter == act %} selected{% endif %}>{{ act }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div>
+      <label class="block text-xs font-semibold text-slate-500 mb-1">Sort</label>
+      <select name="sort" class="form-input" onchange="this.form.submit()">
+        <option value="priority"{% if sort_by == 'priority' %} selected{% endif %}>Priority Score</option>
+        <option value="trend"{% if sort_by == 'trend' %} selected{% endif %}>Trend Score</option>
+        <option value="keyword"{% if sort_by == 'keyword' %} selected{% endif %}>Keyword A–Z</option>
+      </select>
+    </div>
+    {% if category_filter or action_filter or sort_by != 'priority' %}
+    <a href="?sort=priority" class="seo-btn seo-btn-outline self-end">Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+{# ── Keyword cards ────────────────────────────────────────────────────────── #}
+{% if intel %}
+  <div class="space-y-6" id="intel-cards">
+  {% for r in intel %}
+    <div class="card-surface overflow-hidden" id="intel-{{ r.seed_id }}">
+
+      {# ── Card header ── #}
+      <div class="intel-card-header flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="cat-badge cat-{{ r.category }}">{{ r.category }}</span>
+          <h3 class="font-semibold text-slate-800 text-base truncate m-0">{{ r.keyword }}</h3>
+          {% if r.has_local_intent %}
+            <span class="intent-tag intent-local" title="Contains local geo term">📍 local</span>
+          {% endif %}
+          {% if r.has_commercial_intent %}
+            <span class="intent-tag intent-commercial" title="Contains commercial/clinical term">💼 clinical</span>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          {# Trend badge #}
+          <span class="trend-badge trend-{{ r.trend_css }}" title="Trend score {{ r.trend_score }}/100">
+            {% if r.delta_direction == 'up' %}↑{% elif r.delta_direction == 'down' %}↓{% else %}→{% endif %}
+            {{ r.trend_score }}<span class="text-xs font-normal opacity-70"> trend</span>
+          </span>
+          {# Priority score #}
+          <span class="score-pill score-{{ r.score_css }}" title="Priority score {{ r.priority_score }}/100">{{ r.priority_score }}</span>
+          {# Action badge #}
+          <span class="action-badge action-{{ r.action_css }}">{{ r.recommended_action }}</span>
+        </div>
+      </div>
+
+      {# ── Card body: 3-column grid on md+ ── #}
+      <div class="intel-card-body grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+
+        {# ─ Column 1: Trend + Scores ─ #}
+        <div class="intel-col p-4 space-y-4">
+
+          {# Trend panel #}
+          <div>
+            <div class="intel-section-label">📈 Trend (Last 30d vs Prior 30d)</div>
+            <div class="flex items-center gap-3 mt-2">
+              <div class="trend-arc-wrap">
+                <div class="trend-arc trend-arc-{{ r.trend_css }}" style="--pct:{{ r.trend_score }}"></div>
+                <div class="trend-arc-val">{{ r.trend_score }}</div>
+              </div>
+              <div class="text-sm">
+                <div class="font-semibold text-slate-700">
+                  {% if r.delta_direction == 'up' %}<span class="text-emerald-600">↑ Growing</span>
+                  {% elif r.delta_direction == 'down' %}<span class="text-red-500">↓ Declining</span>
+                  {% else %}<span class="text-slate-500">→ Flat</span>{% endif %}
+                </div>
+                <div class="text-xs text-slate-400 mt-0.5">{{ r.delta_label }}</div>
+                <div class="text-xs text-slate-400">{{ r.impressions_90d }} impressions (90d)</div>
+                <div class="text-xs text-slate-400">{{ r.clicks_90d }} clicks (90d)</div>
+              </div>
+            </div>
+          </div>
+
+          {# Priority score breakdown #}
+          <div>
+            <div class="intel-section-label">🎯 Priority Score</div>
+            <div class="mt-2 space-y-1.5">
+              {% include "seo_intel/partials/_score_bar.html" with label="Search Demand" val=r.search_demand_score max=25 %}
+              {% include "seo_intel/partials/_score_bar.html" with label="Competitor Pressure" val=r.competitor_pressure_score max=25 %}
+              {% include "seo_intel/partials/_score_bar.html" with label="LC Psych Presence" val=r.lcpsych_presence_score max=25 %}
+              {% include "seo_intel/partials/_score_bar.html" with label="Local Intent" val=r.local_intent_score max=15 %}
+              {% include "seo_intel/partials/_score_bar.html" with label="Commercial Intent" val=r.commercial_intent_score max=10 %}
+            </div>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-500 font-semibold">Total</span>
+              <span class="score-pill score-{{ r.score_css }}">{{ r.priority_score }}/100</span>
+            </div>
+          </div>
+
+        </div>{# /col-1 #}
+
+        {# ─ Column 2: Competitor + LC Psych ─ #}
+        <div class="intel-col p-4 space-y-4">
+
+          {# Competitor panel #}
+          <div>
+            <div class="intel-section-label">🏆 Competitor Presence</div>
+            {% if r.competitors %}
+              {% if r.competitors_dominate_top3 %}
+                <div class="alert-banner alert-red mt-2">⚠ {{ r.top3_domains|length }} competitors in top 3</div>
+              {% endif %}
+              <div class="mt-2 space-y-1 max-h-36 overflow-y-auto">
+                {% for c in r.competitors %}
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-slate-600 truncate max-w-[9rem]" title="{{ c.domain }}">{{ c.domain }}</span>
+                    <span class="rank-pill {% if c.rank <= 3 %}rank-top{% elif c.rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">
+                      #{{ c.rank }}
+                    </span>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-sm text-slate-400 mt-2 italic">No competitor SERP data yet. Run SerpAPI.</div>
+            {% endif %}
+          </div>
+
+          {# LC Psych panel #}
+          <div>
+            <div class="intel-section-label">🔵 LC Psych Presence</div>
+            {% if r.lc_rank %}
+              <div class="flex items-center gap-2 mt-2">
+                <span class="rank-pill {% if r.lc_rank <= 3 %}rank-top{% elif r.lc_rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">
+                  #{{ r.lc_rank }}
+                </span>
+                {% if r.lc_url %}
+                  <a href="{{ r.lc_url }}" target="_blank" rel="noopener"
+                     class="text-xs text-brand-teal hover:underline truncate max-w-[12rem]"
+                     title="{{ r.lc_url }}">{{ r.lc_title|default:r.lc_url|truncatechars:40 }}</a>
+                {% endif %}
+              </div>
+              {% if r.lc_rank <= 3 %}
+                <div class="text-xs text-emerald-600 mt-1">✓ Strong organic position</div>
+              {% elif r.lc_rank <= 10 %}
+                <div class="text-xs text-amber-600 mt-1">⚡ Page 1 — room to improve</div>
+              {% else %}
+                <div class="text-xs text-red-500 mt-1">↓ Buried — page {{ r.lc_rank|floatformat:0 }} area</div>
+              {% endif %}
+            {% else %}
+              <div class="text-sm text-slate-400 mt-2 italic">LC Psych not ranking for this keyword.</div>
+            {% endif %}
+
+            {# Recommended action #}
+            <div class="mt-3 pt-3 border-t border-slate-100">
+              <div class="text-xs font-semibold text-slate-500 mb-1">Recommended Action</div>
+              <span class="action-badge action-{{ r.action_css }} text-sm py-1 px-3">{{ r.recommended_action }}</span>
+            </div>
+          </div>
+
+        </div>{# /col-2 #}
+
+        {# ─ Column 3: Keyword Expansion ─ #}
+        <div class="intel-col p-4 space-y-4">
+
+          {# PAA #}
+          {% if r.paa %}
+          <div>
+            <div class="intel-section-label">❓ People Also Ask</div>
+            <ul class="mt-2 space-y-1.5">
+              {% for item in r.paa %}
+              <li class="flex items-start justify-between gap-2 text-sm">
+                <span class="text-slate-700 leading-snug flex-1">{{ item.text }}</span>
+                {% if not item.used_as_seed %}
+                  <button type="button"
+                    class="add-seed-btn flex-shrink-0"
+                    data-keyword="{{ item.text }}"
+                    data-category="{{ r.category }}"
+                    title="Promote to Keyword Seed">＋</button>
+                {% else %}
+                  <span class="seed-added-tag flex-shrink-0" title="Already a seed">✓</span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {# Related searches #}
+          {% if r.related %}
+          <div>
+            <div class="intel-section-label">🔍 Related Searches</div>
+            <ul class="mt-2 space-y-1.5">
+              {% for item in r.related %}
+              <li class="flex items-start justify-between gap-2 text-sm">
+                <span class="text-slate-700 leading-snug flex-1">{{ item.text }}</span>
+                {% if not item.used_as_seed %}
+                  <button type="button"
+                    class="add-seed-btn flex-shrink-0"
+                    data-keyword="{{ item.text }}"
+                    data-category="{{ r.category }}"
+                    title="Promote to Keyword Seed">＋</button>
+                {% else %}
+                  <span class="seed-added-tag flex-shrink-0" title="Already a seed">✓</span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if not r.has_expansion %}
+            <div class="text-sm text-slate-400 italic mt-2">No PAA or related searches found yet.<br>Run SerpAPI scrape to populate.</div>
+          {% endif %}
+
+        </div>{# /col-3 #}
+
+      </div>{# /intel-card-body #}
+    </div>{# /card-surface #}
+  {% endfor %}
+  </div>{# /intel-cards #}
+
+{% else %}
+  <div class="card-surface p-10 text-center text-slate-400">
+    <div class="text-4xl mb-3">🌱</div>
+    <div class="font-semibold text-slate-600">No keyword seeds found.</div>
+    <p class="text-sm mt-1">Add keyword seeds in the <a href="{% url 'seo_intel:keywords' %}" class="text-brand-teal hover:underline">Keyword Seeds</a> tab.</p>
+  </div>
+{% endif %}

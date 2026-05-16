@@ -7,8 +7,11 @@ Include via: path('seo/', include('seo_settings.portal_urls', namespace='seo_int
 from django.urls import path
 
 from seo_intel.views.actions import run_serpapi, run_serpapi_for_keyword, score_keywords as score_keywords_action
+from seo_intel.views.add_seed import add_seed
 from seo_intel.views.analytics_hub import analytics_hub
 from seo_intel.views.content_gaps import content_gaps
+from seo_intel.views.keyword_discovery import keyword_discovery
+from seo_intel.views.keyword_seeds_intel import keyword_seeds_intel
 from seo_intel.views.keyword_universe import keyword_universe
 from seo_intel.views.serp_explorer import serp_explorer
 from seo_settings.views import actions, portal
@@ -33,6 +36,15 @@ urlpatterns = [
     path('keywords/<int:pk>/toggle/', portal.toggle_keyword, name='keyword_toggle'),
     path('keywords/<int:pk>/delete/', portal.delete_keyword, name='keyword_delete'),
     path('keywords/export.csv', portal.export_keywords_csv, name='keywords_export'),
+
+    # Keyword Seeds Intelligence
+    path('keyword-seeds-intel/', keyword_seeds_intel, name='keyword_seeds_intel'),
+
+    # Keyword Discovery Engine
+    path('keyword-discovery/', keyword_discovery, name='keyword_discovery'),
+
+    # Add Seed (POST — promotes a discovered keyword to KeywordSeed)
+    path('add-seed/', add_seed, name='add_seed'),
 
     # Keyword Universe
     path('keyword-universe/', keyword_universe, name='keyword_universe'),

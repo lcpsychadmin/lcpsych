@@ -1,0 +1,13 @@
+{% comment %}
+seo_intel/templates/seo_intel/partials/_score_bar.html
+------------------------------------------------------
+Renders a single labeled progress bar for a sub-score.
+Variables: label, val, max
+{% endcomment %}
+<div class="flex items-center gap-2">
+  <span class="text-xs text-slate-500 w-32 flex-shrink-0 truncate" title="{{ label }}">{{ label }}</span>
+  <div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+    <div class="h-1.5 rounded-full bg-brand-teal" style="width:{% widthratio val max 100 %}%"></div>
+  </div>
+  <span class="text-xs font-semibold text-slate-600 w-8 text-right">{{ val }}/{{ max }}</span>
+</div>
