@@ -591,9 +591,6 @@
   <span id="job-toast-text">Scan running…</span>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
 <script>
 const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
 let _pollTimer = null;
@@ -655,4 +652,5 @@ function showToast(msg, isError, isDone) {
   if (isError || isDone) setTimeout(() => toast.classList.remove('show'), 4000);
 }
 </script>
+
 {% endblock %}
