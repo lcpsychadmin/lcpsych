@@ -160,6 +160,28 @@
 </section>
 
 <script>
+const _POLL_JOB_URL_TEMPLATE = "{% url 'seo_intel:action_poll_job' job_id='__JOB_ID__' %}";
+
+function _buildPollUrl(jobId) {
+  return _POLL_JOB_URL_TEMPLATE.replace('__JOB_ID__', jobId);
+}
+
+function _pollJob(jobId, onDone, onError, intervalMs = 3000, maxWaitMs = 300000) {
+  const started = Date.now();
+  function check() {
+    if (Date.now() - started > maxWaitMs) { onError('Timed out.'); return; }
+    fetch(_buildPollUrl(jobId), { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'done')       { onDone(data); }
+        else if (data.status === 'error') { onError(data.message || 'Unknown error'); }
+        else                              { setTimeout(check, intervalMs); }
+      })
+      .catch(() => setTimeout(check, intervalMs));
+  }
+  setTimeout(check, intervalMs);
+}
+
 function runCrawl(btn) {
   const domain = btn.dataset.domain;
   if (!domain) return;
@@ -185,25 +207,41 @@ function runCrawl(btn) {
   })
   .then(r => r.json())
   .then(data => {
-    if (data.status === 'ok') {
-      btnText.textContent = `✓ ${data.pages} pages crawled`;
-      // Reload the panel via HTMX
-      htmx.ajax('GET', '?competitor=' + encodeURIComponent(domain), {
-        target: '#comp-panel',
-        swap: 'innerHTML',
-      });
-    } else {
+    if (data.status === 'queued') {
+      _pollJob(
+        data.job_id,
+        result => {
+          spinner.style.display = 'none';
+          btn.disabled = false;
+          btnText.textContent = `✓ ${result.pages} pages crawled`;
+          // Reload the analysis panel with fresh data
+          htmx.ajax('GET', '?competitor=' + encodeURIComponent(domain), {
+            target: '#comp-panel',
+            swap: 'innerHTML',
+          });
+          setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);
+        },
+        msg => {
+          spinner.style.display = 'none';
+          btn.disabled = false;
+          btnText.textContent = '✗ Error';
+          alert('Crawl failed: ' + msg);
+          setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);
+        }
+      );
+    } else if (data.status === 'error') {
+      spinner.style.display = 'none';
+      btn.disabled = false;
       btnText.textContent = '✗ Error';
       alert('Crawl failed: ' + (data.message || 'unknown error'));
+      setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);
     }
   })
   .catch(err => {
-    btnText.textContent = '✗ Error';
-    console.error('Crawl error:', err);
-  })
-  .finally(() => {
     spinner.style.display = 'none';
     btn.disabled = false;
+    btnText.textContent = '✗ Error';
+    console.error('Crawl error:', err);
     setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);
   });
 }

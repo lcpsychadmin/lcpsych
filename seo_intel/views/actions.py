@@ -130,14 +130,30 @@ def score_keywords(request) -> JsonResponse:
 # Action: run_competitor_crawl
 # ---------------------------------------------------------------------------
 
+def _bg_run_competitor_crawl(job_id: str, domain: str, limit: int) -> None:
+    from seo_intel.services.competitor_crawler import crawl_competitor, invalidate_crawl
+    try:
+        invalidate_crawl(domain)
+        pages = crawl_competitor(domain, max_pages=limit, force=True)
+        logger.info("run_competitor_crawl: %s — %d pages crawled", domain, len(pages))
+        _jobs[job_id] = {
+            "status": "done",
+            "pages":  len(pages),
+            "_ts":    _time.time(),
+        }
+    except Exception as exc:
+        logger.exception("run_competitor_crawl bg failed for %s: %s", domain, exc)
+        _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+
+
 @_require_staff_post
 def run_competitor_crawl(request) -> JsonResponse:
-    """Trigger a live crawl for a single competitor domain.
+    """Queue a background crawl for a single competitor domain.
 
-    Accepts POST param ``domain`` (required). Crawls up to 50 pages for
-    speed. Invalidates existing cache before crawling so results are fresh.
+    Returns {"status": "queued", "job_id": "..."} immediately.
+    Poll actions/job-status/<job_id>/ to track completion.
     """
-    from seo_intel.services.competitor_crawler import crawl_competitor, invalidate_crawl
+    from seo_intel.services.competitor_crawler import crawl_competitor, invalidate_crawl  # noqa: F401
 
     domain = request.POST.get("domain", "").strip()
     if not domain:
@@ -150,10 +166,8 @@ def run_competitor_crawl(request) -> JsonResponse:
         except (TypeError, ValueError):
             limit = 50
 
-        invalidate_crawl(domain)
-        pages = crawl_competitor(domain, max_pages=limit, force=True)
-        logger.info("run_competitor_crawl: %s — %d pages crawled", domain, len(pages))
-        return JsonResponse({"status": "ok", "pages": len(pages)})
+        job_id = _start_job(_bg_run_competitor_crawl, domain, limit)
+        return JsonResponse({"status": "queued", "job_id": job_id})
     except Exception as exc:
         logger.exception("run_competitor_crawl failed for %s: %s", domain, exc)
         return JsonResponse({"status": "error", "message": str(exc)}, status=500)
