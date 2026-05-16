@@ -1,0 +1,257 @@
+{% comment %}
+seo_intel/templates/seo_intel/partials/competitor_analysis_panel.html
+-----------------------------------------------------------------------
+HTMX partial — replaces #comp-panel on competitor switch or refresh.
+{% endcomment %}
+
+{% if not crawled %}
+{# ── Empty / not-yet-crawled state ──────────────────────────────────── #}
+<div class="card-surface p-8 empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0f3f46" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
+  <h3>No crawl data for {% if selected_domain %}<strong>{{ selected_domain }}</strong>{% else %}this competitor{% endif %}</h3>
+  <p class="text-sm text-slate-500 mb-4">
+    Click <strong>▶ Run Crawl</strong> above to crawl the competitor's public pages
+    and generate your gap analysis. Results are cached for 24 hours.
+  </p>
+  {% if not competitors %}
+  <p class="text-sm text-slate-500">
+    No active competitor domains are configured.
+    <a href="{% url 'seo_intel:competitors' %}" class="text-brand-teal underline">Add competitors →</a>
+  </p>
+  {% endif %}
+</div>
+
+{% else %}
+
+{# ── Section A: Competitor Overview ─────────────────────────────────── #}
+<div class="card-surface p-5 mb-5">
+  <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500 mb-4">
+    Competitor Overview — {{ selected_domain }}
+  </h2>
+  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 divide-x divide-slate-100">
+    <div class="stat-block">
+      <div class="stat-num">{{ overview.page_count }}</div>
+      <div class="stat-label">Pages Crawled</div>
+    </div>
+    <div class="stat-block pl-3">
+      <div class="stat-num text-slate-600">{{ overview.avg_word_count }}</div>
+      <div class="stat-label">Avg Words/Page</div>
+    </div>
+    <div class="stat-block pl-3">
+      <div class="stat-num text-sky-600">{{ overview.service_pages }}</div>
+      <div class="stat-label">Service Pages</div>
+    </div>
+    <div class="stat-block pl-3">
+      <div class="stat-num text-violet-600">{{ overview.modality_pages }}</div>
+      <div class="stat-label">Modality Pages</div>
+    </div>
+    <div class="stat-block pl-3">
+      <div class="stat-num text-pink-600">{{ overview.testing_pages }}</div>
+      <div class="stat-label">Testing Pages</div>
+    </div>
+    <div class="stat-block pl-3">
+      <div class="stat-num text-orange-600">{{ overview.location_pages }}</div>
+      <div class="stat-label">Location Pages</div>
+    </div>
+    <div class="stat-block pl-3">
+      <div class="stat-num text-amber-600">{{ overview.condition_pages }}</div>
+      <div class="stat-label">Condition Pages</div>
+    </div>
+  </div>
+</div>
+
+{# ── Section B: Gap Summary Scores ───────────────────────────────────── #}
+<div class="mb-5">
+  <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500 mb-3">Gap Scores
+    <span class="text-xs font-normal text-slate-400 ml-1 normal-case">(% of competitor coverage LC Psych lacks — lower is better)</span>
+  </h2>
+  <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+
+    {% with s=gap_scores.content_gap_score %}
+    <div class="gap-score-card {% if s <= 20 %}gap-card-low{% elif s <= 50 %}gap-card-mid{% else %}gap-card-high{% endif %}">
+      <div class="gap-score-num">{{ s }}</div>
+      <div class="gap-score-label">Content Gap</div>
+    </div>
+    {% endwith %}
+
+    {% with s=gap_scores.keyword_gap_score %}
+    <div class="gap-score-card {% if s <= 20 %}gap-card-low{% elif s <= 50 %}gap-card-mid{% else %}gap-card-high{% endif %}">
+      <div class="gap-score-num">{{ s }}</div>
+      <div class="gap-score-label">Keyword Gap</div>
+    </div>
+    {% endwith %}
+
+    {% with s=gap_scores.modality_gap_score %}
+    <div class="gap-score-card {% if s <= 20 %}gap-card-low{% elif s <= 50 %}gap-card-mid{% else %}gap-card-high{% endif %}">
+      <div class="gap-score-num">{{ s }}</div>
+      <div class="gap-score-label">Modality Gap</div>
+    </div>
+    {% endwith %}
+
+    {% with s=gap_scores.testing_gap_score %}
+    <div class="gap-score-card {% if s <= 20 %}gap-card-low{% elif s <= 50 %}gap-card-mid{% else %}gap-card-high{% endif %}">
+      <div class="gap-score-num">{{ s }}</div>
+      <div class="gap-score-label">Testing Gap</div>
+    </div>
+    {% endwith %}
+
+    {% with s=gap_scores.location_gap_score %}
+    <div class="gap-score-card {% if s <= 20 %}gap-card-low{% elif s <= 50 %}gap-card-mid{% else %}gap-card-high{% endif %}">
+      <div class="gap-score-num">{{ s }}</div>
+      <div class="gap-score-label">Location Gap</div>
+    </div>
+    {% endwith %}
+
+  </div>
+</div>
+
+{# ── Section C: Side-by-Side Comparison Table ────────────────────────── #}
+<div class="card-surface mb-5 overflow-hidden">
+  <div class="p-4 border-b border-slate-100">
+    <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">Side-by-Side Coverage</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>LC Psych Coverage</th>
+          <th>Competitor Coverage</th>
+          <th>Gap Count</th>
+          <th>Gap Score</th>
+          <th>Top Missing Keywords</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in category_rows %}
+        <tr>
+          <td>
+            <span class="cat-badge cat-{{ row.category }}">{{ row.label }}</span>
+          </td>
+          <td class="text-slate-700 font-medium">{{ row.lc_count }}</td>
+          <td class="text-slate-700 font-medium">{{ row.comp_count }}</td>
+          <td>
+            {% if row.gap_count > 0 %}
+            <span class="font-semibold text-red-600">{{ row.gap_count }}</span>
+            {% else %}
+            <span class="text-emerald-600 font-semibold">0</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="score-pill {{ row.score_css }}">{{ row.score }}</span>
+          </td>
+          <td>
+            {% for kw in row.gap_keywords %}
+            <span class="kw-chip">{{ kw }}</span>
+            {% empty %}
+            <span class="text-xs text-slate-400">—</span>
+            {% endfor %}
+            {% if row.gap_count > row.gap_keywords|length %}
+            <span class="text-xs text-slate-400 ml-1">+{{ row.gap_count|add:"-10" }} more</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Section D: Recommended Actions ──────────────────────────────────── #}
+{% if recommendations %}
+<div class="card-surface mb-5 overflow-hidden">
+  <div class="p-4 border-b border-slate-100">
+    <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">
+      Recommended Actions
+      <span class="text-xs font-normal text-slate-400 normal-case ml-1">({{ recommendations|length }} suggestions)</span>
+    </h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Action</th>
+          <th>Category</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in recommendations %}
+        <tr>
+          <td><span class="action-badge {{ rec.priority_css }}">{{ rec.priority }}</span></td>
+          <td class="font-medium text-slate-700">{{ rec.action }}</td>
+          <td><span class="cat-badge cat-{{ rec.category }}">{{ rec.category }}</span></td>
+          <td class="text-slate-600 text-sm">{{ rec.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{# ── Section E: Top Competitor Pages by Type ──────────────────────────── #}
+{% if top_pages.testing or top_pages.service or top_pages.modality or top_pages.location or top_pages.condition %}
+<div class="card-surface mb-5 overflow-hidden">
+  <div class="p-4 border-b border-slate-100">
+    <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">Top Competitor Pages by Type</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Title</th>
+          <th>URL</th>
+          <th>Words</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for page in top_pages.testing %}
+        <tr>
+          <td><span class="cat-badge cat-testing">testing</span></td>
+          <td class="font-medium text-slate-700">{{ page.title|default:"—" }}</td>
+          <td><a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-teal-700 hover:underline truncate block max-w-xs">{{ page.url }}</a></td>
+          <td>{{ page.word_count }}</td>
+        </tr>
+        {% endfor %}
+        {% for page in top_pages.modality %}
+        <tr>
+          <td><span class="cat-badge cat-modality">modality</span></td>
+          <td class="font-medium text-slate-700">{{ page.title|default:"—" }}</td>
+          <td><a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-teal-700 hover:underline truncate block max-w-xs">{{ page.url }}</a></td>
+          <td>{{ page.word_count }}</td>
+        </tr>
+        {% endfor %}
+        {% for page in top_pages.service %}
+        <tr>
+          <td><span class="cat-badge cat-service">service</span></td>
+          <td class="font-medium text-slate-700">{{ page.title|default:"—" }}</td>
+          <td><a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-teal-700 hover:underline truncate block max-w-xs">{{ page.url }}</a></td>
+          <td>{{ page.word_count }}</td>
+        </tr>
+        {% endfor %}
+        {% for page in top_pages.location %}
+        <tr>
+          <td><span class="cat-badge cat-location">location</span></td>
+          <td class="font-medium text-slate-700">{{ page.title|default:"—" }}</td>
+          <td><a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-teal-700 hover:underline truncate block max-w-xs">{{ page.url }}</a></td>
+          <td>{{ page.word_count }}</td>
+        </tr>
+        {% endfor %}
+        {% for page in top_pages.condition %}
+        <tr>
+          <td><span class="cat-badge cat-condition">condition</span></td>
+          <td class="font-medium text-slate-700">{{ page.title|default:"—" }}</td>
+          <td><a href="{{ page.url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-teal-700 hover:underline truncate block max-w-xs">{{ page.url }}</a></td>
+          <td>{{ page.word_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}{# /crawled #}

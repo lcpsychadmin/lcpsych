@@ -11,6 +11,7 @@ from seo_intel.views.actions import (
     run_serpapi_for_discovered,
     run_serpapi_for_keyword,
     run_serpapi_selected,
+    run_competitor_crawl,
     score_keywords as score_keywords_action,
 )
 from seo_intel.views.add_seed import add_seed
@@ -18,6 +19,7 @@ from seo_intel.views.analytics_hub import analytics_hub
 from seo_intel.views.content_gaps import content_gaps
 from seo_intel.views.keyword_discovery import keyword_discovery
 from seo_intel.views.keyword_seeds_intel import keyword_seeds_intel
+from seo_intel.views.competitor_analysis import competitor_analysis
 from seo_intel.views.keyword_universe import keyword_universe
 from seo_intel.views.serp_explorer import serp_explorer
 from seo_settings.views import actions, portal
@@ -61,6 +63,9 @@ urlpatterns = [
     # Content Gaps (enhanced view)
     path('content-gaps/', content_gaps, name='content_gaps'),
 
+    # Competitor Analysis Engine
+    path('competitor-analysis/', competitor_analysis, name='competitor_analysis'),
+
     # Analytics Hub
     path('analytics-hub/', analytics_hub, name='analytics_hub'),
 
@@ -83,4 +88,5 @@ urlpatterns = [
     path('actions/clear-dead/', actions.clear_dead_urls, name='action_clear_dead'),
     path('actions/clear-internal/', actions.clear_internal_search, name='action_clear_internal'),
     path('actions/clear-serps/', actions.clear_competitor_results, name='action_clear_serps'),
+    path('actions/run-competitor-crawl/', run_competitor_crawl, name='action_run_competitor_crawl'),
 ]

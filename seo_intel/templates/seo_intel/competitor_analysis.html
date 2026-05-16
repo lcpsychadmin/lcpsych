@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title }} — SEO Intelligence{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+<style>
+/* ── Layout / card surface ───────────────────────────────────────────── */
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.stat-block  { text-align: center; }
+.stat-num    { font-size: 1.6rem; font-weight: 700; color: #0f3f46; line-height: 1; }
+.stat-label  { font-size: 0.73rem; color: #64748b; margin-top: 0.2rem; }
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+.data-table    { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.data-table th { text-align: left; padding: 0.55rem 0.65rem; font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+.data-table td { padding: 0.5rem 0.65rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fbfc; }
+
+/* ── Buttons & forms ─────────────────────────────────────────────────── */
+.form-input   { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.4rem 0.7rem; font-size: 0.85rem; color: #0f3f46; background: #fff; }
+.form-input:focus { outline: none; border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146,220,229,0.3); }
+.seo-btn         { display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; text-decoration: none; }
+.seo-btn-primary { background: #0f3f46; color: #fff; }
+.seo-btn-primary:hover { background: #1a5a63; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.seo-btn-danger  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.seo-btn-danger:hover { background: #fecaca; }
+
+/* ── Score pills ─────────────────────────────────────────────────────── */
+.score-pill { display: inline-block; font-size: 0.78rem; font-weight: 700; padding: 0.18rem 0.55rem; border-radius: 9999px; min-width: 2.4rem; text-align: center; }
+.score-high { background: #d1fae5; color: #065f46; }
+.score-mid  { background: #fef9c3; color: #854d0e; }
+.score-low  { background: #fee2e2; color: #991b1b; }
+.score-none { background: #f1f5f9; color: #94a3b8; }
+
+/* ── Gap score display ───────────────────────────────────────────────── */
+.gap-score-card { border-radius: 1rem; padding: 1.2rem 1rem; text-align: center; }
+.gap-score-num  { font-size: 2rem; font-weight: 800; line-height: 1; }
+.gap-score-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.35rem; }
+.gap-card-low  { background: #d1fae5; }   /* 0-20: good — few gaps */
+.gap-card-low .gap-score-num  { color: #065f46; }
+.gap-card-low .gap-score-label { color: #047857; }
+.gap-card-mid  { background: #fef9c3; }   /* 21-50: moderate */
+.gap-card-mid .gap-score-num  { color: #854d0e; }
+.gap-card-mid .gap-score-label { color: #92400e; }
+.gap-card-high { background: #fee2e2; }   /* 51+: high risk */
+.gap-card-high .gap-score-num  { color: #991b1b; }
+.gap-card-high .gap-score-label { color: #b91c1c; }
+
+/* ── Category badge ──────────────────────────────────────────────────── */
+.cat-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 0.35rem; white-space: nowrap; }
+.cat-service   { background: #e0f2fe; color: #0369a1; }
+.cat-modality  { background: #f3e8ff; color: #6b21a8; }
+.cat-testing   { background: #fce7f3; color: #9d174d; }
+.cat-condition { background: #ffedd5; color: #9a3412; }
+.cat-location  { background: #d1fae5; color: #065f46; }
+.cat-content   { background: #f1f5f9; color: #475569; }
+
+/* ── Priority badges ─────────────────────────────────────────────────── */
+.action-badge  { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 0.4rem; white-space: nowrap; }
+.action-red    { background: #fee2e2; color: #991b1b; }
+.action-yellow { background: #fef9c3; color: #854d0e; }
+.action-gray   { background: #f1f5f9; color: #64748b; }
+
+/* ── Keyword chip ────────────────────────────────────────────────────── */
+.kw-chip { display: inline-block; font-size: 0.7rem; background: #f1f5f9; color: #475569; border-radius: 0.3rem; padding: 0.1rem 0.45rem; margin: 0.1rem 0.1rem; }
+
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 3rem 1rem; color: #64748b; }
+.empty-state svg { opacity: 0.35; margin-bottom: 1rem; }
+.empty-state h3 { font-size: 1.05rem; font-weight: 600; color: #0f3f46; margin-bottom: 0.4rem; }
+
+/* ── Spinner ─────────────────────────────────────────────────────────── */
+.spinner { width: 1rem; height: 1rem; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── htmx request indicator ─────────────────────────────────────────── */
+#comp-panel.htmx-request { opacity: 0.5; transition: opacity 0.2s; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Hero ─────────────────────────────────────────────────────────────── #}
+<section class="bg-brand-deep text-white py-14">
+  <div class="max-w-7xl mx-auto px-4 sm:px-8">
+    <p class="text-sm font-medium uppercase tracking-widest text-cyan-300 mb-2">SEO Intelligence</p>
+    <h1 class="text-4xl font-bold mb-3">Competitor Analysis</h1>
+    <p class="text-slate-300 text-lg">
+      Compare LC Psych's coverage against active competitors and identify
+      content, keyword, location, modality, and testing gaps.
+    </p>
+  </div>
+</section>
+
+{# ── Layout ───────────────────────────────────────────────────────────── #}
+<section class="py-10 md:py-14">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="settings-layout">
+      {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+      <div class="space-y-5 min-w-0">
+
+        {# ── Toolbar ─────────────────────────────────────────────────── #}
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          {# Competitor selector #}
+          {% if competitors %}
+          <form method="get" class="flex items-center gap-2">
+            <label for="comp-select" class="text-sm font-medium text-slate-600">Competitor:</label>
+            <select id="comp-select" name="competitor" class="form-input"
+                    onchange="this.form.submit()">
+              {% for c in competitors %}
+              <option value="{{ c.domain }}"{% if c.domain == selected_domain %} selected{% endif %}>
+                {{ c.label|default:c.domain }}
+              </option>
+              {% endfor %}
+            </select>
+          </form>
+          {% endif %}
+
+          {# Run Crawl button #}
+          {% if selected_domain %}
+          <button id="crawl-btn"
+                  class="seo-btn seo-btn-primary"
+                  onclick="runCrawl(this)"
+                  data-domain="{{ selected_domain }}">
+            <span class="spinner" id="crawl-spinner"></span>
+            <span id="crawl-btn-text">▶ Run Crawl</span>
+          </button>
+          {% endif %}
+
+          {# Refresh analysis (HTMX) #}
+          {% if crawled %}
+          <a href="?competitor={{ selected_domain }}"
+             hx-get="?competitor={{ selected_domain }}"
+             hx-target="#comp-panel"
+             hx-swap="innerHTML"
+             hx-push-url="true"
+             class="seo-btn seo-btn-outline">⟳ Refresh</a>
+          {% endif %}
+
+          {% if crawled %}
+          <span class="text-xs text-slate-500 ml-auto">
+            {{ overview.page_count }} pages crawled · avg {{ overview.avg_word_count }} words/page
+          </span>
+          {% endif %}
+        </div>
+
+        {# ── Main panel (HTMX target) ──────────────────────────────── #}
+        <div id="comp-panel">
+          {% include "seo_intel/partials/competitor_analysis_panel.html" %}
+        </div>
+
+      </div>{# /min-w-0 #}
+    </div>{# /settings-layout #}
+  </div>{# /max-w-7xl #}
+</section>
+
+<script>
+function runCrawl(btn) {
+  const domain = btn.dataset.domain;
+  if (!domain) return;
+
+  const spinner = document.getElementById('crawl-spinner');
+  const btnText = document.getElementById('crawl-btn-text');
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+  btnText.textContent = 'Crawling…';
+
+  const csrfToken = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1] || '';
+
+  fetch('{% url "seo_intel:action_run_competitor_crawl" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrfToken,
+    },
+    body: new URLSearchParams({ domain }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === 'ok') {
+      btnText.textContent = `✓ ${data.pages} pages crawled`;
+      // Reload the panel via HTMX
+      htmx.ajax('GET', '?competitor=' + encodeURIComponent(domain), {
+        target: '#comp-panel',
+        swap: 'innerHTML',
+      });
+    } else {
+      btnText.textContent = '✗ Error';
+      alert('Crawl failed: ' + (data.message || 'unknown error'));
+    }
+  })
+  .catch(err => {
+    btnText.textContent = '✗ Error';
+    console.error('Crawl error:', err);
+  })
+  .finally(() => {
+    spinner.style.display = 'none';
+    btn.disabled = false;
+    setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);
+  });
+}
+</script>
+
+{% endblock %}

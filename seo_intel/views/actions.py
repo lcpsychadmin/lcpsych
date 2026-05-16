@@ -101,6 +101,39 @@ def score_keywords(request) -> JsonResponse:
 
 
 # ---------------------------------------------------------------------------
+# Action: run_competitor_crawl
+# ---------------------------------------------------------------------------
+
+@_require_staff_post
+def run_competitor_crawl(request) -> JsonResponse:
+    """Trigger a live crawl for a single competitor domain.
+
+    Accepts POST param ``domain`` (required). Crawls up to 50 pages for
+    speed. Invalidates existing cache before crawling so results are fresh.
+    """
+    from seo_intel.services.competitor_crawler import crawl_competitor, invalidate_crawl
+
+    domain = request.POST.get("domain", "").strip()
+    if not domain:
+        return JsonResponse({"status": "error", "message": "domain is required"}, status=400)
+
+    try:
+        raw_limit = request.POST.get("limit", "50")
+        try:
+            limit = max(1, min(int(raw_limit), 200))
+        except (TypeError, ValueError):
+            limit = 50
+
+        invalidate_crawl(domain)
+        pages = crawl_competitor(domain, max_pages=limit, force=True)
+        logger.info("run_competitor_crawl: %s — %d pages crawled", domain, len(pages))
+        return JsonResponse({"status": "ok", "pages": len(pages)})
+    except Exception as exc:
+        logger.exception("run_competitor_crawl failed for %s: %s", domain, exc)
+        return JsonResponse({"status": "error", "message": str(exc)}, status=500)
+
+
+# ---------------------------------------------------------------------------
 # Action: run_serpapi_for_discovered
 # ---------------------------------------------------------------------------
 

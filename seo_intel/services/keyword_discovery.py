@@ -204,19 +204,35 @@ def _score_css(score: int) -> str:
     return "none"
 
 
+import re as _re
+
+# Patterns that indicate a SERP title part is a location/service phrase
+# rather than a brand/site name.
+_LOCATION_RE = _re.compile(
+    r",\s*[A-Z]{2}\b"                          # "Florence, KY"
+    r"|\b(?:kentucky|ohio|indiana|tennessee|virginia|georgia|michigan|illinois)\b"
+    r"|\b(?:northern|southern|eastern|western)\s+kentucky\b"
+    r"|\bserving\b|\bnear me\b|\bnear you\b"
+    r"|\b(?:therapy|therapist|counseling|counselor|psychologist|psychiatry)\s+in\b",
+    _re.IGNORECASE,
+)
+
+
 def _site_name_from_title(title: str, fallback_domain: str) -> str:
     """Derive a readable site name from a SERP page title.
 
     E.g. 'Find a Therapist Near You | Psychology Today' → 'Psychology Today'
+    Rejects candidates that look like locations or service phrases.
     Falls back to a cleaned-up version of the domain.
     """
     if title:
         for sep in (" | ", " - ", " – ", " — ", " · "):
             parts = title.split(sep)
             if len(parts) >= 2:
-                candidate = parts[-1].strip()
-                if 2 <= len(candidate) <= 50:
-                    return candidate
+                # Try last part first (most common brand placement), then first
+                for candidate in (parts[-1].strip(), parts[0].strip()):
+                    if 2 <= len(candidate) <= 50 and not _LOCATION_RE.search(candidate):
+                        return candidate
     # Fallback: strip TLD, convert hyphens, title-case
     d = fallback_domain.lower().removeprefix("www.").split(".")[0]
     return d.replace("-", " ").title()
@@ -544,6 +560,15 @@ def _from_competitors(existing_seeds: set[str]) -> list[dict]:
         if kl not in lc_ranks:
             lc_ranks[kl] = hit.rank
 
+    # Pre-fetch CompetitorDomain labels — used as the authoritative display name
+    # when set, falling back to title-derived names.
+    from seo_settings.models import CompetitorDomain as _CD
+    _domain_labels: dict[str, str] = {
+        cd["domain"].lower().removeprefix("www."): cd["label"]
+        for cd in _CD.objects.values("domain", "label")
+        if cd["label"]
+    }
+
     results: list[dict] = []
     seen: set[str] = set()
 
@@ -572,10 +597,14 @@ def _from_competitors(existing_seeds: set[str]) -> list[dict]:
             if d not in domains_seen:
                 domains_seen.add(d)
                 domains.append(d)
+                _clean_d = d.lower().removeprefix("www.")
                 hits.append({
                     "domain": d,
                     "rank": r,
-                    "name": _site_name_from_title(h.get("title", ""), d),
+                    "name": (
+                        _domain_labels.get(_clean_d)
+                        or _site_name_from_title(h.get("title", ""), d)
+                    ),
                 })
                 if top_rank is None:
                     top_rank = r

@@ -13,13 +13,14 @@
         <li><a class="{% if active_page == 'keywords' %}is-active{% endif %}" href="{% url 'seo_intel:keywords' %}">Keyword Seeds</a></li>
       </ul>
     </li>
-    <li class="nav-tree {% if active_page == 'analytics_sc' or active_page == 'analytics_internal' or active_page == 'analytics_dead_urls' or active_page == 'keyword_seeds_intel' or active_page == 'keyword_discovery' or active_page == 'serp_explorer' or active_page == 'analytics_hub' %}{% else %}is-collapsed{% endif %}" data-collapsible>
-      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="{% if active_page == 'analytics_sc' or active_page == 'analytics_internal' or active_page == 'analytics_dead_urls' or active_page == 'keyword_seeds_intel' or active_page == 'keyword_discovery' or active_page == 'serp_explorer' or active_page == 'analytics_hub' %}true{% else %}false{% endif %}" aria-controls="nav-tree-analytics">Analytics <span class="nav-tree__chevron">▸</span></button>
+    <li class="nav-tree {% if active_page == 'analytics_sc' or active_page == 'analytics_internal' or active_page == 'analytics_dead_urls' or active_page == 'keyword_seeds_intel' or active_page == 'keyword_discovery' or active_page == 'serp_explorer' or active_page == 'analytics_hub' or active_page == 'competitor_analysis' %}{% else %}is-collapsed{% endif %}" data-collapsible>
+      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="{% if active_page == 'analytics_sc' or active_page == 'analytics_internal' or active_page == 'analytics_dead_urls' or active_page == 'keyword_seeds_intel' or active_page == 'keyword_discovery' or active_page == 'serp_explorer' or active_page == 'analytics_hub' or active_page == 'competitor_analysis' %}true{% else %}false{% endif %}" aria-controls="nav-tree-analytics">Analytics <span class="nav-tree__chevron">▸</span></button>
       <ul id="nav-tree-analytics" class="nav-tree__items">
         <li><a class="{% if active_page == 'analytics_hub' %}is-active{% endif %}" href="{% url 'seo_intel:analytics_hub' %}">Analytics Hub</a></li>
         <li><a class="{% if active_page == 'analytics_sc' %}is-active{% endif %}" href="{% url 'seo_intel:analytics_sc' %}">Search Console</a></li>
         <li><a class="{% if active_page == 'analytics_internal' %}is-active{% endif %}" href="{% url 'seo_intel:analytics_internal' %}">Internal Search</a></li>
         <li><a class="{% if active_page == 'analytics_dead_urls' %}is-active{% endif %}" href="{% url 'seo_intel:analytics_dead_urls' %}">Dead URLs</a></li>
+        <li><a class="{% if active_page == 'competitor_analysis' %}is-active{% endif %}" href="{% url 'seo_intel:competitor_analysis' %}">Competitor Analysis</a></li>
         <li><a class="{% if active_page == 'keyword_discovery' %}is-active{% endif %}" href="{% url 'seo_intel:keyword_discovery' %}">Keyword Discovery</a></li>
         <li><a class="{% if active_page == 'keyword_seeds_intel' %}is-active{% endif %}" href="{% url 'seo_intel:keyword_seeds_intel' %}">Keyword Intelligence</a></li>
         <li><a class="{% if active_page == 'serp_explorer' %}is-active{% endif %}" href="{% url 'seo_intel:serp_explorer' %}">SERP Explorer</a></li>
