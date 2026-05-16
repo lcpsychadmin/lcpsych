@@ -121,15 +121,22 @@
           </form>
           {% endif %}
 
-          {# Run Crawl button #}
+          {# Run Crawl button + depth selector #}
           {% if selected_domain %}
-          <button id="crawl-btn"
-                  class="seo-btn seo-btn-primary"
-                  onclick="runCrawl(this)"
-                  data-domain="{{ selected_domain }}">
-            <span class="spinner" id="crawl-spinner"></span>
-            <span id="crawl-btn-text">▶ Run Crawl</span>
-          </button>
+          <div class="flex items-center gap-1">
+            <button id="crawl-btn"
+                    class="seo-btn seo-btn-primary"
+                    onclick="runCrawl(this)"
+                    data-domain="{{ selected_domain }}">
+              <span class="spinner" id="crawl-spinner"></span>
+              <span id="crawl-btn-text">▶ Run Crawl</span>
+            </button>
+            <select id="crawl-limit" class="form-input text-sm py-1" title="Max pages to crawl">
+              <option value="100">100 pages</option>
+              <option value="200" selected>200 pages</option>
+              <option value="500">500 pages</option>
+            </select>
+          </div>
           {% endif %}
 
           {# Last crawled timestamp #}
@@ -195,9 +202,13 @@ function runCrawl(btn) {
   const domain = btn.dataset.domain;
   if (!domain) return;
 
+  const limitEl = document.getElementById('crawl-limit');
+  const limit = limitEl ? limitEl.value : '200';
+
   const spinner = document.getElementById('crawl-spinner');
   const btnText = document.getElementById('crawl-btn-text');
   btn.disabled = true;
+  if (limitEl) limitEl.disabled = true;
   spinner.style.display = 'inline-block';
   btnText.textContent = 'Crawling…';
 
@@ -212,7 +223,7 @@ function runCrawl(btn) {
       'Content-Type': 'application/x-www-form-urlencoded',
       'X-CSRFToken': csrfToken,
     },
-    body: new URLSearchParams({ domain }),
+    body: new URLSearchParams({ domain, limit }),
   })
   .then(r => r.json())
   .then(data => {
@@ -222,6 +233,7 @@ function runCrawl(btn) {
         result => {
           spinner.style.display = 'none';
           btn.disabled = false;
+          if (limitEl) limitEl.disabled = false;
           btnText.textContent = `✓ ${result.pages} pages crawled`;
           // Reload the analysis panel with fresh data
           htmx.ajax('GET', '?competitor=' + encodeURIComponent(domain), {
@@ -233,6 +245,7 @@ function runCrawl(btn) {
         msg => {
           spinner.style.display = 'none';
           btn.disabled = false;
+          if (limitEl) limitEl.disabled = false;
           btnText.textContent = '✗ Error';
           alert('Crawl failed: ' + msg);
           setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);
@@ -241,6 +254,7 @@ function runCrawl(btn) {
     } else if (data.status === 'error') {
       spinner.style.display = 'none';
       btn.disabled = false;
+      if (limitEl) limitEl.disabled = false;
       btnText.textContent = '✗ Error';
       alert('Crawl failed: ' + (data.message || 'unknown error'));
       setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);
@@ -249,6 +263,7 @@ function runCrawl(btn) {
   .catch(err => {
     spinner.style.display = 'none';
     btn.disabled = false;
+    if (limitEl) limitEl.disabled = false;
     btnText.textContent = '✗ Error';
     console.error('Crawl error:', err);
     setTimeout(() => { btnText.textContent = '▶ Run Crawl'; }, 4000);

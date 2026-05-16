@@ -161,11 +161,11 @@ def run_competitor_crawl(request) -> JsonResponse:
         return JsonResponse({"status": "error", "message": "domain is required"}, status=400)
 
     try:
-        raw_limit = request.POST.get("limit", "50")
+        raw_limit = request.POST.get("limit", "200")
         try:
-            limit = max(1, min(int(raw_limit), 200))
+            limit = max(1, min(int(raw_limit), 500))
         except (TypeError, ValueError):
-            limit = 50
+            limit = 200
 
         job_id = _start_job(_bg_run_competitor_crawl, domain, limit)
         return JsonResponse({"status": "queued", "job_id": job_id})

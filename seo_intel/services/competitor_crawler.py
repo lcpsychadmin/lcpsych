@@ -293,12 +293,35 @@ def _parse_page(url: str, html: str, domain: str) -> dict:
     }
 
 
+# URL path segments that indicate high-value clinical pages — crawl these first
+_HIGH_PRIORITY_SEGMENTS: frozenset[str] = frozenset({
+    "services", "service", "therapy", "therapist", "therapists",
+    "counseling", "counselor", "treatment", "treatments",
+    "conditions", "condition", "locations", "location", "areas",
+    "team", "staff", "providers", "provider", "clinician", "clinicians",
+    "about", "testing", "evaluation", "assessments", "assessment",
+    "specialties", "specialty", "modalities", "approaches",
+    "telehealth", "online", "insurance", "faq",
+})
+
+
+def _url_is_high_priority(url: str) -> bool:
+    """Return True if the URL path looks like a high-value clinical page."""
+    path = urlparse(url).path.lower()
+    segments = {s for s in path.strip("/").split("/") if s}
+    return bool(segments & _HIGH_PRIORITY_SEGMENTS)
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
-def crawl_competitor(domain: str, max_pages: int = 200, force: bool = False) -> list[dict]:
+def crawl_competitor(domain: str, max_pages: int = 500, force: bool = False) -> list[dict]:
     """Crawl a competitor domain and return a list of page dicts.
+
+    High-priority pages (services, therapists, locations, conditions, etc.) are
+    visited before general pages so the most valuable content is captured first
+    when the crawl is capped.
 
     Results are stored in the Django cache for CACHE_TTL seconds.
     Pass ``force=True`` to bypass the cache and re-crawl.
@@ -346,7 +369,11 @@ def crawl_competitor(domain: str, max_pages: int = 200, force: bool = False) -> 
 
             for link in page["internal_links"]:
                 if link.rstrip("/") not in visited:
-                    queue.append(link)
+                    # Push high-priority URLs to front so they're crawled within budget
+                    if _url_is_high_priority(link):
+                        queue.appendleft(link)
+                    else:
+                        queue.append(link)
 
             if len(pages) % 10 == 0:
                 logger.info(
