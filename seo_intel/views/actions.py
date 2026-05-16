@@ -20,11 +20,11 @@ import logging
 import threading
 import time as _time
 import uuid
-from contextlib import redirect_stderr, redirect_stdout
 from functools import wraps
 from io import StringIO
 
 from django.core.management import call_command
+from django.db import connections
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -52,8 +52,7 @@ def _require_staff_post(view_func):
 def _run_command(*args, **kwargs) -> tuple[str, str]:
     """Run a management command capturing stdout/stderr. Returns (stdout, stderr)."""
     out, err = StringIO(), StringIO()
-    with redirect_stdout(out), redirect_stderr(err):
-        call_command(*args, **kwargs)
+    call_command(*args, stdout=out, stderr=err, **kwargs)
     return out.getvalue(), err.getvalue()
 
 
@@ -141,9 +140,11 @@ def _bg_run_competitor_crawl(job_id: str, domain: str, limit: int) -> None:
             "pages":  len(pages),
             "_ts":    _time.time(),
         }
-    except Exception as exc:
+    except BaseException as exc:
         logger.exception("run_competitor_crawl bg failed for %s: %s", domain, exc)
         _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+    finally:
+        connections.close_all()
 
 
 @_require_staff_post
@@ -194,9 +195,11 @@ def _bg_run_serpapi_for_discovered(job_id: str, kwargs: dict) -> None:
             "output":    stdout[-1000:],
             "_ts":       _time.time(),
         }
-    except Exception as exc:
+    except BaseException as exc:
         logger.exception("run_serpapi_for_discovered bg failed: %s", exc)
         _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+    finally:
+        connections.close_all()
 
 
 @_require_staff_post
@@ -264,6 +267,7 @@ def _bg_run_serpapi_selected(job_id: str, keywords: list[str]) -> None:
             fetch_serp,
             parse_serp,
         )
+        logger.info("run_serpapi_selected starting for %d keyword(s)", len(keywords))
 
         ok_count  = 0
         err_count = 0
@@ -327,9 +331,11 @@ def _bg_run_serpapi_selected(job_id: str, keywords: list[str]) -> None:
             "detail":    detail,
             "_ts":       _time.time(),
         }
-    except Exception as exc:
+    except BaseException as exc:
         logger.exception("run_serpapi_selected bg failed: %s", exc)
         _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+    finally:
+        connections.close_all()
 
 
 @_require_staff_post
