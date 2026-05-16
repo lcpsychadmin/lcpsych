@@ -66,7 +66,6 @@ def get_location_coverage(domain: str) -> dict:
 
     # ── LC Psych locations (geo DB + regions + location seeds) ───────────
     lc_locs: set[str] = set()
-    region_names: set[str] = set()
     try:
         from geo.models import GeoLocation, GeoRegion, GeoState
         for loc in GeoLocation.objects.filter(is_active=True).values("name", "slug"):
@@ -74,14 +73,9 @@ def get_location_coverage(domain: str) -> dict:
             lc_locs.add(loc["slug"].replace("-", " ").lower())
         for state in GeoState.objects.filter(is_active=True).values("name"):
             lc_locs.add(state["name"].lower())
-        # Include regions (e.g. "Northern Kentucky", "Greater Cincinnati")
         for region in GeoRegion.objects.filter(is_active=True).values("name", "slug"):
-            norm_name = region["name"].lower()
-            norm_slug = region["slug"].replace("-", " ").lower()
-            lc_locs.add(norm_name)
-            lc_locs.add(norm_slug)
-            region_names.add(norm_name)
-            region_names.add(norm_slug)
+            lc_locs.add(region["name"].lower())
+            lc_locs.add(region["slug"].replace("-", " ").lower())
     except Exception:
         logger.debug("location_coverage: could not load geo models", exc_info=True)
 
@@ -94,8 +88,10 @@ def get_location_coverage(domain: str) -> dict:
     except Exception:
         logger.debug("location_coverage: could not load KeywordSeed", exc_info=True)
 
-    # Expand taxonomy to include DB-sourced region names so they survive filtering
-    loc_taxonomy = LOCATION_KW | region_names
+    # Expand taxonomy to include all DB-sourced LC Psych locations (counties,
+    # cities, regions, states) so they survive filtering and are also detectable
+    # in competitor content.
+    loc_taxonomy = LOCATION_KW | lc_locs
 
     # ── Competitor locations (from keyword_hits + URL path matching) ──────
     comp_locs: set[str] = set()
@@ -104,9 +100,10 @@ def get_location_coverage(domain: str) -> dict:
         comp_locs.update(kw.lower() for kw in kw_locs)
         comp_locs.update(_extract_url_locations(page.get("url", ""), loc_taxonomy))
 
-    # Filter to expanded taxonomy so both sides are comparable
+    # Filter competitor locations to expanded taxonomy; LC Psych locations are
+    # authoritative (from DB) so use them directly.
     comp_locs = comp_locs & loc_taxonomy
-    lc_locs_filtered = lc_locs & loc_taxonomy
+    lc_locs_filtered = lc_locs
 
     # ── Sets ──────────────────────────────────────────────────────────────
     missing = sorted(comp_locs - lc_locs_filtered)
