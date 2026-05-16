@@ -68,9 +68,8 @@ def get_location_coverage(domain: str) -> dict:
     lc_locs: set[str] = set()
     try:
         from geo.models import GeoLocation, GeoRegion, GeoState
-        for loc in GeoLocation.objects.filter(is_active=True).values("name", "slug"):
+        for loc in GeoLocation.objects.filter(is_active=True).values("name"):
             lc_locs.add(loc["name"].lower())
-            lc_locs.add(loc["slug"].replace("-", " ").lower())
         for state in GeoState.objects.filter(is_active=True).values("name"):
             lc_locs.add(state["name"].lower())
         for region in GeoRegion.objects.filter(is_active=True).values("name", "slug"):
