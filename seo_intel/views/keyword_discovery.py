@@ -4,7 +4,7 @@ seo_intel/views/keyword_discovery.py
 Keyword Discovery view.
 
 Renders the full discovery panel and supports HTMX partial refresh.
-Filters: source, action, sort.
+Filters: source, action, sort.  Pagination: 25 per page.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from functools import wraps
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 
 logger = logging.getLogger(__name__)
@@ -104,6 +105,57 @@ def keyword_discovery(request):
         key=str.lower,
     )
 
+    # ── Pagination ────────────────────────────────────────────────────────
+    PER_PAGE = 25
+    try:
+        page_num = int(request.GET.get("page", 1))
+    except (TypeError, ValueError):
+        page_num = 1
+
+    paginator = Paginator(results, PER_PAGE)
+    page_obj  = paginator.get_page(page_num)
+
+    # Build a query-string fragment (no "page=") for pagination links in template
+    qs_parts = []
+    if source_filter:
+        qs_parts.append(f"source={source_filter}")
+    if action_filter:
+        qs_parts.append(f"action={action_filter}")
+    if sort_by != "priority":
+        qs_parts.append(f"sort={sort_by}")
+    filter_qs = "&".join(qs_parts)  # e.g. "source=paa&sort=trend"
+
+    # ── Build per-row rankings list (sorted by rank asc) ──────────────────
+    # Shallow-copy each page entry so we don't mutate the cached service dicts.
+    def _rank_css(rank: int, is_lc: bool) -> str:
+        if is_lc:
+            return "rank-top" if rank <= 3 else "rank-mid" if rank <= 10 else "rank-low"
+        return "rank-comp-top" if rank <= 3 else "rank-comp-mid" if rank <= 10 else "rank-comp-low"
+
+    page_results = []
+    for r in page_obj.object_list:
+        entry = {**r}  # shallow copy — avoids mutating the cache
+        rankings: list[dict] = []
+        lc = r.get("lc_rank")
+        if lc:
+            rankings.append({
+                "name": "LC Psych",
+                "rank": lc,
+                "is_lc": True,
+                "rank_css": _rank_css(lc, True),
+            })
+        for hit in r.get("competitor_hits", []):
+            rk = hit["rank"]
+            rankings.append({
+                "name": hit.get("name") or hit.get("domain", "?"),
+                "rank": rk,
+                "is_lc": False,
+                "rank_css": _rank_css(rk, False),
+            })
+        rankings.sort(key=lambda x: x["rank"])
+        entry["rankings"] = rankings
+        page_results.append(entry)
+
     # ── HTMX partial ──────────────────────────────────────────────────────
     is_htmx  = request.headers.get("HX-Request") == "true"
     template = (
@@ -115,8 +167,12 @@ def keyword_discovery(request):
     ctx = {
         "seo_title":     "Keyword Discovery",
         "active_page":   "keyword_discovery",
-        "results":       results,
+        "results":       page_results,
+        "page_obj":      page_obj,
+        "paginator":     paginator,
+        "filter_qs":     filter_qs,
         "total":         total,
+        "total_filtered": len(results),
         "rising":        rising,
         "competitor_gap": competitor_gap,
         "high_priority": high_priority,

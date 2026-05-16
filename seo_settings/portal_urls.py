@@ -6,7 +6,13 @@ Include via: path('seo/', include('seo_settings.portal_urls', namespace='seo_int
 """
 from django.urls import path
 
-from seo_intel.views.actions import run_serpapi, run_serpapi_for_keyword, score_keywords as score_keywords_action
+from seo_intel.views.actions import (
+    run_serpapi,
+    run_serpapi_for_discovered,
+    run_serpapi_for_keyword,
+    run_serpapi_selected,
+    score_keywords as score_keywords_action,
+)
 from seo_intel.views.add_seed import add_seed
 from seo_intel.views.analytics_hub import analytics_hub
 from seo_intel.views.content_gaps import content_gaps
@@ -71,6 +77,8 @@ urlpatterns = [
     path('actions/run-gap/', actions.run_gap_analysis, name='action_run_gap'),
     path('actions/run-serpapi/', run_serpapi, name='action_run_serpapi'),
     path('actions/run-serpapi-keyword/', run_serpapi_for_keyword, name='action_run_serpapi_keyword'),
+    path('actions/run-serpapi-discovered/', run_serpapi_for_discovered, name='action_run_serpapi_discovered'),
+    path('actions/run-serpapi-selected/', run_serpapi_selected, name='action_run_serpapi_selected'),
     path('actions/score-keywords/', score_keywords_action, name='action_score_keywords'),
     path('actions/clear-dead/', actions.clear_dead_urls, name='action_clear_dead'),
     path('actions/clear-internal/', actions.clear_internal_search, name='action_clear_internal'),

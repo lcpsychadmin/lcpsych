@@ -64,9 +64,12 @@
 
 /* ── Rank pills ──────────────────────────────────────────────────────────── */
 .rank-pill { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; }
-.rank-top  { background: #dcfce7; color: #166534; }
-.rank-mid  { background: #fef9c3; color: #854d0e; }
-.rank-low  { background: #fee2e2; color: #991b1b; }
+.rank-top      { background: #dcfce7; color: #166534; }   /* LC top 3 — green */
+.rank-mid      { background: #fef9c3; color: #854d0e; }   /* LC 4–10 / all 4–10 — amber */
+.rank-low      { background: #f1f5f9; color: #64748b; }   /* LC 11+ — grey */
+.rank-comp-top { background: #fee2e2; color: #991b1b; }   /* Competitor top 3 — red */
+.rank-comp-mid { background: #ffedd5; color: #9a3412; }   /* Competitor 4–10 — orange */
+.rank-comp-low { background: #f1f5f9; color: #94a3b8; }   /* Competitor 11+ — grey */
 
 /* ── Action badges ───────────────────────────────────────────────────────── */
 .action-badge  { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 0.4rem; white-space: nowrap; }
@@ -94,6 +97,7 @@
 
 /* ── Spinner ─────────────────────────────────────────────────────────────── */
 .spinner { width: 1rem; height: 1rem; border: 2px solid #92DCE5; border-top-color: #0f3f46; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+.spinner.spinner-light { border-color: rgba(255,255,255,0.4); border-top-color: #fff; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
@@ -136,7 +140,14 @@
               <h2 class="text-lg font-semibold text-slate-800 m-0">Keyword Discovery</h2>
               <span class="text-xs text-slate-400 font-normal">( results cached 15 min )</span>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-wrap">
+              <button id="run-serp-btn"
+                      class="seo-btn seo-btn-primary"
+                      onclick="runSerpApi()"
+                      title="Fetch live Google rankings for the top 25 discovered keywords (uses SerpAPI credits)">
+                <span class="spinner" id="serp-spinner"></span>
+                🔍 Run SerpAPI on Discovered
+              </button>
               <a href="?refresh=1&source={{ source_filter }}&action={{ action_filter }}&sort={{ sort_by }}"
                  class="seo-btn seo-btn-outline"
                  hx-get="{% url 'seo_intel:keyword_discovery' %}?refresh=1&source={{ source_filter }}&action={{ action_filter }}&sort={{ sort_by }}"
@@ -205,8 +216,150 @@ function showToast(msg, duration = 2500) {
   setTimeout(() => t.classList.remove('show'), duration);
 }
 
+// ── Run SerpAPI on discovered keywords ────────────────────────────────────
+const RUN_SERP_URL = "{% url 'seo_intel:action_run_serpapi_discovered' %}";
+
+function runSerpApi() {
+  const btn = document.getElementById('run-serp-btn');
+  const spinner = document.getElementById('serp-spinner');
+  if (!btn || btn.disabled) return;
+
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  if (spinner) spinner.style.display = 'inline-block';
+  showToast('Running SerpAPI — this may take 1–2 minutes…', 90000);
+
+  fetch(RUN_SERP_URL, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrf() },
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (spinner) spinner.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+
+    // Dismiss long-running toast
+    const t = document.getElementById('toast');
+    if (t) t.classList.remove('show');
+
+    if (data.status === 'ok') {
+      showToast(
+        `✓ SerpAPI complete — ${data.processed} keyword(s) fetched, ${data.errors} error(s). Refresh to see updated ranks.`,
+        5000
+      );
+    } else {
+      showToast(`Error: ${data.message}`, 5000);
+    }
+  })
+  .catch(err => {
+    if (spinner) spinner.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    showToast('Network error — please try again.', 4000);
+  });
+}
+
 // ── Add to Seeds ──────────────────────────────────────────────────────────
 const ADD_SEED_URL = "{% url 'seo_intel:add_seed' %}";
+const RUN_SERP_SELECTED_URL = "{% url 'seo_intel:action_run_serpapi_selected' %}";
+
+// ── Checkbox / selection helpers ──────────────────────────────────────────
+// Runs after every HTMX panel swap (and once on page load)
+function initCheckboxes() {
+  const selectAll = document.getElementById('select-all-kw');
+  if (selectAll) {
+    selectAll.checked = false;
+    selectAll.addEventListener('change', function () {
+      document.querySelectorAll('.kw-checkbox').forEach(cb => {
+        cb.checked = this.checked;
+      });
+      updateSelectionBar();
+    });
+  }
+  document.querySelectorAll('.kw-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateSelectionBar);
+  });
+}
+
+function getSelectedKeywords() {
+  return Array.from(document.querySelectorAll('.kw-checkbox:checked'))
+    .map(cb => cb.value)
+    .filter(Boolean);
+}
+
+function updateSelectionBar() {
+  const selected = getSelectedKeywords();
+  const bar   = document.getElementById('kw-selection-bar');
+  const label = document.getElementById('kw-selected-label');
+  if (!bar) return;
+  if (selected.length > 0) {
+    bar.classList.remove('hidden');
+    label.textContent = `${selected.length} keyword${selected.length > 1 ? 's' : ''} selected`;
+  } else {
+    bar.classList.add('hidden');
+  }
+}
+
+function clearKwSelection() {
+  document.querySelectorAll('.kw-checkbox').forEach(cb => { cb.checked = false; });
+  const selectAll = document.getElementById('select-all-kw');
+  if (selectAll) selectAll.checked = false;
+  updateSelectionBar();
+}
+
+// Re-init checkboxes after HTMX panel swaps
+document.body.addEventListener('htmx:afterSwap', function (e) {
+  if (e.detail.target && e.detail.target.id === 'keyword-discovery-panel') {
+    initCheckboxes();
+  }
+});
+initCheckboxes();
+
+// ── Run SerpAPI on selected keywords ─────────────────────────────────────
+function runSerpSelected() {
+  const keywords = getSelectedKeywords();
+  if (keywords.length === 0) return;
+
+  const btn     = document.getElementById('run-serp-selected-btn');
+  const spinner = document.getElementById('serp-selected-spinner');
+  if (!btn || btn.disabled) return;
+
+  btn.disabled = true;
+  if (spinner) spinner.style.display = 'inline-block';
+  showToast(`Running SerpAPI for ${keywords.length} keyword(s) — please wait…`, 120000);
+
+  const body = new URLSearchParams({ keywords: keywords.join(',') });
+
+  fetch(RUN_SERP_SELECTED_URL, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrf() },
+    body,
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (spinner) spinner.style.display = 'none';
+    btn.disabled = false;
+
+    const t = document.getElementById('toast');
+    if (t) t.classList.remove('show');
+
+    if (data.status === 'ok') {
+      clearKwSelection();
+      showToast(
+        `✓ Done — ${data.processed} fetched, ${data.errors} error(s). Refresh to see updated ranks.`,
+        6000,
+      );
+    } else {
+      showToast(`Error: ${data.message}`, 5000);
+    }
+  })
+  .catch(() => {
+    if (spinner) spinner.style.display = 'none';
+    btn.disabled = false;
+    showToast('Network error — please try again.', 4000);
+  });
+}
 
 document.body.addEventListener('click', function (e) {
   const btn = e.target.closest('.add-seed-btn');

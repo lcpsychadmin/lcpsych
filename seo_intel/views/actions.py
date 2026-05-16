@@ -101,6 +101,180 @@ def score_keywords(request) -> JsonResponse:
 
 
 # ---------------------------------------------------------------------------
+# Action: run_serpapi_for_discovered
+# ---------------------------------------------------------------------------
+
+@_require_staff_post
+def run_serpapi_for_discovered(request) -> JsonResponse:
+    """Run SerpApi for discovered keywords not yet in the seed list.
+
+    Accepts optional POST parameters:
+        limit       int  — max keywords to process (default 25, max 50)
+        min_priority int — only keywords with priority_score >= this (default 0)
+        source      str  — filter to one discovery source
+        stale_days  int  — skip keywords fetched within this many days (default 7)
+    """
+    try:
+        raw_limit = request.POST.get("limit", "25")
+        try:
+            limit = max(1, min(int(raw_limit), 50))
+        except (TypeError, ValueError):
+            limit = 25
+
+        raw_min = request.POST.get("min_priority", "0")
+        try:
+            min_priority = max(0, int(raw_min))
+        except (TypeError, ValueError):
+            min_priority = 0
+
+        raw_stale = request.POST.get("stale_days", "7")
+        try:
+            stale_days = max(0, int(raw_stale))
+        except (TypeError, ValueError):
+            stale_days = 7
+
+        source = request.POST.get("source", "").strip() or None
+
+        kwargs: dict = {
+            "limit": limit,
+            "min_priority": min_priority,
+            "stale_days": stale_days,
+        }
+        if source:
+            kwargs["source"] = source
+
+        stdout, stderr = _run_command("run_serpapi_for_discovered", **kwargs)
+        logger.info("run_serpapi_for_discovered stdout: %s", stdout[:500])
+        if stderr.strip():
+            logger.warning("run_serpapi_for_discovered stderr: %s", stderr[:500])
+
+        # Parse processed / error counts from command output for the response
+        import re
+        m = re.search(r"Processed:\s*(\d+)\s+Errors:\s*(\d+)", stdout)
+        processed = int(m.group(1)) if m else 0
+        errors    = int(m.group(2)) if m else 0
+
+        return JsonResponse({
+            "status": "ok",
+            "processed": processed,
+            "errors": errors,
+            "output": stdout[-1000:],   # last 1 KB for debugging
+        })
+    except Exception as exc:
+        logger.exception("run_serpapi_for_discovered failed: %s", exc)
+        return JsonResponse({"status": "error", "message": str(exc)}, status=500)
+
+
+# ---------------------------------------------------------------------------
+# Action: run_serpapi_selected  (batch fetch for manually-chosen keywords)
+# ---------------------------------------------------------------------------
+
+@_require_staff_post
+def run_serpapi_selected(request) -> JsonResponse:
+    """Run SerpApi for a caller-supplied list of keywords.
+
+    Accepts ``keywords`` POST param — a comma-separated string of keyword phrases.
+    Calls the serpapi_client functions directly (same as run_serpapi_for_keyword)
+    so results are available immediately in the response without a subprocess.
+    Invalidates the discovery cache on completion.
+    """
+    import time as _time
+
+    raw_keywords = request.POST.get("keywords", "")
+    keywords = [kw.strip() for kw in raw_keywords.split(",") if kw.strip()]
+
+    if not keywords:
+        return JsonResponse(
+            {"status": "error", "message": "No keywords provided."},
+            status=400,
+        )
+
+    # Hard cap to protect API credits
+    MAX_BATCH = 50
+    if len(keywords) > MAX_BATCH:
+        keywords = keywords[:MAX_BATCH]
+
+    try:
+        from django.utils import timezone
+
+        from seo_intel.models import CompetitorHit, LCPsychHit, SerpRawResult
+        from seo_intel.services.keyword_discovery import invalidate_cache
+        from seo_intel.services.serpapi_client import (
+            detect_competitor_hits,
+            detect_lcpsych_hits,
+            fetch_serp,
+            parse_serp,
+        )
+
+        ok_count  = 0
+        err_count = 0
+        detail: list[dict] = []
+
+        for i, kw in enumerate(keywords):
+            try:
+                raw    = fetch_serp(kw)
+                parsed = parse_serp(kw, raw)
+                now    = timezone.now()
+
+                SerpRawResult.objects.create(
+                    keyword=kw,
+                    payload={"raw": raw, "parsed": parsed},
+                )
+
+                comp_hits = detect_competitor_hits(kw, parsed["organic"])
+                for hit in comp_hits:
+                    CompetitorHit.objects.create(
+                        keyword=kw,
+                        competitor_domain=hit["competitor_domain"],
+                        url=hit["url"],
+                        title=hit.get("title", ""),
+                        rank=hit["rank"],
+                        timestamp=now,
+                    )
+
+                lc_hits = detect_lcpsych_hits(kw, parsed["organic"])
+                for hit in lc_hits:
+                    LCPsychHit.objects.create(
+                        keyword=kw,
+                        url=hit["url"],
+                        title=hit.get("title", ""),
+                        rank=hit["rank"],
+                        timestamp=now,
+                    )
+
+                detail.append({
+                    "keyword": kw,
+                    "organic": len(parsed["organic"]),
+                    "competitors": len(comp_hits),
+                    "lc_hits": len(lc_hits),
+                })
+                ok_count += 1
+                logger.info(
+                    "run_serpapi_selected: %r — %d organic, %d comp, %d lc",
+                    kw, len(parsed["organic"]), len(comp_hits), len(lc_hits),
+                )
+            except Exception as exc:
+                logger.exception("run_serpapi_selected failed for %r: %s", kw, exc)
+                err_count += 1
+
+            # Brief delay between calls to be a polite API consumer
+            if i < len(keywords) - 1:
+                _time.sleep(1.5)
+
+        invalidate_cache()
+
+        return JsonResponse({
+            "status": "ok",
+            "processed": ok_count,
+            "errors": err_count,
+            "detail": detail,
+        })
+    except Exception as exc:
+        logger.exception("run_serpapi_selected outer error: %s", exc)
+        return JsonResponse({"status": "error", "message": str(exc)}, status=500)
+
+
+# ---------------------------------------------------------------------------
 # Action: run_serpapi_for_keyword  (single-keyword fetch from SERP Explorer)
 # ---------------------------------------------------------------------------
 

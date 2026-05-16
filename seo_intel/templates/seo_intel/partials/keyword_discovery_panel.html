@@ -30,11 +30,15 @@ HTMX partial — replaces #keyword-discovery-panel on refresh/filter.
 <div class="card-surface p-4 mb-5">
   <div class="flex flex-wrap gap-2 mb-4">
     <a href="?sort={{ sort_by }}{% if action_filter %}&action={{ action_filter }}{% endif %}"
+       hx-get="?sort={{ sort_by }}{% if action_filter %}&action={{ action_filter }}{% endif %}"
+       hx-target="#keyword-discovery-panel" hx-swap="innerHTML" hx-push-url="true"
        class="src-tab{% if not source_filter %} src-tab-active{% endif %}">
       All <span class="src-tab-count">{{ total }}</span>
     </a>
     {% for tab in source_tabs %}
     <a href="?source={{ tab.key }}&sort={{ sort_by }}{% if action_filter %}&action={{ action_filter }}{% endif %}"
+       hx-get="?source={{ tab.key }}&sort={{ sort_by }}{% if action_filter %}&action={{ action_filter }}{% endif %}"
+       hx-target="#keyword-discovery-panel" hx-swap="innerHTML" hx-push-url="true"
        class="src-tab src-tab-{{ tab.key }}{% if source_filter == tab.key %} src-tab-active{% endif %}">
       {{ tab.label }} <span class="src-tab-count">{{ tab.count }}</span>
     </a>
@@ -70,9 +74,15 @@ HTMX partial — replaces #keyword-discovery-panel on refresh/filter.
 </div>
 
 {# ── Results count ────────────────────────────────────────────────────────── #}
-{% if source_filter or action_filter %}
-<p class="text-sm text-slate-500 mb-3">Showing {{ displayed }} of {{ total }} opportunities{% if source_filter %} · source: {{ source_filter_label }}{% endif %}{% if action_filter %} · action: {{ action_filter }}{% endif %}</p>
-{% endif %}
+<p class="text-sm text-slate-500 mb-3">
+  {% if source_filter or action_filter %}
+  Showing <strong>{{ total_filtered }}</strong> of {{ total }} opportunities
+  {% if source_filter %} · source: {{ source_filter_label }}{% endif %}
+  {% if action_filter %} · action: {{ action_filter }}{% endif %}
+  {% else %}
+  <strong>{{ total }}</strong> opportunities found
+  {% endif %}
+</p>
 
 {# ── Discovery table ──────────────────────────────────────────────────────── #}
 {% if results %}
@@ -80,13 +90,13 @@ HTMX partial — replaces #keyword-discovery-panel on refresh/filter.
   <table class="data-table w-full">
     <thead>
       <tr>
-        <th class="pl-4">Keyword</th>
-        <th>Source</th>
+        <th class="pl-3 w-8">
+          <input type="checkbox" id="select-all-kw" title="Select all" class="cursor-pointer">
+        </th>
+        <th class="pl-2">Keyword</th>
         <th>Trend</th>
         <th>Priority</th>
-        <th>Intent</th>
-        <th>Competitors</th>
-        <th>LC Rank</th>
+        <th>Rankings</th>
         <th>Action</th>
         <th class="pr-4">Add</th>
       </tr>
@@ -94,20 +104,23 @@ HTMX partial — replaces #keyword-discovery-panel on refresh/filter.
     <tbody>
       {% for r in results %}
       <tr class="kw-row" data-keyword="{{ r.keyword }}" data-category="{{ r.category }}" data-priority="{{ r.priority_score }}">
-        <td class="pl-4 max-w-xs">
-          <div class="font-medium text-slate-800 text-sm leading-snug">{{ r.keyword }}</div>
-          {% if r.source_detail %}
-          <div class="text-xs text-slate-400 mt-0.5 truncate max-w-[14rem]" title="{{ r.source_detail }}">{{ r.source_detail }}</div>
-          {% endif %}
+        <td class="pl-3">
+          <input type="checkbox" class="kw-checkbox cursor-pointer" value="{{ r.keyword }}" title="Select for SerpAPI run">
         </td>
-        <td>
-          <span class="src-badge src-badge-{{ r.source }}">
-            {% if r.source == 'search_console' %}📊{% elif r.source == 'paa' %}❓{% elif r.source == 'related' %}🔍{% elif r.source == 'competitor' %}🏆{% elif r.source == 'internal' %}🔎{% else %}💀{% endif %}
-            {{ r.source_label }}
-          </span>
-          {% if r.sources|length > 1 %}
-          <span class="text-xs text-slate-400 ml-1" title="Also: {% for s in r.sources %}{{ s }} {% endfor %}">+{{ r.sources|length|add:"-1" }}</span>
-          {% endif %}
+        <td class="pl-2 max-w-xs">
+          <div class="font-medium text-slate-800 text-sm leading-snug">{{ r.keyword }}</div>
+          <div class="flex flex-wrap items-center gap-1 mt-1">
+            <span class="src-badge src-badge-{{ r.source }}">
+              {% if r.source == 'search_console' %}📊{% elif r.source == 'paa' %}❓{% elif r.source == 'related' %}🔍{% elif r.source == 'competitor' %}🏆{% elif r.source == 'internal' %}🔎{% else %}💀{% endif %}
+              {{ r.source_label }}
+            </span>
+            {% if r.sources|length > 1 %}
+            <span class="text-xs text-slate-400" title="Also: {% for s in r.sources %}{{ s }} {% endfor %}">+{{ r.sources|length|add:"-1" }}</span>
+            {% endif %}
+            {% if r.source_detail %}
+            <span class="text-xs text-slate-400 truncate max-w-[16rem]" title="{{ r.source_detail }}">{{ r.source_detail }}</span>
+            {% endif %}
+          </div>
         </td>
         <td class="whitespace-nowrap">
           {% if r.trend_direction == 'up' %}
@@ -127,28 +140,16 @@ HTMX partial — replaces #keyword-discovery-panel on refresh/filter.
             <div class="score-bar-fill" style="width:{{ r.priority_score }}%"></div>
           </div>
         </td>
-        <td class="text-center">
-          {% if r.has_local %}<span class="intent-dot intent-local" title="Local intent">📍</span>{% endif %}
-          {% if r.has_commercial %}<span class="intent-dot intent-commercial" title="Commercial intent">💼</span>{% endif %}
-          {% if not r.has_local and not r.has_commercial %}<span class="text-slate-300 text-xs">—</span>{% endif %}
-        </td>
-        <td class="text-center">
-          {% if r.competitor_count %}
-            <span class="font-semibold text-sm {% if r.top_competitor_rank <= 3 %}text-red-600{% else %}text-amber-600{% endif %}">
-              {{ r.competitor_count }}
-            </span>
-            {% if r.top_competitor_rank %}
-            <div class="text-xs text-slate-400">best #{{ r.top_competitor_rank }}</div>
-            {% endif %}
-          {% else %}
-            <span class="text-slate-300 text-sm">—</span>
-          {% endif %}
-        </td>
-        <td class="text-center">
-          {% if r.lc_rank %}
-            <span class="rank-pill {% if r.lc_rank <= 3 %}rank-top{% elif r.lc_rank <= 10 %}rank-mid{% else %}rank-low{% endif %}">
-              #{{ r.lc_rank }}
-            </span>
+        <td>
+          {% if r.rankings %}
+            {% for entry in r.rankings %}
+            <div class="flex items-center justify-between gap-2{% if not forloop.last %} mb-0.5{% endif %}">
+              <span class="text-xs truncate max-w-[9rem] {% if entry.is_lc %}font-semibold text-slate-700{% else %}text-slate-500{% endif %}" title="{{ entry.name }}">
+                {{ entry.name }}
+              </span>
+              <span class="rank-pill {{ entry.rank_css }}">#{{ entry.rank }}</span>
+            </div>
+            {% endfor %}
           {% else %}
             <span class="text-slate-300 text-sm">—</span>
           {% endif %}
@@ -169,6 +170,68 @@ HTMX partial — replaces #keyword-discovery-panel on refresh/filter.
       {% endfor %}
     </tbody>
   </table>
+</div>
+
+{# ── Pagination ───────────────────────────────────────────────────────────── #}
+{% if page_obj.has_other_pages %}
+<div class="flex flex-wrap items-center justify-between gap-3 mt-4 px-1">
+  <span class="text-sm text-slate-500">
+    Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ total_filtered }}{% if source_filter or action_filter %} filtered{% endif %} results
+  </span>
+  <div class="flex items-center gap-1">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+       hx-get="?page={{ page_obj.previous_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+       hx-target="#keyword-discovery-panel"
+       hx-swap="innerHTML"
+       hx-push-url="true"
+       class="seo-btn seo-btn-outline py-1 px-3 text-sm">← Prev</a>
+    {% endif %}
+
+    {% for num in paginator.page_range %}
+      {% if num == page_obj.number %}
+        <span class="seo-btn seo-btn-primary py-1 px-3 text-sm cursor-default">{{ num }}</span>
+      {% elif num == 1 or num == paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+        <a href="?page={{ num }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+           hx-get="?page={{ num }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+           hx-target="#keyword-discovery-panel"
+           hx-swap="innerHTML"
+           hx-push-url="true"
+           class="seo-btn seo-btn-outline py-1 px-3 text-sm">{{ num }}</a>
+      {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+        <span class="text-slate-400 px-1">…</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+       hx-get="?page={{ page_obj.next_page_number }}{% if filter_qs %}&{{ filter_qs }}{% endif %}"
+       hx-target="#keyword-discovery-panel"
+       hx-swap="innerHTML"
+       hx-push-url="true"
+       class="seo-btn seo-btn-outline py-1 px-3 text-sm">Next →</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Selection action bar ─────────────────────────────────────────────────── #}
+<div id="kw-selection-bar"
+     class="hidden sticky bottom-4 mt-4 z-40 bg-brand-deep text-white rounded-xl px-5 py-3 shadow-xl flex items-center justify-between gap-4">
+  <span class="text-sm font-semibold" id="kw-selected-label">0 keywords selected</span>
+  <div class="flex gap-3 items-center">
+    <span class="text-xs text-white/70">Will run live Google SERP lookups — uses API credits</span>
+    <button type="button"
+            id="run-serp-selected-btn"
+            onclick="runSerpSelected()"
+            class="bg-white text-brand-deep text-sm font-bold px-4 py-1.5 rounded-lg hover:bg-brand-light transition-colors">
+      <span class="spinner spinner-light" id="serp-selected-spinner"></span>
+      🔍 Run SerpAPI on Selected
+    </button>
+    <button type="button" onclick="clearKwSelection()" class="text-white/60 hover:text-white text-xs underline">
+      Clear
+    </button>
+  </div>
 </div>
 
 {% else %}

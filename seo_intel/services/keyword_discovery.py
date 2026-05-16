@@ -204,6 +204,24 @@ def _score_css(score: int) -> str:
     return "none"
 
 
+def _site_name_from_title(title: str, fallback_domain: str) -> str:
+    """Derive a readable site name from a SERP page title.
+
+    E.g. 'Find a Therapist Near You | Psychology Today' → 'Psychology Today'
+    Falls back to a cleaned-up version of the domain.
+    """
+    if title:
+        for sep in (" | ", " - ", " – ", " — ", " · "):
+            parts = title.split(sep)
+            if len(parts) >= 2:
+                candidate = parts[-1].strip()
+                if 2 <= len(candidate) <= 50:
+                    return candidate
+    # Fallback: strip TLD, convert hyphens, title-case
+    d = fallback_domain.lower().removeprefix("www.").split(".")[0]
+    return d.replace("-", " ").title()
+
+
 def _build_entry(
     keyword: str,
     source: str,
@@ -212,6 +230,7 @@ def _build_entry(
     impressions_7d: int = 0,
     impressions_prev_7d: int = 0,
     competitor_domains: list[str] | None = None,
+    competitor_hits: list[dict] | None = None,
     top_competitor_rank: int | None = None,
     lc_rank: int | None = None,
     category: str = "",
@@ -262,6 +281,7 @@ def _build_entry(
         # SERP
         "competitor_domains":   competitor_domains,
         "competitor_count":     len(competitor_domains),
+        "competitor_hits":      competitor_hits or [],
         "top_competitor_rank":  top_competitor_rank,
         "lc_rank":              lc_rank,
         # Scores
@@ -306,6 +326,13 @@ def _merge(pool: dict[str, dict], entry: dict) -> None:
         combined = list({*existing["competitor_domains"], *entry["competitor_domains"]})
         existing["competitor_domains"] = combined
         existing["competitor_count"]   = len(combined)
+    if entry.get("competitor_hits"):
+        by_domain = {h["domain"]: h for h in existing.get("competitor_hits", [])}
+        for h in entry["competitor_hits"]:
+            d = h["domain"]
+            if d not in by_domain or h["rank"] < by_domain[d]["rank"]:
+                by_domain[d] = h
+        existing["competitor_hits"] = sorted(by_domain.values(), key=lambda h: h["rank"])
     if entry["lc_rank"] is not None and (
         existing["lc_rank"] is None or entry["lc_rank"] < existing["lc_rank"]
     ):
@@ -528,15 +555,16 @@ def _from_competitors(existing_seeds: set[str]) -> list[dict]:
             continue
         seen.add(kw_lower)
 
-        # Gather competitor domains + best rank
+        # Gather competitor domains + best rank per domain
         comp_hits = (
             CompetitorHit.objects
             .filter(keyword__iexact=kw, timestamp__gte=cutoff)
             .order_by("rank")
-            .values("competitor_domain", "rank")
+            .values("competitor_domain", "rank", "title")
         )
         domains_seen: set[str] = set()
         domains: list[str] = []
+        hits: list[dict] = []   # [{domain, rank, name}] — best rank per domain
         top_rank: int | None = None
         top3_count = 0
         for h in comp_hits:
@@ -544,6 +572,11 @@ def _from_competitors(existing_seeds: set[str]) -> list[dict]:
             if d not in domains_seen:
                 domains_seen.add(d)
                 domains.append(d)
+                hits.append({
+                    "domain": d,
+                    "rank": r,
+                    "name": _site_name_from_title(h.get("title", ""), d),
+                })
                 if top_rank is None:
                     top_rank = r
                 if r <= 3:
@@ -562,6 +595,7 @@ def _from_competitors(existing_seeds: set[str]) -> list[dict]:
             SRC_COMPETITOR,
             source_detail=", ".join(detail) if detail else f"{len(domains)} competitors",
             competitor_domains=domains,
+            competitor_hits=hits,
             top_competitor_rank=top_rank,
             lc_rank=lc_rank,
         )
