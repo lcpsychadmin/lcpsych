@@ -418,23 +418,14 @@ def _from_search_console(existing_seeds: set[str]) -> list[dict]:
             continue
         seen.add(kw_lower)
 
-        # Classify signal
+        # Classify signal — only include trending/rising queries
         if prev_i == 0 and impr > 0:
             detail = "breakout — new impressions"
         elif prev_i > 0:
             delta = (impr - prev_i) / prev_i * 100
             if delta < 10:
-                # Only include if high-impression or zero-click opportunity
-                if impr < 20 and clicks > 0:
-                    continue
-                if impr >= 20:
-                    detail = f"high impression ({impr} impr)"
-                elif clicks == 0 and impr >= 5:
-                    detail = f"zero-click ({impr} impr, 0 clicks)"
-                else:
-                    continue
-            else:
-                detail = f"rising +{delta:.0f}%"
+                continue  # not trending; skip high-impression & zero-click statics
+            detail = f"rising +{delta:.0f}%"
         else:
             continue
 
