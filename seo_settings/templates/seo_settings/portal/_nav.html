@@ -25,14 +25,15 @@
         <li><a class="{% if active_page == 'serp_explorer' %}is-active{% endif %}" href="{% url 'seo_intel:serp_explorer' %}">SERP Explorer</a></li>
       </ul>
     </li>
-    <li class="nav-tree {% if active_page == 'competitor_analysis' or active_page == 'competitor_keyword_gap' or active_page == 'competitor_content_quality' or active_page == 'competitor_location_coverage' or active_page == 'competitor_modality_testing' %}{% else %}is-collapsed{% endif %}" data-collapsible>
-      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="{% if active_page == 'competitor_analysis' or active_page == 'competitor_keyword_gap' or active_page == 'competitor_content_quality' or active_page == 'competitor_location_coverage' or active_page == 'competitor_modality_testing' %}true{% else %}false{% endif %}" aria-controls="nav-tree-competitor">Competitor Analysis <span class="nav-tree__chevron">▸</span></button>
+    <li class="nav-tree {% if active_page == 'competitor_analysis' or active_page == 'competitor_keyword_gap' or active_page == 'competitor_content_quality' or active_page == 'competitor_location_coverage' or active_page == 'competitor_modality_testing' or active_page == 'competitor_directory_social' %}{% else %}is-collapsed{% endif %}" data-collapsible>
+      <button type="button" class="nav-tree__toggle" data-collapsible-toggle aria-expanded="{% if active_page == 'competitor_analysis' or active_page == 'competitor_keyword_gap' or active_page == 'competitor_content_quality' or active_page == 'competitor_location_coverage' or active_page == 'competitor_modality_testing' or active_page == 'competitor_directory_social' %}true{% else %}false{% endif %}" aria-controls="nav-tree-competitor">Competitor Analysis <span class="nav-tree__chevron">▸</span></button>
       <ul id="nav-tree-competitor" class="nav-tree__items">
         <li><a class="{% if active_page == 'competitor_analysis' %}is-active{% endif %}" href="{% url 'seo_intel:competitor_analysis' %}">Overview</a></li>
         <li><a class="{% if active_page == 'competitor_keyword_gap' %}is-active{% endif %}" href="{% url 'seo_intel:competitor_keyword_gap' %}">Keyword Gaps</a></li>
         <li><a class="{% if active_page == 'competitor_content_quality' %}is-active{% endif %}" href="{% url 'seo_intel:competitor_content_quality' %}">Content Quality</a></li>
         <li><a class="{% if active_page == 'competitor_location_coverage' %}is-active{% endif %}" href="{% url 'seo_intel:competitor_location_coverage' %}">Location Coverage</a></li>
         <li><a class="{% if active_page == 'competitor_modality_testing' %}is-active{% endif %}" href="{% url 'seo_intel:competitor_modality_testing' %}">Modalities &amp; Testing</a></li>
+        <li><a class="{% if active_page == 'competitor_directory_social' %}is-active{% endif %}" href="{% url 'seo_intel:competitor_directory_social' %}">Directories &amp; Social</a></li>
       </ul>
     </li>
   </ul>

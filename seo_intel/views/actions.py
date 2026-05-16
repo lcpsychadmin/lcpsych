@@ -467,3 +467,93 @@ def poll_job_status(request, job_id: str) -> JsonResponse:
     job.pop("_ts", None)   # internal field — don't expose
     job.pop("detail", None)  # potentially large — omit from poll responses
     return JsonResponse(job)
+
+
+# ---------------------------------------------------------------------------
+# Action: run_directory_scan
+# ---------------------------------------------------------------------------
+
+def _bg_run_directory_scan(job_id: str, domain: str, force: bool) -> None:
+    from seo_intel.services.directory_scraper import run_directory_scan
+    try:
+        results = run_directory_scan(domain, force=force)
+        found_count = sum(1 for v in results.values() if v.get("found"))
+        _jobs[job_id] = {
+            "status": "done",
+            "domain": domain,
+            "platforms_scanned": len(results),
+            "profiles_found": found_count,
+            "_ts": _time.time(),
+        }
+        logger.info("run_directory_scan(%s): %d/%d found", domain, found_count, len(results))
+    except BaseException as exc:
+        logger.exception("run_directory_scan bg failed for %s: %s", domain, exc)
+        _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+    finally:
+        connections.close_all()
+
+
+@_require_staff_post
+def run_directory_scan(request) -> JsonResponse:
+    """Queue a background directory scan for a single competitor domain.
+
+    Accepts POST params:
+      domain  — required
+      force   — optional, '1' to bypass cache
+    Returns {"status": "queued", "job_id": "..."} immediately.
+    """
+    domain = request.POST.get("domain", "").strip()
+    if not domain:
+        return JsonResponse({"status": "error", "message": "domain is required"}, status=400)
+    force = request.POST.get("force", "") == "1"
+    try:
+        job_id = _start_job(_bg_run_directory_scan, domain, force)
+        return JsonResponse({"status": "queued", "job_id": job_id})
+    except Exception as exc:
+        logger.exception("run_directory_scan failed for %s: %s", domain, exc)
+        return JsonResponse({"status": "error", "message": str(exc)}, status=500)
+
+
+# ---------------------------------------------------------------------------
+# Action: run_social_scan
+# ---------------------------------------------------------------------------
+
+def _bg_run_social_scan(job_id: str, domain: str, force: bool) -> None:
+    from seo_intel.services.social_scraper import run_social_scan
+    try:
+        results = run_social_scan(domain, force=force)
+        found_count = sum(1 for v in results.values() if v.get("found"))
+        _jobs[job_id] = {
+            "status": "done",
+            "domain": domain,
+            "platforms_scanned": len(results),
+            "profiles_found": found_count,
+            "_ts": _time.time(),
+        }
+        logger.info("run_social_scan(%s): %d/%d found", domain, found_count, len(results))
+    except BaseException as exc:
+        logger.exception("run_social_scan bg failed for %s: %s", domain, exc)
+        _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+    finally:
+        connections.close_all()
+
+
+@_require_staff_post
+def run_social_scan(request) -> JsonResponse:
+    """Queue a background social scan for a single competitor or LC Psych domain.
+
+    Accepts POST params:
+      domain  — required
+      force   — optional, '1' to bypass cache
+    Returns {"status": "queued", "job_id": "..."} immediately.
+    """
+    domain = request.POST.get("domain", "").strip()
+    if not domain:
+        return JsonResponse({"status": "error", "message": "domain is required"}, status=400)
+    force = request.POST.get("force", "") == "1"
+    try:
+        job_id = _start_job(_bg_run_social_scan, domain, force)
+        return JsonResponse({"status": "queued", "job_id": job_id})
+    except Exception as exc:
+        logger.exception("run_social_scan failed for %s: %s", domain, exc)
+        return JsonResponse({"status": "error", "message": str(exc)}, status=500)

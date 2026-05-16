@@ -25,6 +25,8 @@ from seo_intel.views.competitor_keyword_gap import competitor_keyword_gap
 from seo_intel.views.competitor_content_quality import competitor_content_quality
 from seo_intel.views.competitor_location_coverage import competitor_location_coverage
 from seo_intel.views.competitor_modality_testing import competitor_modality_testing
+from seo_intel.views.competitor_directory_social import competitor_directory_social
+from seo_intel.views.actions import run_directory_scan, run_social_scan
 from seo_intel.views.keyword_universe import keyword_universe
 from seo_intel.views.serp_explorer import serp_explorer
 from seo_settings.views import actions, portal
@@ -74,6 +76,7 @@ urlpatterns = [
     path('competitor-analysis/content-quality/', competitor_content_quality, name='competitor_content_quality'),
     path('competitor-analysis/location-coverage/', competitor_location_coverage, name='competitor_location_coverage'),
     path('competitor-analysis/modality-testing/', competitor_modality_testing, name='competitor_modality_testing'),
+    path('competitor-analysis/directories-social/', competitor_directory_social, name='competitor_directory_social'),
 
     # Analytics Hub
     path('analytics-hub/', analytics_hub, name='analytics_hub'),
@@ -98,5 +101,7 @@ urlpatterns = [
     path('actions/clear-internal/', actions.clear_internal_search, name='action_clear_internal'),
     path('actions/clear-serps/', actions.clear_competitor_results, name='action_clear_serps'),
     path('actions/run-competitor-crawl/', run_competitor_crawl, name='action_run_competitor_crawl'),
+    path('actions/run-directory-scan/', run_directory_scan, name='action_run_directory_scan'),
+    path('actions/run-social-scan/', run_social_scan, name='action_run_social_scan'),
     path('actions/job-status/<str:job_id>/', poll_job_status, name='action_poll_job'),
 ]

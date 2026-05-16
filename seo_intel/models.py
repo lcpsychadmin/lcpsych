@@ -282,3 +282,73 @@ class CompetitorCrawl(models.Model):
 
     def __str__(self):
         return f'{self.domain} — {self.page_count} pages @ {self.crawled_at:%Y-%m-%d %H:%M}'
+
+
+class DirectoryProfile(models.Model):
+    """Scraped directory listing for one (domain, platform) pair.
+
+    One row per (domain, platform) — upserted on each fresh scan so storage
+    stays bounded. ``data`` holds all platform-specific scraped fields as JSON.
+    """
+
+    PLATFORM_GBP = 'gbp'
+    PLATFORM_PT = 'psychology_today'
+    PLATFORM_TD = 'therapyden'
+    PLATFORM_ZD = 'zocdoc'
+    PLATFORM_ALMA = 'alma'
+
+    PLATFORM_CHOICES = [
+        (PLATFORM_GBP,  'Google Business Profile'),
+        (PLATFORM_PT,   'Psychology Today'),
+        (PLATFORM_TD,   'TherapyDen'),
+        (PLATFORM_ZD,   'ZocDoc'),
+        (PLATFORM_ALMA, 'Alma'),
+    ]
+
+    competitor_domain = models.CharField(max_length=253, db_index=True)
+    platform = models.CharField(max_length=30, choices=PLATFORM_CHOICES, db_index=True)
+    data = models.JSONField(default=dict)
+    crawled_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('competitor_domain', 'platform')]
+        ordering = ['competitor_domain', 'platform']
+        verbose_name = 'Directory profile'
+        verbose_name_plural = 'Directory profiles'
+
+    def __str__(self):
+        return f'{self.competitor_domain} — {self.get_platform_display()}'
+
+
+class SocialProfile(models.Model):
+    """Scraped social media presence for one (domain, platform) pair.
+
+    One row per (domain, platform) — upserted on each fresh scan.
+    ``data`` holds all platform-specific scraped fields as JSON.
+    """
+
+    PLATFORM_FB = 'facebook'
+    PLATFORM_IG = 'instagram'
+    PLATFORM_TT = 'tiktok'
+    PLATFORM_YT = 'youtube'
+
+    PLATFORM_CHOICES = [
+        (PLATFORM_FB, 'Facebook'),
+        (PLATFORM_IG, 'Instagram'),
+        (PLATFORM_TT, 'TikTok'),
+        (PLATFORM_YT, 'YouTube'),
+    ]
+
+    competitor_domain = models.CharField(max_length=253, db_index=True)
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, db_index=True)
+    data = models.JSONField(default=dict)
+    crawled_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('competitor_domain', 'platform')]
+        ordering = ['competitor_domain', 'platform']
+        verbose_name = 'Social profile'
+        verbose_name_plural = 'Social profiles'
+
+    def __str__(self):
+        return f'{self.competitor_domain} — {self.get_platform_display()}'
