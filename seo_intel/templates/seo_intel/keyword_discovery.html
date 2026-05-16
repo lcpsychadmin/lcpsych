@@ -218,6 +218,38 @@ function showToast(msg, duration = 2500) {
 
 // ── Run SerpAPI on discovered keywords ────────────────────────────────────
 const RUN_SERP_URL = "{% url 'seo_intel:action_run_serpapi_discovered' %}";
+const POLL_JOB_URL_TEMPLATE = "{% url 'seo_intel:action_poll_job' job_id='__JOB_ID__' %}";
+
+function _buildPollUrl(jobId) {
+  return POLL_JOB_URL_TEMPLATE.replace('__JOB_ID__', jobId);
+}
+
+/**
+ * Poll a background job until it finishes.
+ * @param {string} jobId
+ * @param {function} onDone   called with the final job data object
+ * @param {function} onError  called with an error message string
+ * @param {number}   intervalMs  polling interval (default 3s)
+ * @param {number}   maxWaitMs   give up after this many ms (default 5min)
+ */
+function _pollJob(jobId, onDone, onError, intervalMs = 3000, maxWaitMs = 300000) {
+  const started = Date.now();
+  function check() {
+    if (Date.now() - started > maxWaitMs) {
+      onError('Timed out waiting for job to complete.');
+      return;
+    }
+    fetch(_buildPollUrl(jobId), { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'done')        { onDone(data); }
+        else if (data.status === 'error') { onError(data.message || 'Unknown error'); }
+        else                              { setTimeout(check, intervalMs); }  // still running
+      })
+      .catch(() => setTimeout(check, intervalMs));  // network blip — retry
+  }
+  setTimeout(check, intervalMs);
+}
 
 function runSerpApi() {
   const btn = document.getElementById('run-serp-btn');
@@ -227,7 +259,7 @@ function runSerpApi() {
   btn.disabled = true;
   btn.style.opacity = '0.7';
   if (spinner) spinner.style.display = 'inline-block';
-  showToast('Running SerpAPI — this may take 1–2 minutes…', 90000);
+  showToast('Running SerpAPI in background — please wait…', 300000);
 
   fetch(RUN_SERP_URL, {
     method: 'POST',
@@ -235,27 +267,36 @@ function runSerpApi() {
   })
   .then(r => r.json())
   .then(data => {
-    if (spinner) spinner.style.display = 'none';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-
-    // Dismiss long-running toast
-    const t = document.getElementById('toast');
-    if (t) t.classList.remove('show');
-
-    if (data.status === 'ok') {
-      showToast(
-        `✓ SerpAPI complete — ${data.processed} keyword(s) fetched, ${data.errors} error(s). Refresh to see updated ranks.`,
-        5000
+    if (data.status === 'queued') {
+      _pollJob(
+        data.job_id,
+        result => {
+          if (spinner) spinner.style.display = 'none';
+          btn.disabled = false; btn.style.opacity = '1';
+          const t = document.getElementById('toast'); if (t) t.classList.remove('show');
+          showToast(
+            `✓ SerpAPI complete — ${result.processed} keyword(s) fetched, ${result.errors} error(s). Refresh to see updated ranks.`,
+            5000
+          );
+        },
+        msg => {
+          if (spinner) spinner.style.display = 'none';
+          btn.disabled = false; btn.style.opacity = '1';
+          const t = document.getElementById('toast'); if (t) t.classList.remove('show');
+          showToast(`Error: ${msg}`, 5000);
+        }
       );
-    } else {
+    } else if (data.status === 'error') {
+      if (spinner) spinner.style.display = 'none';
+      btn.disabled = false; btn.style.opacity = '1';
+      const t = document.getElementById('toast'); if (t) t.classList.remove('show');
       showToast(`Error: ${data.message}`, 5000);
     }
   })
-  .catch(err => {
+  .catch(() => {
     if (spinner) spinner.style.display = 'none';
-    btn.disabled = false;
-    btn.style.opacity = '1';
+    btn.disabled = false; btn.style.opacity = '1';
+    const t = document.getElementById('toast'); if (t) t.classList.remove('show');
     showToast('Network error — please try again.', 4000);
   });
 }
@@ -327,7 +368,7 @@ function runSerpSelected() {
 
   btn.disabled = true;
   if (spinner) spinner.style.display = 'inline-block';
-  showToast(`Running SerpAPI for ${keywords.length} keyword(s) — please wait…`, 120000);
+  showToast(`Running SerpAPI for ${keywords.length} keyword(s) in background…`, 300000);
 
   const body = new URLSearchParams({ keywords: keywords.join(',') });
 
@@ -338,19 +379,30 @@ function runSerpSelected() {
   })
   .then(r => r.json())
   .then(data => {
-    if (spinner) spinner.style.display = 'none';
-    btn.disabled = false;
-
-    const t = document.getElementById('toast');
-    if (t) t.classList.remove('show');
-
-    if (data.status === 'ok') {
-      clearKwSelection();
-      showToast(
-        `✓ Done — ${data.processed} fetched, ${data.errors} error(s). Refresh to see updated ranks.`,
-        6000,
+    if (data.status === 'queued') {
+      _pollJob(
+        data.job_id,
+        result => {
+          if (spinner) spinner.style.display = 'none';
+          btn.disabled = false;
+          const t = document.getElementById('toast'); if (t) t.classList.remove('show');
+          clearKwSelection();
+          showToast(
+            `✓ Done — ${result.processed} fetched, ${result.errors} error(s). Refresh to see updated ranks.`,
+            6000,
+          );
+        },
+        msg => {
+          if (spinner) spinner.style.display = 'none';
+          btn.disabled = false;
+          const t = document.getElementById('toast'); if (t) t.classList.remove('show');
+          showToast(`Error: ${msg}`, 5000);
+        }
       );
-    } else {
+    } else if (data.status === 'error') {
+      if (spinner) spinner.style.display = 'none';
+      btn.disabled = false;
+      const t = document.getElementById('toast'); if (t) t.classList.remove('show');
       showToast(`Error: ${data.message}`, 5000);
     }
   })

@@ -17,6 +17,9 @@ All views:
 from __future__ import annotations
 
 import logging
+import threading
+import time as _time
+import uuid
 from contextlib import redirect_stderr, redirect_stdout
 from functools import wraps
 from io import StringIO
@@ -52,6 +55,29 @@ def _run_command(*args, **kwargs) -> tuple[str, str]:
     with redirect_stdout(out), redirect_stderr(err):
         call_command(*args, **kwargs)
     return out.getvalue(), err.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# In-process job registry for long-running background tasks
+# ---------------------------------------------------------------------------
+
+# job_id -> {status, _ts, [processed, errors, message, output, ...]}
+_jobs: dict[str, dict] = {}
+
+
+def _start_job(fn, *args) -> str:
+    """Spawn fn(job_id, *args) in a daemon thread. Returns the new job_id."""
+    now = _time.time()
+    # Prune finished jobs older than 1 hour
+    stale = [jid for jid, j in list(_jobs.items()) if now - j.get("_ts", now) > 3600]
+    for jid in stale:
+        _jobs.pop(jid, None)
+
+    job_id = uuid.uuid4().hex
+    _jobs[job_id] = {"status": "running", "_ts": now}
+    t = threading.Thread(target=fn, args=(job_id, *args), daemon=True)
+    t.start()
+    return job_id
 
 
 # ---------------------------------------------------------------------------
@@ -137,15 +163,40 @@ def run_competitor_crawl(request) -> JsonResponse:
 # Action: run_serpapi_for_discovered
 # ---------------------------------------------------------------------------
 
+def _bg_run_serpapi_for_discovered(job_id: str, kwargs: dict) -> None:
+    import re
+    try:
+        stdout, stderr = _run_command("run_serpapi_for_discovered", **kwargs)
+        logger.info("run_serpapi_for_discovered stdout: %s", stdout[:500])
+        if stderr.strip():
+            logger.warning("run_serpapi_for_discovered stderr: %s", stderr[:500])
+        m = re.search(r"Processed:\s*(\d+)\s+Errors:\s*(\d+)", stdout)
+        processed = int(m.group(1)) if m else 0
+        errors    = int(m.group(2)) if m else 0
+        _jobs[job_id] = {
+            "status":    "done",
+            "processed": processed,
+            "errors":    errors,
+            "output":    stdout[-1000:],
+            "_ts":       _time.time(),
+        }
+    except Exception as exc:
+        logger.exception("run_serpapi_for_discovered bg failed: %s", exc)
+        _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+
+
 @_require_staff_post
 def run_serpapi_for_discovered(request) -> JsonResponse:
-    """Run SerpApi for discovered keywords not yet in the seed list.
+    """Queue a background SerpApi run for discovered keywords.
+
+    Returns {"status": "queued", "job_id": "..."} immediately.
+    Poll actions/job-status/<job_id>/ to track completion.
 
     Accepts optional POST parameters:
-        limit       int  — max keywords to process (default 25, max 50)
-        min_priority int — only keywords with priority_score >= this (default 0)
-        source      str  — filter to one discovery source
-        stale_days  int  — skip keywords fetched within this many days (default 7)
+        limit        int  — max keywords to process (default 25, max 50)
+        min_priority int  — only keywords with priority_score >= this (default 0)
+        source       str  — filter to one discovery source
+        stale_days   int  — skip keywords fetched within this many days (default 7)
     """
     try:
         raw_limit = request.POST.get("limit", "25")
@@ -169,30 +220,15 @@ def run_serpapi_for_discovered(request) -> JsonResponse:
         source = request.POST.get("source", "").strip() or None
 
         kwargs: dict = {
-            "limit": limit,
+            "limit":        limit,
             "min_priority": min_priority,
-            "stale_days": stale_days,
+            "stale_days":   stale_days,
         }
         if source:
             kwargs["source"] = source
 
-        stdout, stderr = _run_command("run_serpapi_for_discovered", **kwargs)
-        logger.info("run_serpapi_for_discovered stdout: %s", stdout[:500])
-        if stderr.strip():
-            logger.warning("run_serpapi_for_discovered stderr: %s", stderr[:500])
-
-        # Parse processed / error counts from command output for the response
-        import re
-        m = re.search(r"Processed:\s*(\d+)\s+Errors:\s*(\d+)", stdout)
-        processed = int(m.group(1)) if m else 0
-        errors    = int(m.group(2)) if m else 0
-
-        return JsonResponse({
-            "status": "ok",
-            "processed": processed,
-            "errors": errors,
-            "output": stdout[-1000:],   # last 1 KB for debugging
-        })
+        job_id = _start_job(_bg_run_serpapi_for_discovered, kwargs)
+        return JsonResponse({"status": "queued", "job_id": job_id})
     except Exception as exc:
         logger.exception("run_serpapi_for_discovered failed: %s", exc)
         return JsonResponse({"status": "error", "message": str(exc)}, status=500)
@@ -202,31 +238,7 @@ def run_serpapi_for_discovered(request) -> JsonResponse:
 # Action: run_serpapi_selected  (batch fetch for manually-chosen keywords)
 # ---------------------------------------------------------------------------
 
-@_require_staff_post
-def run_serpapi_selected(request) -> JsonResponse:
-    """Run SerpApi for a caller-supplied list of keywords.
-
-    Accepts ``keywords`` POST param — a comma-separated string of keyword phrases.
-    Calls the serpapi_client functions directly (same as run_serpapi_for_keyword)
-    so results are available immediately in the response without a subprocess.
-    Invalidates the discovery cache on completion.
-    """
-    import time as _time
-
-    raw_keywords = request.POST.get("keywords", "")
-    keywords = [kw.strip() for kw in raw_keywords.split(",") if kw.strip()]
-
-    if not keywords:
-        return JsonResponse(
-            {"status": "error", "message": "No keywords provided."},
-            status=400,
-        )
-
-    # Hard cap to protect API credits
-    MAX_BATCH = 50
-    if len(keywords) > MAX_BATCH:
-        keywords = keywords[:MAX_BATCH]
-
+def _bg_run_serpapi_selected(job_id: str, keywords: list[str]) -> None:
     try:
         from django.utils import timezone
 
@@ -276,10 +288,10 @@ def run_serpapi_selected(request) -> JsonResponse:
                     )
 
                 detail.append({
-                    "keyword": kw,
-                    "organic": len(parsed["organic"]),
+                    "keyword":     kw,
+                    "organic":     len(parsed["organic"]),
                     "competitors": len(comp_hits),
-                    "lc_hits": len(lc_hits),
+                    "lc_hits":     len(lc_hits),
                 })
                 ok_count += 1
                 logger.info(
@@ -290,21 +302,44 @@ def run_serpapi_selected(request) -> JsonResponse:
                 logger.exception("run_serpapi_selected failed for %r: %s", kw, exc)
                 err_count += 1
 
-            # Brief delay between calls to be a polite API consumer
             if i < len(keywords) - 1:
                 _time.sleep(1.5)
 
         invalidate_cache()
-
-        return JsonResponse({
-            "status": "ok",
+        _jobs[job_id] = {
+            "status":    "done",
             "processed": ok_count,
-            "errors": err_count,
-            "detail": detail,
-        })
+            "errors":    err_count,
+            "detail":    detail,
+            "_ts":       _time.time(),
+        }
     except Exception as exc:
-        logger.exception("run_serpapi_selected outer error: %s", exc)
-        return JsonResponse({"status": "error", "message": str(exc)}, status=500)
+        logger.exception("run_serpapi_selected bg failed: %s", exc)
+        _jobs[job_id] = {"status": "error", "message": str(exc), "_ts": _time.time()}
+
+
+@_require_staff_post
+def run_serpapi_selected(request) -> JsonResponse:
+    """Queue a background SerpApi run for a caller-supplied list of keywords.
+
+    Returns {"status": "queued", "job_id": "..."} immediately.
+    Poll actions/job-status/<job_id>/ to track completion.
+    """
+    raw_keywords = request.POST.get("keywords", "")
+    keywords = [kw.strip() for kw in raw_keywords.split(",") if kw.strip()]
+
+    if not keywords:
+        return JsonResponse(
+            {"status": "error", "message": "No keywords provided."},
+            status=400,
+        )
+
+    MAX_BATCH = 50
+    if len(keywords) > MAX_BATCH:
+        keywords = keywords[:MAX_BATCH]
+
+    job_id = _start_job(_bg_run_serpapi_selected, keywords)
+    return JsonResponse({"status": "queued", "job_id": job_id})
 
 
 # ---------------------------------------------------------------------------
@@ -388,3 +423,27 @@ def run_serpapi_for_keyword(request) -> JsonResponse:
             return render(request, 'seo_intel/partials/_action_status.html',
                           {'status': 'error', 'message': str(exc)})
         return JsonResponse({"status": "error", "message": str(exc)}, status=500)
+
+
+# ---------------------------------------------------------------------------
+# Action: poll_job_status  (GET — check background job progress)
+# ---------------------------------------------------------------------------
+
+def poll_job_status(request, job_id: str) -> JsonResponse:
+    """Return the current status of a background job.
+
+    Response shapes:
+        {"status": "running"}
+        {"status": "done", "processed": N, "errors": N, ...}
+        {"status": "error", "message": "..."}
+        {"status": "unknown"}  — job_id not found (may have expired)
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"status": "error", "message": "Login required"}, status=401)
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({"status": "error", "message": "Forbidden"}, status=403)
+
+    job = dict(_jobs.get(job_id, {"status": "unknown"}))
+    job.pop("_ts", None)   # internal field — don't expose
+    job.pop("detail", None)  # potentially large — omit from poll responses
+    return JsonResponse(job)

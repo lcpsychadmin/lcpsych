@@ -12,6 +12,7 @@ from seo_intel.views.actions import (
     run_serpapi_for_keyword,
     run_serpapi_selected,
     run_competitor_crawl,
+    poll_job_status,
     score_keywords as score_keywords_action,
 )
 from seo_intel.views.add_seed import add_seed
@@ -89,4 +90,5 @@ urlpatterns = [
     path('actions/clear-internal/', actions.clear_internal_search, name='action_clear_internal'),
     path('actions/clear-serps/', actions.clear_competitor_results, name='action_clear_serps'),
     path('actions/run-competitor-crawl/', run_competitor_crawl, name='action_run_competitor_crawl'),
+    path('actions/job-status/<str:job_id>/', poll_job_status, name='action_poll_job'),
 ]
