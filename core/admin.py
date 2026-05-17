@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
 from django.conf import settings
-from .models import Page, Post, Category, Tag, Service, ServiceContentBlock, PaymentFeeRow, FAQItem, JoinOurTeamSubmission, HeroSettings, HeroContentBlock
+from .models import Page, Post, Category, Tag, Service, ServiceContentBlock, PaymentFeeRow, FAQItem, JoinOurTeamSubmission, HeroSettings, HeroContentBlock, OfficeLocation
 from ckeditor.widgets import CKEditorWidget
 class PageAdminForm(forms.ModelForm):
     class Meta:
@@ -345,3 +345,19 @@ class FAQItemAdmin(admin.ModelAdmin):
 	ordering = ("order", "id")
 
 # NavItem admin removed; header uses static template markup
+
+@admin.register(OfficeLocation)
+class OfficeLocationAdmin(admin.ModelAdmin):
+    list_display = ("name", "address_city", "address_state", "is_active", "is_virtual", "order")
+    list_editable = ("is_active", "order")
+    list_filter = ("is_active", "is_virtual")
+    search_fields = ("name", "address_city", "address_state")
+    ordering = ("order", "name")
+    fieldsets = (
+        (None, {"fields": ("name", "is_active", "is_virtual", "order")}),
+        ("Address", {"fields": ("address_line1", "address_line2", "address_city", "address_state", "address_zip")}),
+        ("Coordinates", {"fields": ("latitude", "longitude")}),
+        ("Contact", {"fields": ("phone_number", "phone_label", "fax_number", "fax_label", "email")}),
+        ("Hours", {"fields": ("office_hours", "office_hours_title")}),
+        ("Links", {"fields": ("cta_url", "cta_label", "directions_url")}),
+    )
