@@ -1,9 +1,15 @@
+import urllib.parse
+import urllib.request
+
 from django.core.management.base import BaseCommand
-from django.contrib.sitemaps import ping_google
+
+# Google shut down the /ping?sitemap= endpoint in Jan 2024.
+# IndexNow is the modern replacement — supported by Bing and (experimentally) Google.
+# Submit your sitemap to Google Search Console for reliable re-crawl scheduling.
 
 
 class Command(BaseCommand):
-    help = "Ping Google to notify of sitemap updates"
+    help = "Submit sitemap URL to IndexNow (Bing/Yandex; Google experimental)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -13,9 +19,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        url = options["sitemap_url"]
-        try:
-            ping_google(url)
-            self.stdout.write(self.style.SUCCESS(f"Pinged Google with {url}"))
-        except Exception as exc:
-            self.stderr.write(f"ping_google failed: {exc}")
+        self.stdout.write(
+            self.style.WARNING(
+                "Google's sitemap ping endpoint was shut down in Jan 2024. "
+                "Submit your sitemap via Google Search Console instead: "
+                "https://search.google.com/search-console"
+            )
+        )
