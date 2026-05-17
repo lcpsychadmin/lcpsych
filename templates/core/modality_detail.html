@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+.mdet-hero {
+  position: relative;
+  overflow: hidden;
+  background-color: #0d3f46;
+  color: #ffffff;
+  padding: 96px 0 120px;
+}
+.mdet-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 1;
+  filter: brightness(0.5);
+  z-index: 0;
+}
+.mdet-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 18, 24, 0.42);
+  z-index: 1;
+}
+.mdet-hero__inner {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.mdet-breadcrumb {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 24px;
+}
+.mdet-breadcrumb a {
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+}
+.mdet-breadcrumb a:hover { color: #fff; text-decoration: underline; }
+.mdet-breadcrumb span { margin: 0 6px; }
+.mdet-hero__icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+.mdet-hero__title {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1.15;
+  margin: 0;
+  text-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+.mdet-hero__intro {
+  margin: 24px auto 0;
+  max-width: 720px;
+  font-size: 19px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+.mdet-content {
+  position: relative;
+  background: #ffffff;
+  padding: 96px 0 112px;
+}
+.mdet-content__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  color: #1a3038;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.mdet-block {
+  margin-top: 48px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(4, 96, 107, 0.18);
+}
+.mdet-block:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.mdet-block__heading {
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(20px, 2.5vw, 26px);
+  font-weight: 600;
+  color: #04606B;
+  margin: 0 0 14px;
+}
+.mdet-block__body {
+  font-size: 17px;
+  line-height: 1.75;
+  color: #3a4a4c;
+  margin: 0;
+}
+.mdet-block__body p { margin: 0 0 1em; }
+.mdet-block__body p:last-child { margin-bottom: 0; }
+@media (max-width: 767px) {
+  .mdet-hero { padding: 72px 0 88px; }
+  .mdet-hero__title { font-size: 36px; }
+  .mdet-hero__intro { font-size: 17px; }
+}
+</style>
+{% if modality.card_background_url %}
+<style>
+.mdet-hero::before { background-image: url("{{ modality.card_background_url|escape }}"); }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<main id="content">
+
+  <section class="mdet-hero">
+    <div class="mdet-hero__inner">
+      <nav class="mdet-breadcrumb" aria-label="Breadcrumb">
+        <a href="{% url 'core:home' %}">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="{% url 'core:modalities_list' %}">Types of Therapy</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{{ modality.name }}</span>
+      </nav>
+      {% if modality.icon %}<div class="mdet-hero__icon">{{ modality.icon }}</div>{% endif %}
+      <h1 class="mdet-hero__title">{{ modality.name }}</h1>
+      {% if modality.description %}
+      <p class="mdet-hero__intro">{{ modality.description }}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="mdet-content" id="modality-details">
+    <div class="mdet-content__inner">
+      {% for block in content_blocks %}
+      <div class="mdet-block">
+        <h2 class="mdet-block__heading">{{ block.heading }}</h2>
+        <div class="mdet-block__body">{{ block.body|linebreaks }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+</main>
+{% endblock %}
+
+{% block before_footer %}
+  {% include "partials/schedule_cta.html" with wave_fill="#ffffff" %}
+{% endblock %}

@@ -24,6 +24,10 @@ urlpatterns = [
     path('faq/', views.faq, name='faq'),
     path('join-our-team/', views.join_our_team, name='join_our_team'),
     path('services/<slug:slug>/', views.service_detail, name='service_detail'),
+    path('types-of-therapy/', views.modalities_list, name='modalities_list'),
+    path('types-of-therapy/<slug:slug>/', views.modality_detail, name='modality_detail'),
+    path('conditions-we-treat/', views.conditions_list, name='conditions_list'),
+    path('conditions-we-treat/<slug:slug>/', views.condition_detail, name='condition_detail'),
     # Telehealth virtual location
     path('telehealth/', views.telehealth_page, name='telehealth'),
     path('telehealth/services/<slug:service_slug>/', views.telehealth_service_page, name='telehealth_service'),

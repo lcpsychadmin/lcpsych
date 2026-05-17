@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+.cdet-hero {
+  position: relative;
+  overflow: hidden;
+  background-color: #0d3f46;
+  color: #ffffff;
+  padding: 96px 0 120px;
+}
+.cdet-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 1;
+  filter: brightness(0.5);
+  z-index: 0;
+}
+.cdet-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 18, 24, 0.42);
+  z-index: 1;
+}
+.cdet-hero__inner {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.cdet-breadcrumb {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 24px;
+}
+.cdet-breadcrumb a {
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+}
+.cdet-breadcrumb a:hover { color: #fff; text-decoration: underline; }
+.cdet-breadcrumb span { margin: 0 6px; }
+.cdet-hero__icon {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+.cdet-hero__title {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1.15;
+  margin: 0;
+  text-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+.cdet-hero__intro {
+  margin: 24px auto 0;
+  max-width: 720px;
+  font-size: 19px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+.cdet-content {
+  position: relative;
+  background: #ffffff;
+  padding: 96px 0 112px;
+}
+.cdet-content__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  color: #1a3038;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.cdet-block {
+  margin-top: 48px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(4, 96, 107, 0.18);
+}
+.cdet-block:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.cdet-block__heading {
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(20px, 2.5vw, 26px);
+  font-weight: 600;
+  color: #04606B;
+  margin: 0 0 14px;
+}
+.cdet-block__body {
+  font-size: 17px;
+  line-height: 1.75;
+  color: #3a4a4c;
+  margin: 0;
+}
+.cdet-block__body p { margin: 0 0 1em; }
+.cdet-block__body p:last-child { margin-bottom: 0; }
+@media (max-width: 767px) {
+  .cdet-hero { padding: 72px 0 88px; }
+  .cdet-hero__title { font-size: 36px; }
+  .cdet-hero__intro { font-size: 17px; }
+}
+</style>
+{% if condition.card_background_url %}
+<style>
+.cdet-hero::before { background-image: url("{{ condition.card_background_url|escape }}"); }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<main id="content">
+
+  <section class="cdet-hero">
+    <div class="cdet-hero__inner">
+      <nav class="cdet-breadcrumb" aria-label="Breadcrumb">
+        <a href="{% url 'core:home' %}">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="{% url 'core:conditions_list' %}">Conditions We Treat</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{{ condition.name }}</span>
+      </nav>
+      {% if condition.icon %}<div class="cdet-hero__icon">{{ condition.icon }}</div>{% endif %}
+      <h1 class="cdet-hero__title">{{ condition.name }}</h1>
+      {% if condition.description %}
+      <p class="cdet-hero__intro">{{ condition.description }}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="cdet-content" id="condition-details">
+    <div class="cdet-content__inner">
+      {% for block in content_blocks %}
+      <div class="cdet-block">
+        <h2 class="cdet-block__heading">{{ block.heading }}</h2>
+        <div class="cdet-block__body">{{ block.body|linebreaks }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+</main>
+{% endblock %}
+
+{% block before_footer %}
+  {% include "partials/schedule_cta.html" with wave_fill="#ffffff" %}
+{% endblock %}

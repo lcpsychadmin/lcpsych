@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Office → Modalities | SEO Intelligence{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+.office-panel { border: 1.5px solid rgba(15,63,70,0.12); border-radius: 0.75rem; margin-bottom: 1.25rem; overflow: hidden; }
+.office-panel__header { background: #f8fbfc; border-bottom: 1px solid rgba(15,63,70,0.08); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
+.office-panel__name { font-weight: 700; font-size: 0.95rem; color: #0f3f46; }
+.office-panel__body { padding: 18px; }
+.modality-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.modality-toggle { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid rgba(15,63,70,0.15); border-radius: 999px; padding: 6px 14px; font-size: 0.82rem; font-weight: 600; color: #0f3f46; cursor: default; background: #f8fbfc; transition: background 0.15s, border-color 0.15s; }
+.modality-toggle input[type=checkbox] { accent-color: #04606B; width: 15px; height: 15px; cursor: pointer; }
+.modality-toggle.is-checked { background: rgba(4,96,107,0.08); border-color: rgba(4,96,107,0.35); color: #04606B; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">Office → Modalities</h1>
+      <p class="mt-3 text-white/85 text-lg">Assign therapy modalities to each office location.</p>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" with active_page=active_page %}
+
+        <div class="space-y-4">
+
+          {% if messages %}
+          <div class="space-y-2 mb-4">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if 'error' in msg.tags %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if not all_modalities %}
+          <div class="card-surface px-6 py-10 text-center text-slate-400">
+            No active modalities found. <a href="{% url 'seo_intel:settings_modalities' %}" class="text-brand-teal underline">Add modalities first.</a>
+          </div>
+          {% else %}
+
+          <div class="card-surface p-5 mb-2 text-sm text-slate-600">
+            <strong class="text-slate-700">How it works:</strong>
+            Check/uncheck any modality checkbox to instantly toggle the assignment for that office. Changes are saved immediately via HTMX — no submit button required.
+          </div>
+
+          {% for office in offices %}
+          <div class="office-panel">
+            <div class="office-panel__header">
+              <span class="office-panel__name">{{ office.name }}</span>
+              <span class="text-xs text-slate-400">{{ office.modalities.count }} modality{{ office.modalities.count|pluralize:" ,ies" }}</span>
+            </div>
+            <div class="office-panel__body">
+              {% if all_modalities %}
+              <div class="modality-grid">
+                {% for mod in all_modalities %}
+                {% with assigned=office.modalities.all %}
+                <label class="modality-toggle{% if mod in assigned %} is-checked{% endif %}">
+                  <input type="checkbox"
+                    {% if mod in assigned %}checked{% endif %}
+                    hx-post="{% url 'seo_intel:toggle_office_modality' office.pk mod.pk %}"
+                    hx-swap="outerHTML"
+                    title="Toggle {{ mod.name }}">
+                  {% if mod.icon %}{{ mod.icon }} {% endif %}{{ mod.name }}
+                </label>
+                {% endwith %}
+                {% endfor %}
+              </div>
+              {% else %}
+              <span class="text-slate-400 text-sm">No active modalities.</span>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="card-surface px-6 py-10 text-center text-slate-400">No active offices found.</div>
+          {% endfor %}
+
+          {% endif %}
+
+        </div>{# /space-y-4 #}
+      </div>{# /settings-layout #}
+    </div>
+  </section>
+</main>
+{% endblock %}

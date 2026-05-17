@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Edit Modality | SEO Intelligence{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background: #fff; border: 1px solid rgba(15,63,70,0.12); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,48,57,0.06); }
+.form-input { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.45rem 0.75rem; font-size: 0.88rem; color: #0f3f46; background: #fff; transition: border-color 0.15s; width: 100%; }
+.form-input:focus { outline: none; border-color: #92DCE5; box-shadow: 0 0 0 3px rgba(146,220,229,0.3); }
+.input-basic { border: 1px solid rgba(15,63,70,0.2); border-radius: 0.6rem; padding: 0.45rem 0.75rem; font-size: 0.88rem; color: #0f3f46; background: #fff; width: 100%; }
+.seo-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.18s; }
+.seo-btn-primary { background: #3C9C64; color: #fff; }
+.seo-btn-primary:hover { background: #2e7a4e; }
+.seo-btn-outline { background: #fff; color: #0f3f46; border: 1px solid rgba(15,63,70,0.2); }
+.seo-btn-outline:hover { background: #e6f6f3; border-color: #92DCE5; }
+.action-btn { display: inline-flex; align-items: center; border-radius: 0.65rem; padding: 0.4rem 0.9rem; font-size: 0.82rem; font-weight: 600; border: 1px solid rgba(15,63,70,0.2); background: #fff; color: #0f3f46; cursor: pointer; transition: all 0.18s; }
+.action-btn:hover { background: #e6f6f3; border-color: #92DCE5; }
+.field-label { display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50">
+  <section class="bg-brand-deep text-white py-14">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-4xl font-semibold m-0">Edit Modality</h1>
+    </div>
+  </section>
+
+  <section class="py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="settings-layout">
+        {% include "accounts/partials/settings_nav.html" with active_page=active_page %}
+
+        <div class="space-y-6">
+          {% if messages %}
+          <div class="space-y-2">
+            {% for msg in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-semibold {% if 'error' in msg.tags %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="card-surface p-6">
+            <h2 class="text-lg font-semibold text-brand-deep mb-4">Edit: {{ obj.name }}</h2>
+            <form method="post" enctype="multipart/form-data" action="{% url 'seo_intel:edit_modality' obj.pk %}">
+              {% csrf_token %}
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Name <span class="text-red-500">*</span></label>
+                  <input type="text" name="name" required maxlength="200" value="{{ obj.name }}" class="form-input">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Slug</label>
+                  <input type="text" name="slug" maxlength="200" value="{{ obj.slug }}" class="form-input">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Icon</label>
+                  <input type="text" name="icon" maxlength="100" value="{{ obj.icon }}" class="form-input">
+                </div>
+              </div>
+              <div class="mb-6">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Description</label>
+                <textarea name="description" rows="4" class="form-input">{{ obj.description }}</textarea>
+              </div>
+
+              <div class="mb-6">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Featured image</label>
+                {% if obj.featured_image %}
+                <div class="mb-2 flex items-center gap-3">
+                  <img src="{{ obj.featured_image.url }}" alt="Current featured image" class="h-20 w-32 object-cover rounded-lg border border-slate-200">
+                  <label class="flex items-center gap-1.5 text-xs text-red-700 cursor-pointer">
+                    <input type="checkbox" name="featured_image_clear" value="1"> Remove image
+                  </label>
+                </div>
+                {% endif %}
+                <input type="file" name="featured_image" accept="image/*" class="form-input">
+                <p class="text-xs text-slate-400 mt-1">Used as the card background on the public Types of Therapy listing page.</p>
+              </div>
+
+              <div class="mb-6">
+                <h3 class="text-base font-semibold text-brand-deep mb-1">Page content blocks</h3>
+                <p class="text-xs text-slate-500 mb-4">Add sections that appear on this modality's area pages below the description. Each block has a heading and body text.</p>
+
+                {{ block_formset.management_form }}
+                <div id="block-formset-container" class="space-y-4">
+                  {% for bf in block_formset %}
+                  <div class="block-form-row border border-[rgba(146,220,229,0.5)] rounded-xl p-4 space-y-3 bg-slate-50/60">
+                    {{ bf.id }}
+                    <div class="grid md:grid-cols-[80px_1fr] gap-3 items-start">
+                      <div>
+                        <label class="field-label" for="{{ bf.order.id_for_label }}">Order</label>
+                        {{ bf.order }}
+                        {% if bf.order.errors %}<div class="text-xs text-red-600 mt-1">{{ bf.order.errors|striptags }}</div>{% endif %}
+                      </div>
+                      <div>
+                        <label class="field-label" for="{{ bf.heading.id_for_label }}">Heading</label>
+                        {{ bf.heading }}
+                        {% if bf.heading.errors %}<div class="text-xs text-red-600 mt-1">{{ bf.heading.errors|striptags }}</div>{% endif %}
+                      </div>
+                    </div>
+                    <div>
+                      <label class="field-label" for="{{ bf.body.id_for_label }}">Body text</label>
+                      {{ bf.body }}
+                      {% if bf.body.errors %}<div class="text-xs text-red-600 mt-1">{{ bf.body.errors|striptags }}</div>{% endif %}
+                    </div>
+                    {% if block_formset.can_delete %}
+                    <div class="flex items-center gap-2 pt-1">
+                      {{ bf.DELETE }}
+                      <label for="{{ bf.DELETE.id_for_label }}" class="text-xs text-red-700 font-semibold cursor-pointer">Delete this block</label>
+                    </div>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+                <button type="button" id="add-block-btn" class="action-btn mt-3">+ Add another block</button>
+              </div>
+
+              <div class="flex gap-3">
+                <button type="submit" class="seo-btn seo-btn-primary">Save Changes</button>
+                <a href="{% url 'seo_intel:settings_modalities' %}" class="seo-btn seo-btn-outline">Cancel</a>
+              </div>
+            </form>
+          </div>
+
+          {# ---- Office assignments ---------------------------------------- #}
+          <div class="card-surface p-6">
+            <h3 class="text-base font-semibold text-brand-deep mb-1">Office locations</h3>
+            <p class="text-xs text-slate-500 mb-4">Offices that offer this modality. Therapists at these offices will appear on modality area pages.</p>
+
+            {# Assigned offices as removable pills #}
+            {% if assigned_offices %}
+            <div class="flex flex-wrap gap-2 mb-4">
+              {% for office in assigned_offices %}
+              <form method="post" action="{% url 'seo_intel:edit_modality' obj.pk %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_office">
+                <input type="hidden" name="office_pk" value="{{ office.pk }}">
+                <button type="submit" title="Remove {{ office.name }}"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors cursor-pointer">
+                  {{ office.name }}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style="width:0.75rem;height:0.75rem;flex-shrink:0;"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
+                </button>
+              </form>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-slate-400 italic mb-4">No offices assigned yet.</p>
+            {% endif %}
+
+            {# Add office dropdown #}
+            {% if unassigned_offices %}
+            <form method="post" action="{% url 'seo_intel:edit_modality' obj.pk %}" class="flex items-center gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_office">
+              <select name="office_pk" class="form-input" style="max-width:280px;">
+                {% for office in unassigned_offices %}
+                <option value="{{ office.pk }}">{{ office.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="seo-btn seo-btn-primary" style="white-space:nowrap;">Add office</button>
+            </form>
+            {% else %}
+            <p class="text-xs text-slate-400 italic">All active offices are already assigned.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block body_extra %}
+<script>
+(function () {
+  var btn = document.getElementById('add-block-btn');
+  var container = document.getElementById('block-formset-container');
+  var totalForms = document.getElementById('id_modalitycontentblock_set-TOTAL_FORMS');
+  if (!btn || !container || !totalForms) return;
+  btn.addEventListener('click', function () {
+    var count = parseInt(totalForms.value, 10);
+    var prefix = 'modalitycontentblock_set-' + count;
+    var row = document.createElement('div');
+    row.className = 'block-form-row border border-[rgba(146,220,229,0.5)] rounded-xl p-4 space-y-3 bg-slate-50/60';
+    row.innerHTML =
+      '<input type="hidden" name="' + prefix + '-id" id="id_' + prefix + '-id">' +
+      '<div class="grid md:grid-cols-[80px_1fr] gap-3 items-start">' +
+        '<div><label class="field-label" for="id_' + prefix + '-order">Order</label>' +
+        '<input type="number" name="' + prefix + '-order" value="0" class="input-basic" id="id_' + prefix + '-order"></div>' +
+        '<div><label class="field-label" for="id_' + prefix + '-heading">Heading</label>' +
+        '<input type="text" name="' + prefix + '-heading" maxlength="200" class="input-basic" id="id_' + prefix + '-heading"></div>' +
+      '</div>' +
+      '<div><label class="field-label" for="id_' + prefix + '-body">Body text</label>' +
+      '<textarea name="' + prefix + '-body" rows="4" class="input-basic" id="id_' + prefix + '-body"></textarea></div>' +
+      '<div class="flex items-center gap-2 pt-1">' +
+        '<input type="checkbox" name="' + prefix + '-DELETE" id="id_' + prefix + '-DELETE">' +
+        '<label for="id_' + prefix + '-DELETE" class="text-xs text-red-700 font-semibold cursor-pointer">Delete this block</label>' +
+      '</div>';
+    container.appendChild(row);
+    totalForms.value = count + 1;
+  });
+}());
+</script>
+{% endblock %}

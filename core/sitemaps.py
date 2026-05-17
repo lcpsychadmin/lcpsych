@@ -1,7 +1,7 @@
 from django.contrib.sitemaps import Sitemap
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
-from .models import Page
+from .models import Page, Condition, Modality
 from blog.models import Post as BlogPost
 
 
@@ -20,6 +20,8 @@ class StaticViewSitemap(Sitemap):
             'insurance',
             'contact_us',
             'faq',
+            'conditions_list',
+            'modalities_list',
         ]
 
     def location(self, item):
@@ -92,3 +94,37 @@ class PostSitemap(Sitemap):
                     continue
                 u['location'] = f"{base}{u['location']}"
         return urls
+
+
+class ConditionSitemap(Sitemap):
+    """One entry per active condition detail page (/conditions-we-treat/<slug>/)."""
+
+    priority = 0.7
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        return Condition.objects.filter(active=True).order_by("slug")
+
+    def location(self, obj):
+        return f"/conditions-we-treat/{obj.slug}/"
+
+    def lastmod(self, obj):
+        return obj.updated
+
+
+class ModalitySitemap(Sitemap):
+    """One entry per active modality detail page (/types-of-therapy/<slug>/)."""
+
+    priority = 0.7
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        return Modality.objects.filter(active=True).order_by("slug")
+
+    def location(self, obj):
+        return f"/types-of-therapy/{obj.slug}/"
+
+    def lastmod(self, obj):
+        return obj.updated

@@ -5,6 +5,9 @@ Services are assigned only to therapists.
 Locations inherit services from their therapists.
 Areas (states / cities / counties) inherit services from locations that serve them.
 
+Modalities and Conditions are assigned to OfficeLocations.
+Areas inherit modalities/conditions from the offices that serve them.
+
 Public API
 ----------
   get_therapists_for_location(location)  -> QuerySet[TherapistProfile]
@@ -309,3 +312,154 @@ def get_therapists_for_region_and_service(region, service):
     service : Service instance or int (pk)
     """
     return get_therapists_for_region(region).filter(services=service).distinct()
+
+
+# ---------------------------------------------------------------------------
+# Modality helpers
+# ---------------------------------------------------------------------------
+
+def _get_offices_for_area(area):
+    """
+    Return all active OfficeLocations that cover the given area.
+
+    Coverage is determined by:
+      - OfficeLocation.geo_states includes the state (for GeoState areas)
+      - OfficeLocation.geo_locations includes the location (for GeoLocation areas)
+
+    Parameters
+    ----------
+    area : GeoState or GeoLocation instance
+    """
+    from core.models import OfficeLocation
+    from geo.models import GeoState, GeoLocation
+    from django.db.models import Q
+
+    if isinstance(area, GeoState):
+        return OfficeLocation.objects.filter(
+            is_active=True,
+        ).filter(
+            Q(geo_states=area) | Q(geo_locations__state=area)
+        ).distinct()
+
+    if isinstance(area, GeoLocation):
+        if area.location_type == GeoLocation.COUNTY:
+            return OfficeLocation.objects.filter(
+                is_active=True,
+            ).filter(
+                Q(geo_locations__pk=area.pk) | Q(geo_locations__county=area)
+            ).distinct()
+        # city
+        return OfficeLocation.objects.filter(
+            is_active=True,
+            geo_locations=area,
+        ).distinct()
+
+    raise TypeError(f"Expected GeoState or GeoLocation, got {type(area)}")
+
+
+def get_modalities_for_area(area):
+    """
+    Return all active Modalities available in the given area (via offices
+    that serve the area).
+
+    Parameters
+    ----------
+    area : GeoState or GeoLocation instance
+    """
+    from core.models import Modality
+
+    office_ids = _get_offices_for_area(area).values_list("id", flat=True)
+    return Modality.objects.filter(
+        active=True,
+        offices__id__in=office_ids,
+    ).distinct()
+
+
+def get_conditions_for_area(area):
+    """
+    Return all active Conditions available in the given area (via offices
+    that serve the area).
+
+    Parameters
+    ----------
+    area : GeoState or GeoLocation instance
+    """
+    from core.models import Condition
+
+    office_ids = _get_offices_for_area(area).values_list("id", flat=True)
+    return Condition.objects.filter(
+        active=True,
+        offices__id__in=office_ids,
+    ).distinct()
+
+
+def is_modality_available_in_area(area, modality) -> bool:
+    """
+    Return True if *modality* is offered in *area*.
+
+    Parameters
+    ----------
+    area     : GeoState or GeoLocation instance
+    modality : Modality instance or int (pk)
+    """
+    return get_modalities_for_area(area).filter(
+        pk=modality if isinstance(modality, int) else modality.pk
+    ).exists()
+
+
+def is_condition_available_in_area(area, condition) -> bool:
+    """
+    Return True if *condition* is treated in *area*.
+
+    Parameters
+    ----------
+    area      : GeoState or GeoLocation instance
+    condition : Condition instance or int (pk)
+    """
+    return get_conditions_for_area(area).filter(
+        pk=condition if isinstance(condition, int) else condition.pk
+    ).exists()
+
+
+def get_therapists_for_area_and_modality(area, modality):
+    """
+    Return all published therapists in *area* who work at an office
+    that offers *modality*.
+
+    Parameters
+    ----------
+    area     : GeoState or GeoLocation instance
+    modality : Modality instance
+    """
+    from profiles.models import TherapistProfile
+
+    office_ids = _get_offices_for_area(area).filter(
+        modalities=modality,
+    ).values_list("id", flat=True)
+
+    return TherapistProfile.objects.filter(
+        offices__id__in=office_ids,
+        is_published=True,
+    ).distinct()
+
+
+def get_therapists_for_area_and_condition(area, condition):
+    """
+    Return all published therapists in *area* who work at an office
+    that treats *condition*.
+
+    Parameters
+    ----------
+    area      : GeoState or GeoLocation instance
+    condition : Condition instance
+    """
+    from profiles.models import TherapistProfile
+
+    office_ids = _get_offices_for_area(area).filter(
+        conditions=condition,
+    ).values_list("id", flat=True)
+
+    return TherapistProfile.objects.filter(
+        offices__id__in=office_ids,
+        is_published=True,
+    ).distinct()

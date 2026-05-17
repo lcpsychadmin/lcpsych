@@ -1,3 +1,40 @@
+<style>
+/* Services dropdown nav */
+.elementor-nav-menu--main .menu-item-has-children { position: relative; }
+.elementor-nav-menu--main .menu-item-has-children > .sub-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 210px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  padding: 6px 0;
+  list-style: none;
+  margin: 0;
+  z-index: 9999;
+}
+.elementor-nav-menu--main .menu-item-has-children:hover > .sub-menu,
+.elementor-nav-menu--main .menu-item-has-children:focus-within > .sub-menu { display: block; }
+.elementor-nav-menu--main .sub-menu .elementor-sub-item {
+  display: block;
+  padding: 10px 18px;
+  color: #0f3f46;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.elementor-nav-menu--main .sub-menu .elementor-sub-item:hover,
+.elementor-nav-menu--main .sub-menu .elementor-sub-item.elementor-item-active { background: #f0f9fb; color: #045E6A; }
+/* Mobile sub-items */
+.elementor-nav-menu--dropdown .menu-item-has-children > .sub-menu { display: none; }
+.elementor-nav-menu--dropdown .menu-item-has-children.open > .sub-menu { display: block; }
+.elementor-nav-menu--dropdown .sub-menu .elementor-sub-item { padding-left: 28px; font-size: 14px; }
+</style>
 <div data-elementor-type="footer" data-elementor-id="1295" class="elementor elementor-1295 elementor-location-footer" data-elementor-post-type="elementor_library">
         <footer data-dce-background-color="#FFFFFF" class="elementor-element elementor-element-7999d560 e-flex e-con-boxed e-con e-parent" data-id="7999d560" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;,&quot;shape_divider_top&quot;:&quot;wave-brush&quot;,&quot;_ha_eqh_enable&quot;:false}">
             <div class="e-con-inner">
@@ -35,8 +72,13 @@
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2024">
                                         <a href="/about-us/" {% if request.path == '/about-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/about-us/' %}elementor-item-active{% endif %}">About Us</a>
                                     </li>
-                                    <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2025">
-                                        <a href="/services/" aria-current="page" class="elementor-item {% if request.path|slice:":10" == '/services/' %}elementor-item-active{% endif %}" {% if request.path|slice:":10" == '/services/' %}style="color:#3C9C64"{% endif %}>Services</a>
+                                    <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2025 menu-item-has-children">
+                                        <a href="/services/" class="elementor-item{% if request.path|slice:":10" == '/services/' or request.path == '/types-of-therapy/' or request.path == '/conditions-we-treat/' %} elementor-item-active{% endif %}">Services</a>
+                                        <ul class="sub-menu">
+                                            <li class="menu-item"><a href="/services/" class="elementor-sub-item{% if request.path|slice:":10" == '/services/' %} elementor-item-active{% endif %}">Services We Provide</a></li>
+                                            <li class="menu-item"><a href="/types-of-therapy/" class="elementor-sub-item{% if request.path == '/types-of-therapy/' %} elementor-item-active{% endif %}">Types of Therapy</a></li>
+                                            <li class="menu-item"><a href="/conditions-we-treat/" class="elementor-sub-item{% if request.path == '/conditions-we-treat/' %} elementor-item-active{% endif %}">Conditions We Treat</a></li>
+                                        </ul>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2026">
                                         <a href="/insurance/" {% if request.path == '/insurance/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/insurance/' %}elementor-item-active{% endif %}">Insurance</a>
@@ -65,8 +107,13 @@
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2024">
                                         <a href="/about-us/" {% if request.path == '/about-us/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/about-us/' %}elementor-item-active{% endif %}" tabindex="-1">About Us</a>
                                     </li>
-                                    <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2025">
-                                        <a href="/services/" aria-current="page" class="elementor-item {% if request.path|slice:":10" == '/services/' %}elementor-item-active{% endif %}" {% if request.path|slice:":10" == '/services/' %}style="color:#3C9C64"{% endif %} tabindex="-1">Services</a>
+                                    <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2025 menu-item-has-children">
+                                        <a href="/services/" class="elementor-item{% if request.path|slice:":10" == '/services/' or request.path == '/types-of-therapy/' or request.path == '/conditions-we-treat/' %} elementor-item-active{% endif %}" tabindex="-1">Services</a>
+                                        <ul class="sub-menu">
+                                            <li class="menu-item"><a href="/services/" class="elementor-sub-item{% if request.path|slice:":10" == '/services/' %} elementor-item-active{% endif %}" tabindex="-1">Services We Provide</a></li>
+                                            <li class="menu-item"><a href="/types-of-therapy/" class="elementor-sub-item{% if request.path == '/types-of-therapy/' %} elementor-item-active{% endif %}" tabindex="-1">Types of Therapy</a></li>
+                                            <li class="menu-item"><a href="/conditions-we-treat/" class="elementor-sub-item{% if request.path == '/conditions-we-treat/' %} elementor-item-active{% endif %}" tabindex="-1">Conditions We Treat</a></li>
+                                        </ul>
                                     </li>
                                     <li class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item current_page_item menu-item-home menu-item-2026">
                                         <a href="/insurance/" {% if request.path == '/insurance/' %}aria-current="page"{% endif %} class="elementor-item {% if request.path == '/insurance/' %}elementor-item-active{% endif %}" tabindex="-1">Insurance</a>
@@ -118,6 +165,20 @@
             </div>
         </footer>
     </div>
+    <script>
+    // Mobile sub-menu toggle for Services dropdown
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.elementor-nav-menu--dropdown .menu-item-has-children > a').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+          var li = link.parentElement;
+          var isOpen = li.classList.contains('open');
+          // Close any other open items
+          li.closest('ul').querySelectorAll('.menu-item-has-children.open').forEach(function (el) { el.classList.remove('open'); });
+          if (!isOpen) { e.preventDefault(); li.classList.add('open'); }
+        });
+      });
+    });
+    </script>
     <style>
     button[disabled], html input[disabled] {
         cursor: default;

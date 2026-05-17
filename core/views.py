@@ -33,6 +33,8 @@ from .models import (
 	HeroSettings,
 	AboutSection,
 	OurPhilosophy,
+	Modality,
+	Condition,
 )
 from profiles.models import TherapistProfile
 from core.utils.bot_detection import is_bot_ua
@@ -257,6 +259,8 @@ def home(request):
 		.select_related('page')
 		.order_by('order', 'title')
 	)
+	modalities = list(Modality.objects.filter(active=True).order_by('name'))
+	conditions = list(Condition.objects.filter(active=True).order_by('name'))
 
 	therapists = _build_therapist_cards(_published_therapists_queryset())
 	accepted_providers = list(
@@ -273,7 +277,7 @@ def home(request):
 	from core.utils import get_offices
 	home_offices = list(get_offices())
 
-	ctx = {**seo_ctx, 'services': services, 'therapists': therapists, 'accepted_providers': accepted_providers, 'hero_settings': hero_settings, 'home_offices': home_offices}
+	ctx = {**seo_ctx, 'services': services, 'modalities': modalities, 'conditions': conditions, 'therapists': therapists, 'accepted_providers': accepted_providers, 'hero_settings': hero_settings, 'home_offices': home_offices}
 	return render(request, 'home.html', ctx)
 
 
@@ -528,6 +532,52 @@ def faq(request):
 		'Frequently Asked Questions',
 	)
 	return render(request, 'pages/faq.html', context)
+
+
+def modalities_list(request):
+	query = request.GET.get("q", "").strip()
+	qs = Modality.objects.filter(active=True)
+	if query:
+		qs = qs.filter(name__icontains=query)
+	return render(request, "core/modalities_list.html", {
+		"modalities": list(qs),
+		"query": query,
+		"seo_title": "Types of Therapy | L+C Psychological Services",
+		"seo_description": "Explore the therapy modalities and approaches offered at L+C Psychological Services in Northern Kentucky.",
+	})
+
+
+def modality_detail(request, slug: str):
+	modality = get_object_or_404(Modality, slug=slug, active=True)
+	return render(request, "core/modality_detail.html", {
+		"modality": modality,
+		"content_blocks": modality.content_blocks.all(),
+		"seo_title": f"{modality.name} | Types of Therapy | L+C Psychological Services",
+		"seo_description": (modality.description[:155] + "…") if len(modality.description) > 155 else modality.description,
+	})
+
+
+def conditions_list(request):
+	query = request.GET.get("q", "").strip()
+	qs = Condition.objects.filter(active=True)
+	if query:
+		qs = qs.filter(name__icontains=query)
+	return render(request, "core/conditions_list.html", {
+		"conditions": list(qs),
+		"query": query,
+		"seo_title": "Conditions We Treat | L+C Psychological Services",
+		"seo_description": "Explore the mental health conditions and presenting concerns treated at L+C Psychological Services.",
+	})
+
+
+def condition_detail(request, slug: str):
+	condition = get_object_or_404(Condition, slug=slug, active=True)
+	return render(request, "core/condition_detail.html", {
+		"condition": condition,
+		"content_blocks": condition.content_blocks.all(),
+		"seo_title": f"{condition.name} | Conditions We Treat | L+C Psychological Services",
+		"seo_description": (condition.description[:155] + "…") if len(condition.description) > 155 else condition.description,
+	})
 
 
 def service_detail(request, slug: str):

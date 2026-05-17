@@ -27,6 +27,12 @@ from seo_intel.views.competitor_location_coverage import competitor_location_cov
 from seo_intel.views.competitor_modality_testing import competitor_modality_testing
 from seo_intel.views.competitor_directory_social import competitor_directory_social
 from seo_intel.views.actions import run_directory_scan, run_social_scan
+from seo_intel.views.settings_modalities import manage_modalities, edit_modality, toggle_modality, delete_modality
+from seo_intel.views.settings_conditions import manage_conditions, edit_condition, toggle_condition, delete_condition
+from seo_intel.views.settings_office_modalities import office_modalities, toggle_office_modality
+from seo_intel.views.settings_office_conditions import office_conditions, toggle_office_condition
+from seo_intel.views.modality_coverage import modality_coverage
+from seo_intel.views.condition_coverage import condition_coverage
 from seo_intel.views.keyword_universe import keyword_universe
 from seo_intel.views.serp_explorer import serp_explorer
 from seo_settings.views import actions, portal
@@ -80,6 +86,30 @@ urlpatterns = [
 
     # Analytics Hub
     path('analytics-hub/', analytics_hub, name='analytics_hub'),
+
+    # Modalities management
+    path('modalities/', manage_modalities, name='settings_modalities'),
+    path('modalities/<int:pk>/edit/', edit_modality, name='edit_modality'),
+    path('modalities/<int:pk>/toggle/', toggle_modality, name='toggle_modality'),
+    path('modalities/<int:pk>/delete/', delete_modality, name='delete_modality'),
+
+    # Conditions management
+    path('conditions/', manage_conditions, name='settings_conditions'),
+    path('conditions/<int:pk>/edit/', edit_condition, name='edit_condition'),
+    path('conditions/<int:pk>/toggle/', toggle_condition, name='toggle_condition'),
+    path('conditions/<int:pk>/delete/', delete_condition, name='delete_condition'),
+
+    # Office → Modality assignment (HTMX inline toggle)
+    path('office-modalities/', office_modalities, name='settings_office_modalities'),
+    path('office-modalities/<int:office_pk>/toggle/<int:modality_pk>/', toggle_office_modality, name='toggle_office_modality'),
+
+    # Office → Condition assignment (HTMX inline toggle)
+    path('office-conditions/', office_conditions, name='settings_office_conditions'),
+    path('office-conditions/<int:office_pk>/toggle/<int:condition_pk>/', toggle_office_condition, name='toggle_office_condition'),
+
+    # Coverage dashboards
+    path('modality-coverage/', modality_coverage, name='modality_coverage'),
+    path('condition-coverage/', condition_coverage, name='condition_coverage'),
 
     # Analytics
     path('analytics/sc/', portal.analytics_sc, name='analytics_sc'),

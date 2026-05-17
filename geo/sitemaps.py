@@ -182,3 +182,170 @@ class GeoRegionTherapistSitemap(Sitemap):
         region, therapist = item
         return f"/regions/{region.slug}/therapists/{therapist.slug}/"
 
+
+class GeoRegionModalitySitemap(Sitemap):
+    """One entry per (region, modality) pair where at least one active office in the region offers that modality."""
+
+    priority = 0.6
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        from core.models import Modality
+
+        pairs = []
+        regions = GeoRegion.objects.filter(is_active=True).prefetch_related(
+            "offices"
+        ).order_by("slug")
+        modalities = Modality.objects.filter(active=True).order_by("slug")
+        for region in regions:
+            offices_in_region = region.offices.filter(
+                is_active=True,
+                therapists__is_published=True,
+            ).distinct()
+            for modality in modalities:
+                if offices_in_region.filter(modalities=modality).exists():
+                    pairs.append((region, modality))
+        return pairs
+
+    def location(self, item):
+        region, modality = item
+        return f"/regions/{region.slug}/modalities/{modality.slug}/"
+
+
+class GeoRegionConditionSitemap(Sitemap):
+    """One entry per (region, condition) pair where at least one active office in the region treats that condition."""
+
+    priority = 0.6
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        from core.models import Condition
+
+        pairs = []
+        regions = GeoRegion.objects.filter(is_active=True).prefetch_related(
+            "offices"
+        ).order_by("slug")
+        conditions = Condition.objects.filter(active=True).order_by("slug")
+        for region in regions:
+            offices_in_region = region.offices.filter(
+                is_active=True,
+                therapists__is_published=True,
+            ).distinct()
+            for condition in conditions:
+                if offices_in_region.filter(conditions=condition).exists():
+                    pairs.append((region, condition))
+        return pairs
+
+    def location(self, item):
+        region, condition = item
+        return f"/regions/{region.slug}/conditions/{condition.slug}/"
+
+
+class GeoStateModalitySitemap(Sitemap):
+    """One entry per (state, modality) pair where at least one published therapist offers that modality in the state."""
+
+    priority = 0.65
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        from core.models import Modality
+        from geo.utils.availability import get_therapists_for_area_and_modality
+
+        pairs = []
+        states = GeoState.objects.filter(is_active=True).order_by("slug")
+        modalities = Modality.objects.filter(active=True).order_by("slug")
+        for state in states:
+            for modality in modalities:
+                if get_therapists_for_area_and_modality(state, modality).exists():
+                    pairs.append((state, modality))
+        return pairs
+
+    def location(self, item):
+        state, modality = item
+        return f"/{state.slug}/modalities/{modality.slug}/"
+
+
+class GeoStateConditionSitemap(Sitemap):
+    """One entry per (state, condition) pair where at least one published therapist treats that condition in the state."""
+
+    priority = 0.65
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        from core.models import Condition
+        from geo.utils.availability import get_therapists_for_area_and_condition
+
+        pairs = []
+        states = GeoState.objects.filter(is_active=True).order_by("slug")
+        conditions = Condition.objects.filter(active=True).order_by("slug")
+        for state in states:
+            for condition in conditions:
+                if get_therapists_for_area_and_condition(state, condition).exists():
+                    pairs.append((state, condition))
+        return pairs
+
+    def location(self, item):
+        state, condition = item
+        return f"/{state.slug}/conditions/{condition.slug}/"
+
+
+class GeoLocationModalitySitemap(Sitemap):
+    """One entry per (location, modality) pair where at least one published therapist offers that modality there."""
+
+    priority = 0.6
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        from core.models import Modality
+        from geo.utils.availability import get_therapists_for_area_and_modality
+
+        pairs = []
+        locations = (
+            GeoLocation.objects.filter(is_active=True)
+            .select_related("state", "county")
+            .order_by("state__slug", "slug")
+        )
+        modalities = Modality.objects.filter(active=True).order_by("slug")
+        for location in locations:
+            for modality in modalities:
+                if get_therapists_for_area_and_modality(location, modality).exists():
+                    pairs.append((location, modality))
+        return pairs
+
+    def location(self, item):
+        loc, modality = item
+        return f"{loc.get_url_path()}modalities/{modality.slug}/"
+
+
+class GeoLocationConditionSitemap(Sitemap):
+    """One entry per (location, condition) pair where at least one published therapist treats that condition there."""
+
+    priority = 0.6
+    changefreq = "monthly"
+    protocol = "https"
+
+    def items(self):
+        from core.models import Condition
+        from geo.utils.availability import get_therapists_for_area_and_condition
+
+        pairs = []
+        locations = (
+            GeoLocation.objects.filter(is_active=True)
+            .select_related("state", "county")
+            .order_by("state__slug", "slug")
+        )
+        conditions = Condition.objects.filter(active=True).order_by("slug")
+        for location in locations:
+            for condition in conditions:
+                if get_therapists_for_area_and_condition(location, condition).exists():
+                    pairs.append((location, condition))
+        return pairs
+
+    def location(self, item):
+        loc, condition = item
+        return f"{loc.get_url_path()}conditions/{condition.slug}/"

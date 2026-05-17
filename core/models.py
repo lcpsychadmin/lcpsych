@@ -760,6 +760,18 @@ class OfficeLocation(Timestamped):
 		blank=True,
 		help_text="Specific cities/counties served from this office.",
 	)
+	modalities = models.ManyToManyField(
+		"core.Modality",
+		related_name="offices",
+		blank=True,
+		help_text="Therapy modalities offered at this office.",
+	)
+	conditions = models.ManyToManyField(
+		"core.Condition",
+		related_name="offices",
+		blank=True,
+		help_text="Conditions/presenting concerns treated at this office.",
+	)
 
 	# Display
 	is_active = models.BooleanField(default=True)
@@ -809,6 +821,120 @@ class OfficeLocation(Timestamped):
 			"postalCode": self.address_zip,
 			"addressCountry": "US",
 		}
+
+class Modality(Timestamped):
+	"""A therapy modality offered at one or more office locations."""
+
+	name = models.CharField(max_length=200)
+	slug = models.SlugField(max_length=200, unique=True)
+	description = models.TextField(blank=True)
+	active = models.BooleanField(default=True)
+	icon = models.CharField(max_length=100, blank=True, help_text="Optional icon class or emoji.")
+	featured_image = models.ImageField(
+		upload_to="modalities/",
+		blank=True,
+		null=True,
+		help_text="Card background image for the listing page.",
+	)
+
+	class Meta:
+		ordering = ["name"]
+		verbose_name = "Modality"
+		verbose_name_plural = "Modalities"
+
+	def __str__(self) -> str:
+		return self.name
+
+	def save(self, *args, **kwargs):
+		if not self.slug:
+			self.slug = slugify(self.name)[:200]
+		super().save(*args, **kwargs)
+
+	@property
+	def card_background_url(self) -> str:
+		if self.featured_image:
+			try:
+				return self.featured_image.url
+			except ValueError:
+				return ""
+		return ""
+
+
+class Condition(Timestamped):
+	"""A mental health condition or presenting concern treated at one or more office locations."""
+
+	name = models.CharField(max_length=200)
+	slug = models.SlugField(max_length=200, unique=True)
+	description = models.TextField(blank=True)
+	active = models.BooleanField(default=True)
+	icon = models.CharField(max_length=100, blank=True, help_text="Optional icon class or emoji.")
+	featured_image = models.ImageField(
+		upload_to="conditions/",
+		blank=True,
+		null=True,
+		help_text="Card background image for the listing page.",
+	)
+
+	class Meta:
+		ordering = ["name"]
+		verbose_name = "Condition"
+		verbose_name_plural = "Conditions"
+
+	def __str__(self) -> str:
+		return self.name
+
+	def save(self, *args, **kwargs):
+		if not self.slug:
+			self.slug = slugify(self.name)[:200]
+		super().save(*args, **kwargs)
+
+	@property
+	def card_background_url(self) -> str:
+		if self.featured_image:
+			try:
+				return self.featured_image.url
+			except ValueError:
+				return ""
+		return ""
+
+
+class ModalityContentBlock(models.Model):
+	"""A heading + body content block attached to a Modality detail page."""
+
+	modality = models.ForeignKey(
+		Modality,
+		on_delete=models.CASCADE,
+		related_name="content_blocks",
+	)
+	order = models.PositiveSmallIntegerField(default=0, help_text="Lower numbers appear first.")
+	heading = models.CharField(max_length=200, help_text="Section heading")
+	body = models.TextField(help_text="Paragraph text for this section")
+
+	class Meta:
+		ordering = ["order"]
+
+	def __str__(self):
+		return self.heading
+
+
+class ConditionContentBlock(models.Model):
+	"""A heading + body content block attached to a Condition detail page."""
+
+	condition = models.ForeignKey(
+		Condition,
+		on_delete=models.CASCADE,
+		related_name="content_blocks",
+	)
+	order = models.PositiveSmallIntegerField(default=0, help_text="Lower numbers appear first.")
+	heading = models.CharField(max_length=200, help_text="Section heading")
+	body = models.TextField(help_text="Paragraph text for this section")
+
+	class Meta:
+		ordering = ["order"]
+
+	def __str__(self):
+		return self.heading
+
 
 class Gone410URL(models.Model):
     """A URL path that should return 410 Gone, managed via the admin UI."""

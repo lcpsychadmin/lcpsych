@@ -23,6 +23,10 @@ from core.models import (
     OfficeLocation,
     HeroSettings,
     HeroContentBlock,
+    Modality,
+    ModalityContentBlock,
+    Condition,
+    ConditionContentBlock,
 )
 
 
@@ -70,6 +74,54 @@ ServiceContentBlockFormSet = forms.inlineformset_factory(
     Service,
     ServiceContentBlock,
     form=ServiceContentBlockForm,
+    extra=1,
+    can_delete=True,
+)
+
+
+class ModalityContentBlockForm(forms.ModelForm):
+    class Meta:
+        model = ModalityContentBlock
+        fields = ["order", "heading", "body"]
+        widgets = {
+            "order": forms.NumberInput(attrs={"class": "input-basic"}),
+            "heading": forms.TextInput(attrs={"class": "input-basic"}),
+            "body": forms.Textarea(attrs={"rows": 4, "class": "input-basic"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial.setdefault("order", 0)
+
+
+ModalityContentBlockFormSet = forms.inlineformset_factory(
+    Modality,
+    ModalityContentBlock,
+    form=ModalityContentBlockForm,
+    extra=1,
+    can_delete=True,
+)
+
+
+class ConditionContentBlockForm(forms.ModelForm):
+    class Meta:
+        model = ConditionContentBlock
+        fields = ["order", "heading", "body"]
+        widgets = {
+            "order": forms.NumberInput(attrs={"class": "input-basic"}),
+            "heading": forms.TextInput(attrs={"class": "input-basic"}),
+            "body": forms.Textarea(attrs={"rows": 4, "class": "input-basic"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial.setdefault("order", 0)
+
+
+ConditionContentBlockFormSet = forms.inlineformset_factory(
+    Condition,
+    ConditionContentBlock,
+    form=ConditionContentBlockForm,
     extra=1,
     can_delete=True,
 )

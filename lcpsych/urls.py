@@ -19,8 +19,8 @@ from django.urls import path, include, re_path
 from django.views.generic import TemplateView
 from django.contrib.sitemaps.views import sitemap
 from django.views.static import serve
-from core.sitemaps import StaticViewSitemap, PageSitemap, PostSitemap
-from geo.sitemaps import GeoStateSitemap, GeoCitySitemap, GeoCountySitemap, GeoStateServiceSitemap, GeoLocationServiceSitemap, GeoRegionSitemap, GeoRegionServiceSitemap, GeoRegionTherapistSitemap
+from core.sitemaps import StaticViewSitemap, PageSitemap, PostSitemap, ConditionSitemap, ModalitySitemap
+from geo.sitemaps import GeoStateSitemap, GeoCitySitemap, GeoCountySitemap, GeoStateServiceSitemap, GeoLocationServiceSitemap, GeoRegionSitemap, GeoRegionServiceSitemap, GeoRegionTherapistSitemap, GeoRegionModalitySitemap, GeoRegionConditionSitemap, GeoStateModalitySitemap, GeoStateConditionSitemap, GeoLocationModalitySitemap, GeoLocationConditionSitemap
 from profiles.sitemaps import TherapistSitemap, TherapistStateSitemap, TherapistAreaSitemap
 from core import views as core_views
 from accounts.views import ManageTherapistsView
@@ -40,6 +40,8 @@ urlpatterns = [
             'static': StaticViewSitemap,
             'pages': PageSitemap,
             'posts': PostSitemap,
+            'conditions': ConditionSitemap,
+            'modalities': ModalitySitemap,
             'geo_states': GeoStateSitemap,
             'geo_cities': GeoCitySitemap,
             'geo_counties': GeoCountySitemap,
@@ -48,6 +50,12 @@ urlpatterns = [
             'geo_regions': GeoRegionSitemap,
             'geo_region_services': GeoRegionServiceSitemap,
             'geo_region_therapists': GeoRegionTherapistSitemap,
+            'geo_region_modalities': GeoRegionModalitySitemap,
+            'geo_region_conditions': GeoRegionConditionSitemap,
+            'geo_state_modalities': GeoStateModalitySitemap,
+            'geo_state_conditions': GeoStateConditionSitemap,
+            'geo_location_modalities': GeoLocationModalitySitemap,
+            'geo_location_conditions': GeoLocationConditionSitemap,
             'therapists': TherapistSitemap,
             'therapist_states': TherapistStateSitemap,
             'therapist_areas': TherapistAreaSitemap,

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Modality Coverage — SEO Intelligence{% endblock %}
+
+{% block head_extra %}
+{% include "accounts/partials/settings_nav_styles.html" %}
+<style>
+.card-surface { background:#fff; border:1px solid rgba(15,63,70,.12); border-radius:1rem; box-shadow:0 10px 30px rgba(0,48,57,.06); }
+.stat-block { text-align:center; }
+.stat-num { font-size:1.6rem; font-weight:700; color:#0f3f46; line-height:1; }
+.stat-label { font-size:.73rem; color:#64748b; margin-top:.2rem; }
+.data-table { width:100%; border-collapse:collapse; font-size:.86rem; }
+.data-table th { text-align:left; padding:.55rem .65rem; font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748b; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
+.data-table td { padding:.5rem .65rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table tr:hover td { background:#f8fbfc; }
+.pill-ok { display:inline-block; font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:9999px; background:#d1fae5; color:#065f46; }
+.pill-missing { display:inline-block; font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:9999px; background:#fee2e2; color:#991b1b; }
+.pill-inactive { display:inline-block; font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:9999px; background:#f1f5f9; color:#64748b; }
+.office-chip { display:inline-block; font-size:.7rem; font-weight:600; padding:.15rem .5rem; border-radius:.4rem; background:#e0f2fe; color:#0369a1; margin:.1rem; }
+.state-chip { display:inline-block; font-size:.7rem; font-weight:600; padding:.15rem .5rem; border-radius:.4rem; background:#f0fdf4; color:#15803d; margin:.1rem; }
+.seo-btn { display:inline-flex; align-items:center; gap:.4rem; border-radius:.65rem; padding:.45rem 1rem; font-size:.85rem; font-weight:600; border:none; cursor:pointer; transition:all .18s; text-decoration:none; }
+.seo-btn-outline { background:#fff; color:#0f3f46; border:1px solid rgba(15,63,70,.2); }
+.seo-btn-outline:hover { background:#e6f6f3; border-color:#92DCE5; }
+.seo-btn-sm { padding:.3rem .75rem; font-size:.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="bg-brand-deep text-white py-14">
+  <div class="max-w-7xl mx-auto px-4 sm:px-8">
+    <p class="text-sm font-medium uppercase tracking-widest text-cyan-300 mb-2">SEO Intelligence › Modality Coverage</p>
+    <h1 class="text-4xl font-bold mb-3">Modality Coverage</h1>
+    <p class="text-slate-300 text-lg">Which modalities are assigned to offices and which states/areas have coverage.</p>
+  </div>
+</section>
+
+<section class="py-10 md:py-14">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="settings-layout">
+      {% include "seo_settings/portal/_nav.html" with active_page=active_page %}
+
+      <div class="space-y-5 min-w-0">
+
+        {# ── Summary stats ── #}
+        <div class="card-surface p-6">
+          <div class="grid grid-cols-3 gap-6 divide-x divide-slate-100">
+            <div class="stat-block">
+              <div class="stat-num">{{ total }}</div>
+              <div class="stat-label">Total Modalities</div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-num text-emerald-600">{{ covered }}</div>
+              <div class="stat-label">With Office Coverage</div>
+            </div>
+            <div class="stat-block">
+              <div class="stat-num text-red-500">{{ missing }}</div>
+              <div class="stat-label">Missing Coverage</div>
+            </div>
+          </div>
+        </div>
+
+        {# ── Quick actions ── #}
+        <div class="flex flex-wrap gap-3">
+          <a href="{% url 'seo_intel:settings_modalities' %}" class="seo-btn seo-btn-outline seo-btn-sm">Manage Modalities →</a>
+          <a href="{% url 'seo_intel:settings_office_modalities' %}" class="seo-btn seo-btn-outline seo-btn-sm">Assign to Offices →</a>
+        </div>
+
+        {# ── Coverage table ── #}
+        <div class="card-surface overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-base font-semibold text-brand-deep">Modality Coverage Details</h2>
+          </div>
+          {% if rows %}
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Modality</th>
+                  <th>Status</th>
+                  <th>Offices</th>
+                  <th>States</th>
+                  <th>Therapists</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      {% if row.modality.icon %}<span>{{ row.modality.icon }}</span>{% endif %}
+                      <span class="font-semibold text-slate-800">{{ row.modality.name }}</span>
+                    </div>
+                    <div class="text-xs text-slate-400 font-mono mt-0.5">/modalities/{{ row.modality.slug }}/</div>
+                  </td>
+                  <td>
+                    {% if not row.modality.active %}
+                    <span class="pill-inactive">Inactive</span>
+                    {% elif row.has_coverage %}
+                    <span class="pill-ok">Covered</span>
+                    {% else %}
+                    <span class="pill-missing">No Offices</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if row.offices %}
+                    {% for o in row.offices %}<span class="office-chip">{{ o.name }}</span>{% endfor %}
+                    {% else %}
+                    <span class="text-slate-300 text-xs">—</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if row.states %}
+                    {% for s in row.states %}<span class="state-chip">{{ s }}</span>{% endfor %}
+                    {% else %}
+                    <span class="text-slate-300 text-xs">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="font-semibold text-slate-700">{{ row.therapist_count }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="px-6 py-10 text-center text-slate-400">
+            No modalities found. <a href="{% url 'seo_intel:settings_modalities' %}" class="text-brand-teal underline">Add your first modality.</a>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>{# /space-y-5 #}
+    </div>{# /settings-layout #}
+  </div>
+</section>
+{% endblock %}

@@ -27,7 +27,7 @@ from geo.utils.availability import (
     get_therapists_for_region,
     get_therapists_for_region_and_service,
 )
-from core.models import HeroSettings, InsuranceProvider, OfficeLocation, PublishStatus, Service
+from core.models import Condition, HeroSettings, InsuranceProvider, Modality, OfficeLocation, PublishStatus, Service
 from core.utils import get_offices
 from django.db import models
 from django.db.models import Case, IntegerField, Q, When
@@ -64,6 +64,8 @@ def state_page(request: HttpRequest, state_slug: str) -> HttpResponse:
         .select_related('page')
         .order_by('order', 'title')
     )
+    modalities = list(Modality.objects.filter(active=True).order_by('name'))
+    conditions = list(Condition.objects.filter(active=True).order_by('name'))
     accepted_providers = list(
         InsuranceProvider.objects.filter(is_active=True).order_by('order', 'name', 'id')
     )
@@ -96,6 +98,8 @@ def state_page(request: HttpRequest, state_slug: str) -> HttpResponse:
         # Homepage partials context
         "therapists": therapists,
         "services": services,
+        "modalities": modalities,
+        "conditions": conditions,
         "accepted_providers": accepted_providers,
         "hero_settings": hero_settings,
         "home_offices": home_offices,
@@ -131,6 +135,8 @@ def _location_page_impl(
         .select_related('page')
         .order_by('order', 'title')
     )
+    modalities = list(Modality.objects.filter(active=True).order_by('name'))
+    conditions = list(Condition.objects.filter(active=True).order_by('name'))
     accepted_providers = list(
         InsuranceProvider.objects.filter(is_active=True).order_by('order', 'name', 'id')
     )
@@ -163,6 +169,8 @@ def _location_page_impl(
         # Homepage partials context
         "therapists": therapists,
         "services": services,
+        "modalities": modalities,
+        "conditions": conditions,
         "accepted_providers": accepted_providers,
         "hero_settings": hero_settings,
         "home_offices": home_offices,
@@ -481,6 +489,8 @@ def region_page(request: HttpRequest, region_slug: str) -> HttpResponse:
         .select_related("page")
         .order_by("order", "title")
     )
+    modalities = list(Modality.objects.filter(active=True).order_by('name'))
+    conditions = list(Condition.objects.filter(active=True).order_by('name'))
     accepted_providers = list(
         InsuranceProvider.objects.filter(is_active=True).order_by("order", "name", "id")
     )
@@ -505,6 +515,8 @@ def region_page(request: HttpRequest, region_slug: str) -> HttpResponse:
         # Homepage partials context
         "therapists": therapists,
         "services": services,
+        "modalities": modalities,
+        "conditions": conditions,
         "accepted_providers": accepted_providers,
         "hero_settings": hero_settings,
         "home_offices": home_offices,
@@ -614,3 +626,460 @@ def region_therapist_page(
         ),
     }
     return render(request, "profiles/therapist_area.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Modality pages
+# ---------------------------------------------------------------------------
+
+def _area_modality_context(request, state, location, modality, therapist_cards):
+    """Shared context builder for state_modality_page / location_modality_page."""
+    if location:
+        area_name = f"{location.name}, {state.abbreviation}"
+        breadcrumbs = [
+            {"label": "Home", "url": "/"},
+            {"label": state.name, "url": f"/{state.slug}/"},
+            {"label": location.name, "url": location.get_url_path()},
+            {"label": modality.name, "url": ""},
+        ]
+    else:
+        area_name = state.name
+        breadcrumbs = [
+            {"label": "Home", "url": "/"},
+            {"label": state.name, "url": f"/{state.slug}/"},
+            {"label": modality.name, "url": ""},
+        ]
+
+    location_type = location.location_type if location else "state"
+    links = get_related_links(state.slug, location.slug if location else None)
+
+    from core.models import Modality as ModalityModel, OfficeLocation as OLModel
+    other_modalities = list(
+        ModalityModel.objects.filter(active=True).exclude(pk=modality.pk).order_by("name")[:8]
+    )
+    office_locations = list(OLModel.objects.filter(is_active=True, is_virtual=False).order_by("order", "name"))
+    content_blocks = list(modality.content_blocks.all())
+
+    return {
+        "seo_title": f"{modality.name} in {area_name} | L+C Psychological Services",
+        "seo_description": (
+            f"Find licensed therapists offering {modality.name.lower()} in {area_name}. "
+            f"L+C Psychological Services provides in-person and telehealth options."
+        ),
+        "hero_heading": modality.name,
+        "hero_subheading": modality.description or (
+            f"Connect with a licensed therapist specializing in {modality.name.lower()}. "
+            f"We offer flexible scheduling and most major insurance plans are accepted."
+        ),
+        "state": state,
+        "location": location,
+        "location_type": location_type,
+        "area_name": area_name,
+        "modality": modality,
+        "content_blocks": content_blocks,
+        "other_modalities": other_modalities,
+        "office_locations": office_locations,
+        "therapist_cards": therapist_cards,
+        "breadcrumbs": breadcrumbs,
+        "links": links,
+    }
+
+
+def state_modality_page(request, state_slug, modality_slug):
+    """
+    Intersectional page: a modality offered in a specific state.
+    URL: /<state_slug>/modalities/<modality_slug>/
+    Returns 410 if no published therapist in this state works at an office offering the modality.
+    """
+    from core.models import Modality
+    from geo.utils.availability import get_therapists_for_area_and_modality
+
+    try:
+        state = GeoState.objects.get(slug=state_slug, is_active=True)
+    except GeoState.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        modality = Modality.objects.get(slug=modality_slug, active=True)
+    except Modality.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_area_and_modality(state, modality)
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    context = _area_modality_context(request, state, None, modality, therapist_cards)
+    return render(request, "geo/area_modality.html", context)
+
+
+def location_modality_page(request, state_slug, location_slug, modality_slug):
+    """
+    Intersectional page: a modality offered in a specific city/county.
+    URL: /<state_slug>/<location_slug>/modalities/<modality_slug>/
+    """
+    from core.models import Modality
+    from geo.utils.availability import get_therapists_for_area_and_modality
+
+    try:
+        state = GeoState.objects.get(slug=state_slug, is_active=True)
+    except GeoState.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        location = GeoLocation.objects.get(state=state, slug=location_slug, is_active=True)
+    except GeoLocation.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        modality = Modality.objects.get(slug=modality_slug, active=True)
+    except Modality.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_area_and_modality(location, modality)
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    context = _area_modality_context(request, state, location, modality, therapist_cards)
+    return render(request, "geo/area_modality.html", context)
+
+
+def city_county_modality_page(request, state_slug, county_slug, city_slug, modality_slug):
+    """
+    Intersectional page: a modality offered in a city nested under a county.
+    URL: /<state_slug>/<county_slug>/<city_slug>/modalities/<modality_slug>/
+    """
+    from core.models import Modality
+    from geo.utils.availability import get_therapists_for_area_and_modality
+
+    try:
+        state = GeoState.objects.get(slug=state_slug, is_active=True)
+    except GeoState.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        county = GeoLocation.objects.get(
+            state=state, slug=county_slug,
+            location_type=GeoLocation.COUNTY, is_active=True,
+        )
+    except GeoLocation.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        location = GeoLocation.objects.get(
+            state=state, slug=city_slug, county=county, is_active=True
+        )
+    except GeoLocation.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        modality = Modality.objects.get(slug=modality_slug, active=True)
+    except Modality.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_area_and_modality(location, modality)
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    context = _area_modality_context(request, state, location, modality, therapist_cards)
+    return render(request, "geo/area_modality.html", context)
+
+
+def region_modality_page(request, region_slug, modality_slug):
+    """
+    Intersectional page: a modality offered in a region.
+    URL: /regions/<region_slug>/modalities/<modality_slug>/
+    Returns 410 if no published therapist in this region offers the modality.
+    """
+    from core.models import Modality, OfficeLocation as OLModel
+
+    try:
+        region = GeoRegion.objects.get(slug=region_slug, is_active=True)
+    except GeoRegion.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        modality = Modality.objects.get(slug=modality_slug, active=True)
+    except Modality.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_region(region).filter(
+        offices__modalities=modality
+    ).distinct()
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    area_name = region.name
+    other_modalities = list(
+        Modality.objects.filter(active=True).exclude(pk=modality.pk).order_by("name")[:8]
+    )
+    office_locations = list(
+        OLModel.objects.filter(is_active=True, is_virtual=False).order_by("order", "name")
+    )
+    content_blocks = list(modality.content_blocks.all())
+
+    context = {
+        "seo_title": f"{modality.name} in {area_name} | L+C Psychological Services",
+        "seo_description": (
+            f"Find licensed therapists offering {modality.name.lower()} in {area_name}. "
+            f"L+C Psychological Services provides in-person and telehealth options."
+        ),
+        "hero_heading": modality.name,
+        "hero_subheading": modality.description or (
+            f"Connect with a licensed therapist specializing in {modality.name.lower()}. "
+            f"We offer flexible scheduling and most major insurance plans are accepted."
+        ),
+        "area_name": area_name,
+        "modality": modality,
+        "content_blocks": content_blocks,
+        "other_modalities": other_modalities,
+        "office_locations": office_locations,
+        "therapist_cards": therapist_cards,
+        "breadcrumbs": [
+            {"label": "Home", "url": "/"},
+            {"label": region.name, "url": f"/regions/{region_slug}/"},
+            {"label": modality.name, "url": ""},
+        ],
+        "region": region,
+        "region_slug": region_slug,
+    }
+    return render(request, "geo/area_modality.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Condition pages
+# ---------------------------------------------------------------------------
+
+def _area_condition_context(request, state, location, condition, therapist_cards):
+    """Shared context builder for state_condition_page / location_condition_page."""
+    if location:
+        area_name = f"{location.name}, {state.abbreviation}"
+        breadcrumbs = [
+            {"label": "Home", "url": "/"},
+            {"label": state.name, "url": f"/{state.slug}/"},
+            {"label": location.name, "url": location.get_url_path()},
+            {"label": condition.name, "url": ""},
+        ]
+    else:
+        area_name = state.name
+        breadcrumbs = [
+            {"label": "Home", "url": "/"},
+            {"label": state.name, "url": f"/{state.slug}/"},
+            {"label": condition.name, "url": ""},
+        ]
+
+    location_type = location.location_type if location else "state"
+    links = get_related_links(state.slug, location.slug if location else None)
+
+    from core.models import Condition as ConditionModel, OfficeLocation as OLModel
+    other_conditions = list(
+        ConditionModel.objects.filter(active=True).exclude(pk=condition.pk).order_by("name")[:8]
+    )
+    office_locations = list(OLModel.objects.filter(is_active=True, is_virtual=False).order_by("order", "name"))
+    content_blocks = list(condition.content_blocks.all())
+
+    return {
+        "seo_title": f"{condition.name} Treatment in {area_name} | L+C Psychological Services",
+        "seo_description": (
+            f"Find licensed therapists treating {condition.name.lower()} in {area_name}. "
+            f"L+C Psychological Services provides in-person and telehealth options."
+        ),
+        "hero_heading": condition.name,
+        "hero_subheading": condition.description or (
+            f"Connect with a licensed therapist who specializes in treating {condition.name.lower()}. "
+            f"We offer flexible scheduling and most major insurance plans are accepted."
+        ),
+        "state": state,
+        "location": location,
+        "location_type": location_type,
+        "area_name": area_name,
+        "condition": condition,
+        "content_blocks": content_blocks,
+        "other_conditions": other_conditions,
+        "office_locations": office_locations,
+        "therapist_cards": therapist_cards,
+        "breadcrumbs": breadcrumbs,
+        "links": links,
+    }
+
+
+def state_condition_page(request, state_slug, condition_slug):
+    """
+    Intersectional page: a condition treated in a specific state.
+    URL: /<state_slug>/conditions/<condition_slug>/
+    """
+    from core.models import Condition
+    from geo.utils.availability import get_therapists_for_area_and_condition
+
+    try:
+        state = GeoState.objects.get(slug=state_slug, is_active=True)
+    except GeoState.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        condition = Condition.objects.get(slug=condition_slug, active=True)
+    except Condition.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_area_and_condition(state, condition)
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    context = _area_condition_context(request, state, None, condition, therapist_cards)
+    return render(request, "geo/area_condition.html", context)
+
+
+def location_condition_page(request, state_slug, location_slug, condition_slug):
+    """
+    Intersectional page: a condition treated in a specific city/county.
+    URL: /<state_slug>/<location_slug>/conditions/<condition_slug>/
+    """
+    from core.models import Condition
+    from geo.utils.availability import get_therapists_for_area_and_condition
+
+    try:
+        state = GeoState.objects.get(slug=state_slug, is_active=True)
+    except GeoState.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        location = GeoLocation.objects.get(state=state, slug=location_slug, is_active=True)
+    except GeoLocation.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        condition = Condition.objects.get(slug=condition_slug, active=True)
+    except Condition.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_area_and_condition(location, condition)
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    context = _area_condition_context(request, state, location, condition, therapist_cards)
+    return render(request, "geo/area_condition.html", context)
+
+
+def city_county_condition_page(request, state_slug, county_slug, city_slug, condition_slug):
+    """
+    Intersectional page: a condition treated in a city nested under a county.
+    URL: /<state_slug>/<county_slug>/<city_slug>/conditions/<condition_slug>/
+    """
+    from core.models import Condition
+    from geo.utils.availability import get_therapists_for_area_and_condition
+
+    try:
+        state = GeoState.objects.get(slug=state_slug, is_active=True)
+    except GeoState.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        county = GeoLocation.objects.get(
+            state=state, slug=county_slug,
+            location_type=GeoLocation.COUNTY, is_active=True,
+        )
+    except GeoLocation.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        location = GeoLocation.objects.get(
+            state=state, slug=city_slug, county=county, is_active=True
+        )
+    except GeoLocation.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        condition = Condition.objects.get(slug=condition_slug, active=True)
+    except Condition.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_area_and_condition(location, condition)
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    context = _area_condition_context(request, state, location, condition, therapist_cards)
+    return render(request, "geo/area_condition.html", context)
+
+
+def region_condition_page(request, region_slug, condition_slug):
+    """
+    Intersectional page: a condition treated in a region.
+    URL: /regions/<region_slug>/conditions/<condition_slug>/
+    Returns 410 if no published therapist in this region treats the condition.
+    """
+    from core.models import Condition, OfficeLocation as OLModel
+
+    try:
+        region = GeoRegion.objects.get(slug=region_slug, is_active=True)
+    except GeoRegion.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    try:
+        condition = Condition.objects.get(slug=condition_slug, active=True)
+    except Condition.DoesNotExist:
+        return HttpResponse("Gone", status=410)
+
+    therapists_qs = get_therapists_for_region(region).filter(
+        offices__conditions=condition
+    ).distinct()
+    if not therapists_qs.exists():
+        return HttpResponse("Gone", status=410)
+
+    from core.views import _build_therapist_cards
+    therapist_cards = _build_therapist_cards(therapists_qs)
+
+    area_name = region.name
+    other_conditions = list(
+        Condition.objects.filter(active=True).exclude(pk=condition.pk).order_by("name")[:8]
+    )
+    office_locations = list(
+        OLModel.objects.filter(is_active=True, is_virtual=False).order_by("order", "name")
+    )
+    content_blocks = list(condition.content_blocks.all())
+
+    context = {
+        "seo_title": f"{condition.name} Treatment in {area_name} | L+C Psychological Services",
+        "seo_description": (
+            f"Find licensed therapists treating {condition.name.lower()} in {area_name}. "
+            f"L+C Psychological Services provides in-person and telehealth options."
+        ),
+        "hero_heading": condition.name,
+        "hero_subheading": condition.description or (
+            f"Connect with a licensed therapist who specializes in treating {condition.name.lower()}. "
+            f"We offer flexible scheduling and most major insurance plans are accepted."
+        ),
+        "area_name": area_name,
+        "condition": condition,
+        "content_blocks": content_blocks,
+        "other_conditions": other_conditions,
+        "office_locations": office_locations,
+        "therapist_cards": therapist_cards,
+        "breadcrumbs": [
+            {"label": "Home", "url": "/"},
+            {"label": region.name, "url": f"/regions/{region_slug}/"},
+            {"label": condition.name, "url": ""},
+        ],
+        "region": region,
+        "region_slug": region_slug,
+    }
+    return render(request, "geo/area_condition.html", context)

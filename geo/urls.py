@@ -62,6 +62,16 @@ urlpatterns = [
         views.region_therapist_page,
         name="region_therapist",
     ),
+    path(
+        "regions/<slug:region_slug>/modalities/<slug:modality_slug>/",
+        views.region_modality_page,
+        name="region_modality",
+    ),
+    path(
+        "regions/<slug:region_slug>/conditions/<slug:condition_slug>/",
+        views.region_condition_page,
+        name="region_condition",
+    ),
     # Intersectional service pages (must come before state/location pages to avoid shadowing)
     path(
         "<state:state_slug>/services/<slug:service_slug>/",
@@ -78,6 +88,38 @@ urlpatterns = [
         "<state:state_slug>/<slug:county_slug>/<slug:city_slug>/services/<slug:service_slug>/",
         views.city_county_service_page,
         name="city_county_service",
+    ),
+    # Intersectional modality pages
+    path(
+        "<state:state_slug>/modalities/<slug:modality_slug>/",
+        views.state_modality_page,
+        name="state_modality",
+    ),
+    path(
+        "<state:state_slug>/<slug:location_slug>/modalities/<slug:modality_slug>/",
+        views.location_modality_page,
+        name="location_modality",
+    ),
+    path(
+        "<state:state_slug>/<slug:county_slug>/<slug:city_slug>/modalities/<slug:modality_slug>/",
+        views.city_county_modality_page,
+        name="city_county_modality",
+    ),
+    # Intersectional condition pages
+    path(
+        "<state:state_slug>/conditions/<slug:condition_slug>/",
+        views.state_condition_page,
+        name="state_condition",
+    ),
+    path(
+        "<state:state_slug>/<slug:location_slug>/conditions/<slug:condition_slug>/",
+        views.location_condition_page,
+        name="location_condition",
+    ),
+    path(
+        "<state:state_slug>/<slug:county_slug>/<slug:city_slug>/conditions/<slug:condition_slug>/",
+        views.city_county_condition_page,
+        name="city_county_condition",
     ),
     # State hub page — e.g. /kentucky/
     path("<state:state_slug>/", views.state_page, name="state"),

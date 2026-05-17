@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+/* ---- Hero ---------------------------------------------------------------- */
+.as-hero {
+  position: relative;
+  overflow: hidden;
+  background-color: #0d3f46;
+  color: #ffffff;
+  padding: 96px 0 120px;
+}
+.as-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 1;
+  filter: brightness(0.5);
+  z-index: 0;
+}
+.as-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 18, 24, 0.42);
+  z-index: 1;
+}
+.as-hero__inner {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.as-hero__title {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1.15;
+  margin: 0;
+  text-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+.as-hero__intro {
+  margin: 24px auto 0;
+  max-width: 720px;
+  font-size: 19px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+@media (max-width: 767px) {
+  .as-hero { padding: 72px 0 88px; }
+  .as-hero__title { font-size: 36px; }
+  .as-hero__intro { font-size: 17px; }
+}
+
+/* ---- Content section ----------------------------------------------------- */
+.as-content {
+  background: #ffffff;
+  padding: 80px 0 96px;
+}
+.as-content__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  color: #1a3038;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.as-content__description {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #2d4a50;
+}
+.as-content__block-heading {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0d3f46;
+  margin: 0 0 0.75rem;
+  line-height: 1.3;
+}
+
+/* ---- Wave dividers ------------------------------------------------------- */
+.as-wave {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  line-height: 0;
+}
+.as-wave svg {
+  display: block;
+  width: calc(100% + 1.3px);
+  height: 30px;
+}
+.as-wave--top { top: -1px; }
+.as-wave--top svg { fill: #ffffff; }
+.as-wave--bottom { bottom: -1px; }
+.as-wave--bottom svg { fill: #ffffff; transform: rotate(180deg); }
+
+/* ---- Therapist card chips ------------------------------------------------ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  background: rgba(146,220,229,0.28);
+  color: #0f3f46;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* ---- Therapists carousel ------------------------------------------------- */
+.as-carousel-track { scrollbar-width: none; }
+.as-carousel-track::-webkit-scrollbar { display: none; }
+.as-carousel-item { flex: 0 0 100%; }
+@media (min-width: 640px) { .as-carousel-item { flex: 0 0 calc((100% - 1.5rem) / 2); } }
+@media (min-width: 1024px) { .as-carousel-item { flex: 0 0 calc((100% - 2 * 1.5rem) / 3); } }
+.as-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: #ffffff;
+  color: #04606B;
+  border: none;
+  border-radius: 9999px;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  transition: background 150ms, color 150ms;
+  flex-shrink: 0;
+}
+.as-carousel-btn:hover { background: #92DCE5; color: #04606B; }
+.as-carousel-btn-prev { left: -1.375rem; }
+.as-carousel-btn-next { right: -1.375rem; }
+@media (max-width: 640px) {
+  .as-carousel-btn-prev { left: 0; }
+  .as-carousel-btn-next { right: 0; }
+}
+
+/* ---- Related modalities -------------------------------------------------- */
+.am-related {
+  background-color: #ffffff;
+  padding: 64px 0 96px;
+}
+.am-related__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.am-related__title {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 28px;
+  color: #045E6A;
+  margin: 0 0 28px;
+  text-align: center;
+}
+.am-related__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+.am-related__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: rgba(4,96,107,0.08);
+  color: #04606B;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1.5px solid rgba(4,96,107,0.15);
+  transition: background 0.18s, border-color 0.18s;
+}
+.am-related__chip:hover {
+  background: rgba(4,96,107,0.15);
+  border-color: rgba(4,96,107,0.3);
+}
+
+/* ---- Office locations ---------------------------------------------------- */
+.locations-section {
+  background: #92DCE5;
+  padding: 72px 24px 64px;
+  position: relative;
+  overflow: hidden;
+}
+.locations-section__inner { max-width: 1100px; margin: 0 auto; }
+.locations-section__title {
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 700;
+  color: #0d3f46;
+  margin: 0 0 32px;
+  text-align: center;
+}
+.loc-carousel-wrap { position: relative; padding: 0 48px; }
+.loc-carousel-track {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 16px 2px 32px;
+  margin: -16px -2px -32px;
+}
+.loc-carousel-track::-webkit-scrollbar { display: none; }
+.loc-carousel-item { flex: 0 0 calc(50% - 12px); scroll-snap-align: start; min-width: 0; }
+.loc-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border: 1.5px solid rgba(4,96,107,0.20);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  color: #04606B;
+  transition: background 0.15s, color 0.15s;
+}
+.loc-carousel-btn:hover { background: #04606B; color: #fff; }
+.loc-carousel-btn--prev { left: 0; }
+.loc-carousel-btn--next { right: 0; }
+@media (max-width: 640px) {
+  .loc-carousel-item { flex: 0 0 85%; }
+  .loc-carousel-wrap { padding: 0 36px; }
+}
+.office-card {
+  background: #fff;
+  border-radius: 18px;
+  border: 1.5px solid rgba(0,95,107,0.10);
+  box-shadow: 0 4px 20px rgba(0,48,57,0.07);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+}
+.office-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 40px rgba(0,48,57,0.13);
+  border-color: rgba(0,95,107,0.25);
+}
+.office-card__body {
+  padding: 22px 24px 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.contact-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  row-gap: 6px;
+  align-items: center;
+  font-size: 0.875rem;
+}
+.contact-row__label { font-weight: 600; color: #04606B; white-space: nowrap; }
+
+/* ---- CTA strip ----------------------------------------------------------- */
+.as-cta {
+  background: #04606B;
+  padding: 96px 24px 64px;
+  text-align: center;
+  color: #ffffff;
+  position: relative;
+}
+.as-cta__heading {
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+.as-cta__sub {
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.88);
+  margin: 0 auto 28px;
+  max-width: 600px;
+}
+.as-cta__btn {
+  display: inline-block;
+  background: #92DCE5;
+  color: #0d3f46;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 40px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.as-cta__btn:hover { background: #ffffff; }
+</style>
+{% if modality.featured_image %}
+<style>
+.as-hero::before {
+  background-image: url("{{ modality.featured_image.url|escape }}");
+}
+</style>
+{% endif %}
+{% endblock %}
+
+{% block meta_description %}{{ seo_description }}{% endblock %}
+
+{% block content %}
+
+{# ---- Hero ---------------------------------------------------------------- #}
+<section class="as-hero" aria-label="Page introduction">
+  <div class="as-hero__inner">
+    <h1 class="as-hero__title">{{ hero_heading }}</h1>
+    {% if hero_subheading %}
+    <p class="as-hero__intro">{{ hero_subheading }}</p>
+    {% endif %}
+  </div>
+</section>
+
+{# ---- Description --------------------------------------------------------- #}
+{% if modality.description %}
+<section class="as-content" id="modality-details">
+  <div class="as-content__inner">
+    <p class="as-content__description">{{ modality.description }}</p>
+  </div>
+</section>
+{% endif %}
+
+{# ---- Content blocks ------------------------------------------------------ #}
+{% for block in content_blocks %}
+<section class="as-content" style="padding-top:{% if forloop.first and not modality.description %}3rem{% else %}0{% endif %}; padding-bottom:0;">
+  <div class="as-content__inner">
+    <h2 class="as-content__block-heading">{{ block.heading }}</h2>
+    <p class="as-content__description">{{ block.body|linebreaksbr }}</p>
+  </div>
+</section>
+{% endfor %}
+{% if content_blocks %}<div style="padding-bottom:3rem;"></div>{% endif %}
+
+{# ---- Therapists carousel ------------------------------------------------- #}
+{% if therapist_cards %}
+<section class="py-12 md:py-16" style="background:#04606B; position:relative; padding-top:60px; padding-bottom:80px;" aria-label="Therapists for this modality">
+  <div class="as-wave as-wave--top" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none">
+      <path d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+      <path d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+      <path d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+      <path d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+    </svg>
+  </div>
+  <div class="max-w-6xl mx-auto px-4" style="position:relative;z-index:1;">
+    <div class="text-center mb-10">
+      <h2 class="text-3xl font-semibold text-white m-0">Therapists Offering {{ modality.name }} in {{ area_name }}</h2>
+    </div>
+    <div class="relative px-8 md:px-10">
+      <button class="as-carousel-btn as-carousel-btn-prev" aria-label="Previous therapists">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:1.25rem;height:1.25rem;"><path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/></svg>
+      </button>
+      <div class="as-carousel-track flex gap-6 overflow-x-auto scroll-smooth pb-4" style="scroll-snap-type:x mandatory;">
+        {% for t in therapist_cards %}
+        <div class="as-carousel-item" style="scroll-snap-align:start;">
+          {% include "partials/therapist_card_shared.html" with slug=t.slug photo_url=t.photo_url name=t.profile.display_name accepts_new_clients=t.accepts_new_clients license_text=t.title services=t.services client_focuses=t.focuses %}
+        </div>
+        {% endfor %}
+      </div>
+      <button class="as-carousel-btn as-carousel-btn-next" aria-label="Next therapists">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:1.25rem;height:1.25rem;"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="as-wave as-wave--bottom" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none" style="fill:#92DCE5;">
+      <path d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+      <path d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+      <path d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+      <path d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+    </svg>
+  </div>
+</section>
+{% endif %}
+
+{# ---- Related modalities -------------------------------------------------- #}
+{% if other_modalities %}
+<section class="am-related" aria-labelledby="am-related-heading">
+  <div class="am-related__inner">
+    <h2 id="am-related-heading" class="am-related__title">Explore Other Modalities in {{ area_name }}</h2>
+    <div class="am-related__grid">
+      {% for m in other_modalities %}
+      <a class="am-related__chip" href="{% if region_slug %}/regions/{{ region_slug }}/modalities/{{ m.slug }}/{% else %}/{{ state.slug }}/modalities/{{ m.slug }}/{% endif %}">
+        {% if m.icon %}{{ m.icon }} {% endif %}{{ m.name }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ---- Our Locations ------------------------------------------------------- #}
+{% if office_locations %}
+<section class="locations-section" aria-labelledby="as-locations-heading">
+  <div class="locations-section__inner">
+    <h2 id="as-locations-heading" class="locations-section__title">Our Locations</h2>
+    <div class="loc-carousel-wrap">
+      <button class="loc-carousel-btn loc-carousel-btn--prev" aria-label="Previous locations">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/></svg>
+      </button>
+      <div class="loc-carousel-track">
+        {% for office in office_locations %}
+        <div class="loc-carousel-item">
+          <div class="office-card">
+            {% if office.map_embed_url %}
+            <div style="height:180px;overflow:hidden;flex-shrink:0;">
+              <iframe src="{{ office.map_embed_url }}" width="100%" height="180" style="border:0;display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map of {{ office.name }}"></iframe>
+            </div>
+            {% endif %}
+            <div class="office-card__body">
+              <div>
+                <h3 style="font-size:1.1rem;font-weight:700;color:#04606B;margin:0;">{{ office.name }}</h3>
+                {% if office.full_address %}
+                <p style="font-size:0.875rem;color:#475569;margin:4px 0 0;line-height:1.5;">{{ office.full_address|linebreaksbr }}</p>
+                {% endif %}
+              </div>
+              {% if office.phone_number or office.fax_number %}
+              <div class="contact-row">
+                {% if office.phone_number %}
+                <span class="contact-row__label">{{ office.phone_label }}:</span>
+                <span><a style="color:#1e293b;text-decoration:none;" href="tel:{{ office.phone_number|cut:'-'|cut:' '|cut:'('|cut:')' }}">{{ office.phone_number }}</a></span>
+                {% endif %}
+                {% if office.fax_number %}
+                <span class="contact-row__label">{{ office.fax_label }}:</span>
+                <span style="color:#1e293b;">{{ office.fax_number }}</span>
+                {% endif %}
+              </div>
+              {% endif %}
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px;">
+                {% if office.cta_url %}
+                <a href="{{ office.cta_url }}" target="_blank" rel="noopener"
+                   style="display:inline-flex;align-items:center;gap:6px;border-radius:8px;background:#3C9C64;padding:8px 16px;font-size:0.8rem;font-weight:600;color:#fff;text-decoration:none;"
+                   data-schedule-trigger>{{ office.cta_label|default:"Schedule Online" }}</a>
+                {% endif %}
+                <a href="/contact-us/{{ office.slug }}/"
+                   style="display:inline-flex;align-items:center;gap:6px;border-radius:8px;border:1.5px solid rgba(4,96,107,0.3);padding:8px 16px;font-size:0.8rem;font-weight:600;color:#04606B;text-decoration:none;">Office details &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <button class="loc-carousel-btn loc-carousel-btn--next" aria-label="Next locations">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ---- CTA ----------------------------------------------------------------- #}
+<section class="as-cta" aria-label="Schedule an appointment">
+  <div class="as-wave as-wave--top" aria-hidden="true" style="top:-1px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 283.5 27.8" preserveAspectRatio="none" style="fill:#92DCE5;">
+      <path d="M283.5,9.7c0,0-7.3,4.3-14,4.6c-6.8,0.3-12.6,0-20.9-1.5c-11.3-2-33.1-10.1-44.7-5.7 s-12.1,4.6-18,7.4c-6.6,3.2-20,9.6-36.6,9.3C131.6,23.5,99.5,7.2,86.3,8c-1.4,0.1-6.6,0.8-10.5,2c-3.8,1.2-9.4,3.8-17,4.7 c-3.2,0.4-8.3,1.1-14.2,0.9c-1.5-0.1-6.3-0.4-12-1.6c-5.7-1.2-11-3.1-15.8-3.7C6.5,9.2,0,10.8,0,10.8V0h283.5V9.7z"/>
+      <path d="M269.6,18c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C267.7,18.8,269.7,18,269.6,18z"/>
+      <path d="M227.4,9.8c-0.2-0.1-4.5-1-9.5-1.2c-5-0.2-12.7,0.6-12.3,0.5c0.3-0.1,5.9-1.8,13.3-1.2 S227.6,9.9,227.4,9.8z"/>
+      <path d="M154.5,26.7c-0.1-0.1-4.6,0.3-7.2,0c-7.3-0.7-17-3.2-16.6-2.9c0.4,0.3,13.7,3.1,17,3.3 C152.6,27.5,154.6,26.8,154.5,26.7z"/>
+    </svg>
+  </div>
+  <h2 class="as-cta__heading">Ready to Get Started?</h2>
+  <p class="as-cta__sub">
+    Our therapists are accepting new clients. Schedule your first appointment today —
+    in-person or via telehealth, evenings and weekends available.
+  </p>
+  <a href="https://www.therapyportal.com/p/lcpsych41042/appointments/availability/"
+     class="as-cta__btn"
+     data-schedule-trigger
+     data-analytics-label="cta_schedule_area_modality_footer">Schedule Online</a>
+</section>
+
+{% endblock %}
+
+{% block body_extra %}
+<script>
+(function () {
+  var asTrack = document.querySelector('.as-carousel-track');
+  if (asTrack) {
+    var asPrev = document.querySelector('.as-carousel-btn-prev');
+    var asNext = document.querySelector('.as-carousel-btn-next');
+    function asScrollAmt() {
+      var item = asTrack.querySelector('.as-carousel-item');
+      return item ? item.offsetWidth + 24 : 320;
+    }
+    if (asPrev) asPrev.addEventListener('click', function () { asTrack.scrollBy({ left: -asScrollAmt(), behavior: 'smooth' }); });
+    if (asNext) asNext.addEventListener('click', function () { asTrack.scrollBy({ left: asScrollAmt(), behavior: 'smooth' }); });
+  }
+  var locTrack = document.querySelector('.loc-carousel-track');
+  if (locTrack) {
+    var locPrev = document.querySelector('.loc-carousel-btn--prev');
+    var locNext = document.querySelector('.loc-carousel-btn--next');
+    function locScrollAmt() {
+      var item = locTrack.querySelector('.loc-carousel-item');
+      return item ? item.offsetWidth + 24 : 440;
+    }
+    if (locPrev) locPrev.addEventListener('click', function () { locTrack.scrollBy({ left: -locScrollAmt(), behavior: 'smooth' }); });
+    if (locNext) locNext.addEventListener('click', function () { locTrack.scrollBy({ left: locScrollAmt(), behavior: 'smooth' }); });
+  }
+})();
+</script>
+{% endblock %}
