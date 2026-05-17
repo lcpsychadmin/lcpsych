@@ -35,6 +35,7 @@ from .models import (
 	OurPhilosophy,
 	Modality,
 	Condition,
+	OfficeLocation,
 )
 from profiles.models import TherapistProfile
 from core.utils.bot_detection import is_bot_ua
@@ -282,13 +283,11 @@ def home(request):
 
 
 def location_xml(request):
-	"""Return location.xml populated from ContactInfo for local SEO/NAP."""
-	contact = ContactInfo.objects.order_by('id').first()
-	if not contact:
-		contact = ContactInfo.objects.create()
+	"""Return location.xml as KML populated from active OfficeLocation records."""
+	offices = OfficeLocation.objects.filter(is_active=True, is_virtual=False).order_by('order', 'name')
 	site_base = getattr(settings, 'BASE_URL', '').rstrip('/') or request.build_absolute_uri('/').rstrip('/')
-	content = select_template(['location.xml']).render({'contact': contact, 'site_base': site_base}, request=request)
-	return HttpResponse(content, content_type='application/xml')
+	content = select_template(['location.xml']).render({'offices': offices, 'site_base': site_base}, request=request)
+	return HttpResponse(content, content_type='application/vnd.google-earth.kml+xml')
 
 
 def our_team(request):

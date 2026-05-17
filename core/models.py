@@ -773,6 +773,16 @@ class OfficeLocation(Timestamped):
 		help_text="Conditions/presenting concerns treated at this office.",
 	)
 
+	# Geo coordinates (used for KML / schema markup)
+	latitude = models.DecimalField(
+		max_digits=9, decimal_places=6, null=True, blank=True,
+		help_text="Decimal latitude, e.g. 39.008625",
+	)
+	longitude = models.DecimalField(
+		max_digits=9, decimal_places=6, null=True, blank=True,
+		help_text="Decimal longitude, e.g. -84.647614",
+	)
+
 	# Display
 	is_active = models.BooleanField(default=True)
 	is_virtual = models.BooleanField(
