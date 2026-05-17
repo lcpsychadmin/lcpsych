@@ -357,7 +357,7 @@ class OfficeLocationAdmin(admin.ModelAdmin):
         (None, {"fields": ("name", "is_active", "is_virtual", "order")}),
         ("Address", {"fields": ("address_line1", "address_line2", "address_city", "address_state", "address_zip")}),
         ("Coordinates", {"fields": ("latitude", "longitude")}),
-        ("Contact", {"fields": ("phone_number", "phone_label", "fax_number", "fax_label", "email")}),
+        ("Contact", {"fields": ("phone_number", "phone_label", "fax_number", "fax_label")}),
         ("Hours", {"fields": ("office_hours", "office_hours_title")}),
         ("Links", {"fields": ("cta_url", "cta_label", "directions_url")}),
     )
