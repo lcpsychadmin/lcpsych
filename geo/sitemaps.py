@@ -15,9 +15,29 @@ Register all five in lcpsych/urls.py under the 'sitemaps' dict that is
 passed to Django's built-in sitemap view.
 """
 
+from functools import lru_cache
+
 from django.contrib.sitemaps import Sitemap
 from geo.models import GeoLocation, GeoRegion, GeoState
 from geo.utils.availability import get_therapists_for_area_and_service
+
+
+@lru_cache(maxsize=1)
+def _latest_therapist_date():
+    """Return the most recent TherapistProfile.updated_at, cached per process lifetime.
+
+    Geo models don't have their own timestamps, so we use the latest therapist
+    update as a proxy for 'something on these pages changed'. Google uses this
+    to decide whether to re-crawl a sitemap section.
+    """
+    from profiles.models import TherapistProfile
+
+    return (
+        TherapistProfile.objects.filter(is_published=True)
+        .order_by("-updated_at")
+        .values_list("updated_at", flat=True)
+        .first()
+    )
 
 
 class GeoStateSitemap(Sitemap):
@@ -30,6 +50,9 @@ class GeoStateSitemap(Sitemap):
 
     def location(self, item: GeoState) -> str:
         return f"/{item.slug}/"
+
+    def lastmod(self, item):
+        return _latest_therapist_date()
 
 
 class GeoCitySitemap(Sitemap):
@@ -49,6 +72,9 @@ class GeoCitySitemap(Sitemap):
     def location(self, item: GeoLocation) -> str:
         return item.get_url_path()
 
+    def lastmod(self, item):
+        return _latest_therapist_date()
+
 
 class GeoCountySitemap(Sitemap):
     priority = 0.6
@@ -66,6 +92,9 @@ class GeoCountySitemap(Sitemap):
 
     def location(self, item: GeoLocation) -> str:
         return f"/{item.state.slug}/{item.slug}/"
+
+    def lastmod(self, item):
+        return _latest_therapist_date()
 
 
 class GeoStateServiceSitemap(Sitemap):
@@ -90,6 +119,9 @@ class GeoStateServiceSitemap(Sitemap):
     def location(self, item):
         state, service = item
         return f"/{state.slug}/services/{service.slug}/"
+
+    def lastmod(self, item):
+        return _latest_therapist_date()
 
 
 class GeoLocationServiceSitemap(Sitemap):
@@ -119,6 +151,9 @@ class GeoLocationServiceSitemap(Sitemap):
         location, service = item
         return f"{location.get_url_path()}services/{service.slug}/"
 
+    def lastmod(self, item):
+        return _latest_therapist_date()
+
 
 class GeoRegionSitemap(Sitemap):
     """One entry per active region."""
@@ -132,6 +167,9 @@ class GeoRegionSitemap(Sitemap):
 
     def location(self, item: GeoRegion) -> str:
         return item.get_url_path()
+
+    def lastmod(self, item):
+        return _latest_therapist_date()
 
 
 class GeoRegionServiceSitemap(Sitemap):
@@ -159,6 +197,9 @@ class GeoRegionServiceSitemap(Sitemap):
         region, service = item
         return f"/regions/{region.slug}/services/{service.slug}/"
 
+    def lastmod(self, item):
+        return _latest_therapist_date()
+
 
 class GeoRegionTherapistSitemap(Sitemap):
     """One entry per (region, therapist) pair where the therapist is in the region."""
@@ -181,6 +222,10 @@ class GeoRegionTherapistSitemap(Sitemap):
     def location(self, item):
         region, therapist = item
         return f"/regions/{region.slug}/therapists/{therapist.slug}/"
+
+    def lastmod(self, item):
+        _region, therapist = item
+        return therapist.updated_at
 
 
 class GeoRegionModalitySitemap(Sitemap):
@@ -212,6 +257,9 @@ class GeoRegionModalitySitemap(Sitemap):
         region, modality = item
         return f"/regions/{region.slug}/modalities/{modality.slug}/"
 
+    def lastmod(self, item):
+        return _latest_therapist_date()
+
 
 class GeoRegionConditionSitemap(Sitemap):
     """One entry per (region, condition) pair where at least one active office in the region treats that condition."""
@@ -242,6 +290,9 @@ class GeoRegionConditionSitemap(Sitemap):
         region, condition = item
         return f"/regions/{region.slug}/conditions/{condition.slug}/"
 
+    def lastmod(self, item):
+        return _latest_therapist_date()
+
 
 class GeoStateModalitySitemap(Sitemap):
     """One entry per (state, modality) pair where at least one published therapist offers that modality in the state."""
@@ -267,6 +318,9 @@ class GeoStateModalitySitemap(Sitemap):
         state, modality = item
         return f"/{state.slug}/modalities/{modality.slug}/"
 
+    def lastmod(self, item):
+        return _latest_therapist_date()
+
 
 class GeoStateConditionSitemap(Sitemap):
     """One entry per (state, condition) pair where at least one published therapist treats that condition in the state."""
@@ -291,6 +345,9 @@ class GeoStateConditionSitemap(Sitemap):
     def location(self, item):
         state, condition = item
         return f"/{state.slug}/conditions/{condition.slug}/"
+
+    def lastmod(self, item):
+        return _latest_therapist_date()
 
 
 class GeoLocationModalitySitemap(Sitemap):
@@ -321,6 +378,9 @@ class GeoLocationModalitySitemap(Sitemap):
         loc, modality = item
         return f"{loc.get_url_path()}modalities/{modality.slug}/"
 
+    def lastmod(self, item):
+        return _latest_therapist_date()
+
 
 class GeoLocationConditionSitemap(Sitemap):
     """One entry per (location, condition) pair where at least one published therapist treats that condition there."""
@@ -349,3 +409,6 @@ class GeoLocationConditionSitemap(Sitemap):
     def location(self, item):
         loc, condition = item
         return f"{loc.get_url_path()}conditions/{condition.slug}/"
+
+    def lastmod(self, item):
+        return _latest_therapist_date()

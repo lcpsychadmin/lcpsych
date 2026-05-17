@@ -24,6 +24,9 @@ class TherapistSitemap(Sitemap):
     def location(self, item):
         return f"/therapists/{item.slug}/"
 
+    def lastmod(self, item):
+        return item.updated_at
+
 
 class TherapistServiceSitemap(Sitemap):
     """One entry per (therapist, service) pair."""
@@ -68,6 +71,10 @@ class TherapistStateSitemap(Sitemap):
         therapist, state = item
         return f"/therapists/{therapist.slug}/{state.slug}/"
 
+    def lastmod(self, item):
+        therapist, _state = item
+        return therapist.updated_at
+
 
 class TherapistAreaSitemap(Sitemap):
     """One entry per (therapist, geo_location) pair."""
@@ -90,3 +97,7 @@ class TherapistAreaSitemap(Sitemap):
         if loc.location_type == "city" and loc.county_id:
             return f"/therapists/{therapist.slug}/{loc.state.slug}/{loc.county.slug}/{loc.slug}/"
         return f"/therapists/{therapist.slug}/{loc.state.slug}/{loc.slug}/"
+
+    def lastmod(self, item):
+        therapist, _loc = item
+        return therapist.updated_at
