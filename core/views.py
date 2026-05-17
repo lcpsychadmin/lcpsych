@@ -690,7 +690,9 @@ def page_detail(request, path: str):
 	if page.path == 'services':
 		from django.db.models import Q
 		q = (request.GET.get('q') or '').strip()
-		svc_qs = Service.objects.filter(status=PublishStatus.PUBLISH, page__status=PublishStatus.PUBLISH)
+		svc_qs = Service.objects.filter(status=PublishStatus.PUBLISH).filter(
+			Q(page__isnull=True) | Q(page__status=PublishStatus.PUBLISH)
+		)
 		if q:
 			svc_qs = svc_qs.filter(
 				Q(title__icontains=q) |
