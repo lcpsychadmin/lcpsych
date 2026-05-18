@@ -4,5 +4,4 @@ Disallow: /
 {% else %}
 Allow: /
 Sitemap: {{ site_base }}/sitemap.xml
-Sitemap: {{ site_base }}/location.xml
 {% endif %}
