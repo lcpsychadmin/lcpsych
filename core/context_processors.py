@@ -14,6 +14,7 @@ from .models import (
     CompanyQuote,
     ContactInfo,
     JoinOurTeamSubmission,
+    OfficeLocation,
 )
 
 
@@ -175,6 +176,12 @@ def contact(request):
     return {
         'contact_info': contact_info,
     }
+
+
+def primary_office(request):
+    """Expose the primary active physical office for schema markup and global context."""
+    office = OfficeLocation.objects.filter(is_active=True, is_virtual=False).order_by('order', 'name').first()
+    return {'primary_office': office}
 
 
 def join_submissions_counts(request):

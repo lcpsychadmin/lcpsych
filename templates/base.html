@@ -73,8 +73,8 @@ window.wp.a11y = window.wp.a11y || {
 			"@id": "{{ site_base }}/#organization",
 			"name": "L+C Psychological Services",
 			"url": "{{ site_base }}/",
-			"email": "frontoffice@lcpsych.com",
-			"telephone": "8595254911",
+			"email": "{% if primary_office and primary_office.email_address %}{{ primary_office.email_address|escapejs }}{% else %}frontoffice@lcpsych.com{% endif %}",
+			"telephone": "{% if primary_office and primary_office.phone_number %}{{ primary_office.phone_number|escapejs }}{% else %}8595254911{% endif %}",
 			"logo": {
 				"@type": "ImageObject",
 				"@id": "{{ site_base }}/#logo",
@@ -86,12 +86,17 @@ window.wp.a11y = window.wp.a11y || {
 			},
 			"address": {
 				"@type": "PostalAddress",
-				"streetAddress": "6900 Houston Rd. Building 500 Suite 11",
-				"addressLocality": "Florence",
-				"addressRegion": "KY",
-				"postalCode": "41091",
+				"streetAddress": "{% if primary_office and primary_office.address_line1 %}{{ primary_office.address_line1|escapejs }}{% if primary_office.address_line2 %} {{ primary_office.address_line2|escapejs }}{% endif %}{% else %}6900 Houston Rd. Building 500 Suite 11{% endif %}",
+				"addressLocality": "{% if primary_office and primary_office.address_city %}{{ primary_office.address_city|escapejs }}{% else %}Florence{% endif %}",
+				"addressRegion": "{% if primary_office and primary_office.address_state %}{{ primary_office.address_state|escapejs }}{% else %}KY{% endif %}",
+				"postalCode": "{% if primary_office and primary_office.address_zip %}{{ primary_office.address_zip|escapejs }}{% else %}41091{% endif %}",
 				"addressCountry": "US"
-			},
+			},{% if primary_office and primary_office.latitude and primary_office.longitude %}
+			"geo": {
+				"@type": "GeoCoordinates",
+				"latitude": {{ primary_office.latitude }},
+				"longitude": {{ primary_office.longitude }}
+			},{% endif %}
 			"openingHours": [
 				"Mo-Th 09:00-21:00",
 				"Fr 09:00-17:00",
