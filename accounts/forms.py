@@ -413,6 +413,8 @@ class OfficeLocationForm(forms.ModelForm):
             "section_heading",
             "map_embed_url",
             "directions_url",
+            "latitude",
+            "longitude",
             "address_line1",
             "address_line2",
             "address_city",
